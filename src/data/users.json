@@ -1,0 +1,53 @@
+{
+    "users":[
+        {
+            "UserID": 1,
+            "FirstName": "Tharusha",
+            "LastName": "Samarawickrama",
+            "Email": "superadmin@example.com",
+            "Phone": "+11234567890",
+            "Username": "superadmin",
+            "Password": "Superadmin@1234",
+            "Role": {
+                "RoleID": 1,
+                "RoleName": "SuperAdmin",
+                "Description": "Full system access with all permissions"
+            },
+            "CreatedBy": 1,
+            "CreatedDate": "2025-01-10T10:00:00.000Z"
+        },
+        {
+            "UserID": 2,
+            "FirstName": "Kasun",
+            "LastName": "Disanayake",
+            "Email": "admin@example.com",
+            "Phone": "+11235557890",
+            "Username": "admin",
+            "Password": "Admin@1234",
+            "Role": {
+                "RoleID": 2,
+                "RoleName": "Admin",
+                "Description": "Manages operations and inventory overview"
+            },
+            "CreatedBy": 1,
+            "CreatedDate": "2025-02-15T09:45:00.000Z"
+        },
+        {
+            "UserID": 3,
+            "FirstName": "Pramod",
+            "LastName": "Madushan",
+            "Email": "stockkeeper@example.com",
+            "Phone": "+11236667890",
+            "Username": "stockkeeper",
+            "Password": "Stockkeeper@1234",
+            "Role": {
+                "RoleID": 3,
+                "RoleName": "StockKeeper",
+                "Description": "Handles stock updates and item tracking"
+            },
+            "CreatedBy": 2,
+            "CreatedDate": "2025-03-05T14:20:00.000Z"
+        }
+
+    ]
+}

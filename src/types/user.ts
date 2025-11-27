@@ -4,15 +4,13 @@ export interface Role {
   Description: string
 }
 
-export interface User {
-  UserID: number
-  FirstName: string
-  LastName: string
+export interface Employee {
+  EmployeeID: number
   Email: string
   Phone: string
-  Username: string
+  UserName: string
   Password: string
-  Role: Role
+  RoleID: number
   CreatedBy: number
   CreatedDate: string
 }
@@ -22,9 +20,33 @@ export interface LoginRequest {
   password: string
 }
 
+// export interface LoginResponse {
+//   success: boolean
+//   employee?: Omit<Employee, 'Password'>
+//   message: string
+//   token?: string
+// }
+
+
+//edit for jwt-token (start)
 export interface LoginResponse {
   success: boolean
-  user?: Omit<User, 'Password'>
   message: string
-  token?: string
+  data?: {
+    userId: number
+    username: string
+    role: string
+    accessToken: string
+    refreshToken: string
+  }
 }
+
+export interface AuthUser {
+  userId: number
+  username: string
+  email: string
+  role: string
+  roleId: number
+}
+
+//edit for jwt-token (start)

@@ -1,0 +1,693 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@/lib/supabase/server'
+import { verifyAccessToken } from '@/lib/jwt'
+import { getAuthTokenFromCookies } from '@/lib/cookies'
+
+// Helper function to extract employee ID from token
+function getEmployeeIdFromToken(accessToken: string): number {
+  try {
+    const payload = verifyAccessToken(accessToken);
+    // Assuming the token payload contains userId which is the EmployeeID
+    return payload.userId || 1; // fallback to 1 if not found
+  } catch (error) {
+    console.error('Error extracting employee ID from token:', error);
+    return 1; // fallback employee ID
+  }
+}
+
+// GET - Retrieve brands with pagination, sorting, search, and filtering
+export async function GET(request: NextRequest) {
+  try {
+    // Verify authentication
+    const accessToken = getAuthTokenFromCookies(request)
+    if (!accessToken) {
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 401,
+          message: 'Access token not found',
+          timestamp: new Date().toISOString()
+        },
+        { status: 401 }
+      )
+    }
+
+    try {
+      verifyAccessToken(accessToken)
+    } catch (error) {
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 401,
+          message: 'Invalid access token',
+          timestamp: new Date().toISOString()
+        },
+        { status: 401 }
+      )
+    }
+
+    const supabase = createServerClient()
+    const { searchParams } = new URL(request.url)
+
+    // Parse query parameters
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '100')
+    const sortBy = searchParams.get('sortBy') || 'brandName'
+    const sortOrder = searchParams.get('sortOrder') || 'asc'
+    const search = searchParams.get('search') || ''
+    const country = searchParams.get('country')
+    const isActive = searchParams.get('isActive')
+
+    // Calculate offset for pagination
+    const offset = (page - 1) * limit
+
+    // Build query - use camelCase column names
+    let query = supabase
+      .from('brand')
+      .select(`
+        brandId,
+        brandName,
+        description,
+        country,
+        isActive,
+        createdAt,
+        createdBy,
+        updatedAt,
+        updatedBy,
+        deletedAt,
+        deletedBy
+      `, { count: 'exact' })
+
+    // Apply search filter (camelCase column names)
+    if (search) {
+      query = query.or(`brandName.ilike.%${search}%,description.ilike.%${search}%`)
+    }
+
+    // Apply filters (camelCase column names)
+    if (country) {
+      query = query.eq('country', country)
+    }
+
+    if (isActive !== null && isActive !== undefined && isActive !== '') {
+      query = query.eq('isActive', isActive === 'true')
+    }
+
+    // Apply sorting (camelCase column names)
+    const dbSortBy = sortBy === 'brandName' ? 'brandName' : 
+                     sortBy === 'brandId' ? 'brandId' :
+                     sortBy === 'description' ? 'description' :
+                     sortBy === 'country' ? 'country' :
+                     sortBy === 'isActive' ? 'isActive' :
+                     sortBy === 'createdAt' ? 'createdAt' : 'brandName'
+
+    query = query.order(dbSortBy, { ascending: sortOrder === 'asc' })
+
+    // Apply pagination
+    query = query.range(offset, offset + limit - 1)
+
+    const { data: brands, error, count } = await query
+
+    if (error) {
+      console.error('Error fetching brands:', error)
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 500,
+          message: 'Failed to retrieve brands',
+          timestamp: new Date().toISOString(),
+          details: error.message
+        },
+        { status: 500 }
+      )
+    }
+
+    // Transform data to match response format (keep camelCase)
+    const transformedBrands = brands?.map(brand => ({
+      brandID: brand.brandId,
+      brandName: brand.brandName,
+      description: brand.description,
+      country: brand.country,
+      isActive: brand.isActive,
+      createdAt: brand.createdAt,
+      createdBy: brand.createdBy || 1,
+      updatedAt: brand.updatedAt,
+      updatedBy: brand.updatedBy || 1,
+      deletedAt: brand.deletedAt,
+      deletedBy: brand.deletedBy
+    })) || []
+
+    return NextResponse.json(
+      {
+        status: 'success',
+        code: 200,
+        message: 'Brands retrieved successfully',
+        timestamp: new Date().toISOString(),
+        data: {
+          items: transformedBrands,
+          pagination: {
+            totalItems: count || 0,
+            page,
+            limit,
+            totalPages: Math.ceil((count || 0) / limit)
+          }
+        }
+      },
+      { status: 200 }
+    )
+
+  } catch (error) {
+    console.error('Brands GET error:', error)
+    return NextResponse.json(
+      { 
+        status: 'error',
+        code: 500,
+        message: 'Internal server error',
+        timestamp: new Date().toISOString()
+      },
+      { status: 500 }
+    )
+  }
+}
+
+// POST - Create new brand
+export async function POST(request: NextRequest) {
+  try {
+    // Verify authentication
+    const accessToken = getAuthTokenFromCookies(request)
+    if (!accessToken) {
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 401,
+          message: 'Access token not found',
+          timestamp: new Date().toISOString()
+        },
+        { status: 401 }
+      )
+    }
+
+    let employeeId: number;
+    try {
+      verifyAccessToken(accessToken)
+      // Extract employee ID from token
+      employeeId = getEmployeeIdFromToken(accessToken)
+    } catch (error) {
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 401,
+          message: 'Invalid access token',
+          timestamp: new Date().toISOString()
+        },
+        { status: 401 }
+      )
+    }
+
+    const supabase = createServerClient()
+    const body = await request.json()
+    
+    // Validate required fields
+    const { brandName, description, country, isActive } = body
+    if (!brandName) {
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 400,
+          message: 'Brand name is required',
+          timestamp: new Date().toISOString()
+        },
+        { status: 400 }
+      )
+    }
+
+    // Check if brand name already exists (camelCase column names)
+    const { data: existingBrand, error: checkError } = await supabase
+      .from('brand')
+      .select('brandId')
+      .eq('brandName', brandName)
+      .maybeSingle()
+
+    if (checkError) {
+      console.error('Error checking existing brand:', checkError);
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 500,
+          message: 'Failed to check existing brand',
+          error: checkError.message,
+          timestamp: new Date().toISOString()
+        },
+        { status: 500 }
+      )
+    }
+
+    if (existingBrand) {
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 409,
+          message: 'Brand name already exists',
+          timestamp: new Date().toISOString()
+        },
+        { status: 409 }
+      )
+    }
+
+    // Prepare brand data with logged-in employee ID (camelCase)
+    const currentTimestamp = new Date().toISOString();
+    const brandData = {
+      brandName,
+      description: description || '',
+      country: country || '',
+      isActive: isActive !== undefined ? isActive : true,
+      createdAt: currentTimestamp,
+      createdBy: employeeId, // Use logged-in employee ID
+      updatedAt: currentTimestamp,
+      updatedBy: employeeId  // Use logged-in employee ID
+    }
+    
+    const { data: brand, error } = await supabase
+      .from('brand')
+      .insert([brandData])
+      .select(`
+        brandId,
+        brandName,
+        description,
+        country,
+        isActive,
+        createdAt,
+        createdBy,
+        updatedAt,
+        updatedBy,
+        deletedAt,
+        deletedBy
+      `)
+      .single()
+
+    if (error) {
+      console.error('Error creating brand:', error)
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 500,
+          message: 'Failed to create brand',
+          timestamp: new Date().toISOString(),
+          details: error.message
+        },
+        { status: 500 }
+      )
+    }
+
+    // Transform response (keep camelCase)
+    const transformedBrand = {
+      brandID: brand.brandId,
+      brandName: brand.brandName,
+      description: brand.description,
+      country: brand.country,
+      isActive: brand.isActive,
+      createdAt: brand.createdAt,
+      createdBy: brand.createdBy,
+      updatedAt: brand.updatedAt,
+      updatedBy: brand.updatedBy,
+      deletedAt: brand.deletedAt,
+      deletedBy: brand.deletedBy
+    }
+
+    return NextResponse.json(
+      {
+        status: 'success',
+        code: 201,
+        message: 'Brand created successfully',
+        timestamp: new Date().toISOString(),
+        data: transformedBrand
+      },
+      { status: 201 }
+    )
+
+  } catch (error) {
+    console.error('Brands POST error:', error)
+    return NextResponse.json(
+      { 
+        status: 'error',
+        code: 500,
+        message: 'Internal server error',
+        timestamp: new Date().toISOString()
+      },
+      { status: 500 }
+    )
+  }
+}
+
+// PUT - Update brand
+export async function PUT(request: NextRequest) {
+  try {
+    // Verify authentication
+    const accessToken = getAuthTokenFromCookies(request)
+    if (!accessToken) {
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 401,
+          message: 'Access token not found',
+          timestamp: new Date().toISOString()
+        },
+        { status: 401 }
+      )
+    }
+
+    let employeeId: number;
+    try {
+      verifyAccessToken(accessToken)
+      // Extract employee ID from token
+      employeeId = getEmployeeIdFromToken(accessToken)
+    } catch (error) {
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 401,
+          message: 'Invalid access token',
+          timestamp: new Date().toISOString()
+        },
+        { status: 401 }
+      )
+    }
+
+    const supabase = createServerClient()
+    const body = await request.json()
+    const { brandId, ...updateData } = body
+    
+    if (!brandId) {
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 400,
+          message: 'Brand ID is required',
+          timestamp: new Date().toISOString()
+        },
+        { status: 400 }
+      )
+    }
+
+    // Check if brand exists first
+    const { data: existingBrandCheck, error: existsError } = await supabase
+      .from('brand')
+      .select('brandId')
+      .eq('brandId', brandId)
+      .maybeSingle()
+
+    if (existsError) {
+      console.error('Error checking brand existence:', existsError);
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 500,
+          message: 'Failed to check brand existence',
+          error: existsError.message,
+          timestamp: new Date().toISOString()
+        },
+        { status: 500 }
+      )
+    }
+
+    if (!existingBrandCheck) {
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 404,
+          message: 'Brand not found',
+          timestamp: new Date().toISOString()
+        },
+        { status: 404 }
+      )
+    }
+
+    // Check if brand name already exists (excluding current brand) - camelCase
+    if (updateData.brandName) {
+      const { data: duplicateBrand } = await supabase
+        .from('brand')
+        .select('brandId')
+        .eq('brandName', updateData.brandName)
+        .neq('brandId', brandId)
+        .maybeSingle()
+
+      if (duplicateBrand) {
+        return NextResponse.json(
+          { 
+            status: 'error',
+            code: 409,
+            message: 'Brand name already exists',
+            timestamp: new Date().toISOString()
+          },
+          { status: 409 }
+        )
+      }
+    }
+
+    // Add update timestamp and logged-in employee ID (camelCase)
+    const updateDataWithTimestamp = {
+      ...updateData,
+      updatedAt: new Date().toISOString(),
+      updatedBy: employeeId // Use logged-in employee ID
+    }
+    
+    const { data: brand, error } = await supabase
+      .from('brand')
+      .update(updateDataWithTimestamp)
+      .eq('brandId', brandId)
+      .select(`
+        brandId,
+        brandName,
+        description,
+        country,
+        isActive,
+        createdAt,
+        createdBy,
+        updatedAt,
+        updatedBy,
+        deletedAt,
+        deletedBy
+      `)
+      .single()
+
+    if (error) {
+      console.error('Error updating brand:', error)
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 500,
+          message: 'Failed to update brand',
+          timestamp: new Date().toISOString(),
+          details: error.message
+        },
+        { status: 500 }
+      )
+    }
+
+    if (!brand) {
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 404,
+          message: 'Brand not found after update',
+          timestamp: new Date().toISOString()
+        },
+        { status: 404 }
+      )
+    }
+
+    // Transform response (keep camelCase)
+    const transformedBrand = {
+      brandID: brand.brandId,
+      brandName: brand.brandName,
+      description: brand.description,
+      country: brand.country,
+      isActive: brand.isActive,
+      createdAt: brand.createdAt,
+      createdBy: brand.createdBy,
+      updatedAt: brand.updatedAt,
+      updatedBy: brand.updatedBy,
+      deletedAt: brand.deletedAt,
+      deletedBy: brand.deletedBy
+    }
+
+    return NextResponse.json(
+      {
+        status: 'success',
+        code: 200,
+        message: 'Brand updated successfully',
+        timestamp: new Date().toISOString(),
+        data: transformedBrand
+      },
+      { status: 200 }
+    )
+
+  } catch (error) {
+    console.error('Brands PUT error:', error)
+    return NextResponse.json(
+      { 
+        status: 'error',
+        code: 500,
+        message: 'Internal server error',
+        timestamp: new Date().toISOString()
+      },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE - Delete brand
+export async function DELETE(request: NextRequest) {
+  try {
+    // Verify authentication
+    const accessToken = getAuthTokenFromCookies(request)
+    if (!accessToken) {
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 401,
+          message: 'Access token not found',
+          timestamp: new Date().toISOString()
+        },
+        { status: 401 }
+      )
+    }
+
+    let employeeId: number;
+    try {
+      verifyAccessToken(accessToken)
+      // Extract employee ID from token for potential soft delete tracking
+      employeeId = getEmployeeIdFromToken(accessToken)
+    } catch (error) {
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 401,
+          message: 'Invalid access token',
+          timestamp: new Date().toISOString()
+        },
+        { status: 401 }
+      )
+    }
+
+    const { searchParams } = new URL(request.url)
+    const brandId = searchParams.get('brandId') || searchParams.get('brandID') || searchParams.get('id')
+
+    if (!brandId) {
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 400,
+          message: 'Brand ID is required',
+          timestamp: new Date().toISOString()
+        },
+        { status: 400 }
+      )
+    }
+
+    const supabase = createServerClient()
+
+    // Check if brand exists (camelCase)
+    const { data: existingBrand, error: fetchError } = await supabase
+      .from('brand')
+      .select('brandId')
+      .eq('brandId', brandId)
+      .maybeSingle()
+
+    if (fetchError) {
+      console.error('Error checking existing brand:', fetchError);
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 500,
+          message: 'Failed to check brand existence',
+          error: fetchError.message,
+          timestamp: new Date().toISOString()
+        },
+        { status: 500 }
+      )
+    }
+
+    if (!existingBrand) {
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 404,
+          message: 'Brand not found',
+          timestamp: new Date().toISOString()
+        },
+        { status: 404 }
+      )
+    }
+
+    // Optional: Check if brand is being used by any products/models (camelCase)
+    const { data: productsUsingBrand } = await supabase
+      .from('model')
+      .select('modelId')
+      .eq('brandId', brandId)
+      .limit(1)
+
+    if (productsUsingBrand && productsUsingBrand.length > 0) {
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 400,
+          message: 'Cannot delete brand that is being used by models/products',
+          timestamp: new Date().toISOString()
+        },
+        { status: 400 }
+      )
+    }
+    
+    // If you want to implement soft delete instead of hard delete, use this:
+    // const { error } = await supabase
+    //   .from('brand')
+    //   .update({
+    //     deletedAt: new Date().toISOString(),
+    //     deletedBy: employeeId,
+    //     isActive: false
+    //   })
+    //   .eq('brandId', brandId)
+
+    // Hard delete (current implementation)
+    const { error } = await supabase
+      .from('brand')
+      .delete()
+      .eq('brandId', brandId)
+
+    if (error) {
+      console.error('Error deleting brand:', error)
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 500,
+          message: 'Failed to delete brand',
+          timestamp: new Date().toISOString(),
+          details: error.message
+        },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json(
+      {
+        status: 'success',
+        code: 200,
+        message: 'Brand deleted successfully',
+        timestamp: new Date().toISOString()
+      },
+      { status: 200 }
+    )
+
+  } catch (error) {
+    console.error('Brands DELETE error:', error)
+    return NextResponse.json(
+      { 
+        status: 'error',
+        code: 500,
+        message: 'Internal server error',
+        timestamp: new Date().toISOString()
+      },
+      { status: 500 }
+    )
+  }
+}

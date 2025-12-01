@@ -6,7 +6,18 @@ import {
   FileText, 
   LogOut, 
   ChevronLeft, 
-  ChevronRight 
+  ChevronRight,
+  Truck,
+  Package,
+  Blocks,
+  Grid3X3,
+  GitBranch,
+  FileSpreadsheet,
+  ArrowRight,
+  ArrowLeft,
+  Shield,
+  Undo,
+  Users
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -14,7 +25,7 @@ interface SidebarProps {
   onLogout?: () => void;
   isMobileOpen?: boolean;
   onMobileClose?: () => void;
-  onExpandedChange?: (isExpanded: boolean) => void; // Add this prop
+  onExpandedChange?: (isExpanded: boolean) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -33,26 +44,70 @@ const Sidebar: React.FC<SidebarProps> = ({
       href: '/home'
     },
     {
-      icon: UserPlus,
-      label: 'Create Account',
-      href: '/create-account'
+      icon: Truck,
+      label: 'Stock',
+      href: '/stock'
+    },
+    {
+      icon: Package,
+      label: 'Product',
+      href: '/product'
+    },
+    {
+      icon: Blocks,
+      label: 'Model',
+      href: '/model'
+    },
+    {
+      icon: Grid3X3,
+      label: 'Brand',
+      href: '/brand'
+    },
+    {
+      icon: GitBranch,
+      label: 'Category',
+      href: '/category'
     },
     {
       icon: CreditCard,
       label: 'Bin Card',
-      href: '/admin/bin-card'
+      href: '/bin-card'
     },
     {
       icon: FileText,
       label: 'Transaction Log',
-      href: '/admin/transaction-log'
+      href: '/transaction-log'
+    },
+    {
+      icon: ArrowRight,
+      label: 'GRN',
+      href: '/grn'
+    },
+    {
+      icon: ArrowLeft,
+      label: 'GIN',
+      href: '/gin'
+    },
+    {
+      icon: Shield,
+      label: 'Gate Pass',
+      href: '/gate-pass'
+    },
+    {
+      icon: Undo,
+      label: 'Return',
+      href: '/return'
+    },
+    {
+      icon: Users,
+      label: 'Suppliers',
+      href: '/supplier'
     }
   ];
 
   const toggleSidebar = () => {
     const newExpanded = !isExpanded;
     setIsExpanded(newExpanded);
-    // Notify parent component about the change
     if (onExpandedChange) {
       onExpandedChange(newExpanded);
     }

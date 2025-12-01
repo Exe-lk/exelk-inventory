@@ -50,3 +50,29 @@ export interface AuthUser {
 }
 
 //edit for jwt-token (start)
+
+export const ROLES = {
+  SUPERADMIN: 1,
+  ADMIN: 2,
+  STOCKKEEPER: 3
+} as const;
+
+export type RoleType = typeof ROLES[keyof typeof ROLES];
+
+// Helper function to check if user has admin privileges
+export const hasAdminAccess = (roleID: number): boolean => {
+  return roleID === 1 || roleID === 2; // SuperAdmin (1) and Admin (2)
+};
+
+// Helper function to check if user is stockkeeper
+export const isStockKeeper = (roleID: number): boolean => {
+  return roleID === 3; // Assuming RoleID 3 is for Stockkeeper
+};
+
+export const isSuperAdmin = (roleID: number): boolean => {
+  return roleID === 1; // SuperAdmin only
+};
+
+export const isAdmin = (roleID: number): boolean => {
+  return roleID === 2; // Admin only
+};

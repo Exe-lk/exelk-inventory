@@ -222,7 +222,7 @@ const Table: React.FC<TableProps> = ({
                 </div>
                 <input
                   type="text"
-                  placeholder="Search employees..."
+                  placeholder="Search here..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"

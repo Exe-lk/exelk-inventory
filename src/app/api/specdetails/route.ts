@@ -7,17 +7,16 @@
 // function getEmployeeIdFromToken(accessToken: string): number {
 //   try {
 //     const payload = verifyAccessToken(accessToken);
-//     // Assuming the token payload contains userId which is the EmployeeID
-//     return payload.userId || 1; // fallback to 1 if not found
+//     return payload.userId || 1;
 //   } catch (error) {
 //     console.error('Error extracting employee ID from token:', error);
-//     return 1; // fallback employee ID
+//     return 1;
 //   }
 // }
 
 
 
-// // GET - Retrieve models with pagination, sorting, search, and filtering
+// // GET - Retrieve spec details with pagination, sorting, search, and filtering
 // export async function GET(request: NextRequest) {
 //   try {
 //     // Verify authentication
@@ -54,102 +53,104 @@
 //     // Parse query parameters
 //     const page = parseInt(searchParams.get('page') || '1')
 //     const limit = parseInt(searchParams.get('limit') || '100')
-//     const sortBy = searchParams.get('sortBy') || 'modelName'
+//     const sortBy = searchParams.get('sortBy') || 'specValue'
 //     const sortOrder = searchParams.get('sortOrder') || 'asc'
 //     const search = searchParams.get('search') || ''
-//     const brandId = searchParams.get('brandId')
-//     const isActive = searchParams.get('isActive')
+//     const variationId = searchParams.get('variationId')
+//     const specId = searchParams.get('specId')
 
 //     // Calculate offset for pagination
 //     const offset = (page - 1) * limit
 
-//     // Build query with camelCase column names
+//     // Build query - select only non-deleted records
 //     let query = supabase
-//       .from('model')
+//       .from('specdetails')
 //       .select(`
-//         modelId,
-//         modelName,
-//         description,
-//         brandId,
-//         isActive,
+//         specDetailId,
+//         variationId,
+//         specId,
+//         specValue,
 //         createdAt,
 //         createdBy,
 //         updatedAt,
-//         updatedBy,
-//         deletedAt,
-//         deletedBy
+//         updatedBy
 //       `, { count: 'exact' })
+//       .is('deletedAt', null)
 
-//     // Apply search filter with camelCase column names
+//     // Apply search filter
 //     if (search) {
-//       query = query.or(`modelName.ilike.%${search}%,description.ilike.%${search}%`)
+//       query = query.ilike('specValue', `%${search}%`)
 //     }
 
-//     // Apply filters with camelCase column names
-//     if (brandId) {
-//       query = query.eq('brandId', parseInt(brandId))
+//     // Apply filters
+//     if (variationId) {
+//       query = query.eq('variationId', variationId)
 //     }
 
-//     if (isActive !== null && isActive !== undefined && isActive !== '') {
-//       query = query.eq('isActive', isActive === 'true')
+//     if (specId) {
+//       query = query.eq('specId', specId)
 //     }
 
-//     // Apply sorting with camelCase column names
-//     const validSortColumns = ['modelName', 'description', 'brandId', 'isActive', 'createdAt']
-//     const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'modelName'
-//     query = query.order(sortColumn, { ascending: sortOrder === 'asc' })
+//     // Apply sorting
+//     const dbSortBy = sortBy === 'specDetailId' ? 'specDetailId' : 
+//                      sortBy === 'variationId' ? 'variationId' :
+//                      sortBy === 'specId' ? 'specId' :
+//                      sortBy === 'specValue' ? 'specValue' :
+//                      sortBy === 'createdAt' ? 'createdAt' : 'specValue'
+
+//     query = query.order(dbSortBy, { ascending: sortOrder === 'asc' })
 
 //     // Apply pagination
 //     query = query.range(offset, offset + limit - 1)
 
-//     console.log('Executing model query...')
-//     const { data: models, error, count } = await query
+//     const { data: specDetails, error, count } = await query
 
 //     if (error) {
-//       console.error('Database error:', error)
+//       console.error('Error fetching spec details:', error)
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 500,
-//           message: 'Failed to retrieve models from database',
-//           error: error.message,
-//           timestamp: new Date().toISOString()
+//           message: 'Failed to retrieve spec details',
+//           timestamp: new Date().toISOString(),
+//           details: error.message
 //         },
 //         { status: 500 }
 //       )
 //     }
 
-//     console.log('Models fetched:', models?.length)
-//     console.log('Sample model:', models?.[0])
-
-//     // Transform data to match frontend expectations
-//     const transformedModels = models?.map(model => ({
-//       modelID: model.modelId,
-//       modelName: model.modelName,
-//       description: model.description || '',
-//       brandID: model.brandId,
-//       isActive: model.isActive,
-//       createdAt: model.createdAt,
-//       createdBy: model.createdBy || 1,
-//       updatedAt: model.updatedAt || model.createdAt,
-//       updatedBy: model.updatedBy || 1,
-//       deletedAt: model.deletedAt,
-//       deletedBy: model.deletedBy
+//     // Transform data to match response format
+//     const transformedSpecDetails = specDetails?.map(specDetail => ({
+//       specDetailId: specDetail.specDetailId,
+//       variationId: specDetail.variationId,
+//       specId: specDetail.specId,
+//       specValue: specDetail.specValue,
+//       createdAt: specDetail.createdAt,
+//       updatedAt: specDetail.updatedAt
 //     })) || []
 
 //     return NextResponse.json(
 //       {
 //         status: 'success',
 //         code: 200,
-//         message: 'Models retrieved successfully',
+//         message: 'Spec details retrieved successfully',
 //         timestamp: new Date().toISOString(),
 //         data: {
-//           items: transformedModels,
+//           items: transformedSpecDetails,
 //           pagination: {
 //             totalItems: count || 0,
 //             page,
 //             limit,
 //             totalPages: Math.ceil((count || 0) / limit)
+//           },
+//           sorting: {
+//             sortBy,
+//             sortOrder
+//           },
+//           search: search || null,
+//           filters: {
+//             variationId: variationId || null,
+//             specId: specId || null
 //           }
 //         }
 //       },
@@ -157,13 +158,12 @@
 //     )
 
 //   } catch (error) {
-//     console.error('Models GET error:', error)
+//     console.error('Spec details GET error:', error)
 //     return NextResponse.json(
 //       { 
 //         status: 'error',
 //         code: 500,
 //         message: 'Internal server error',
-//         error: error instanceof Error ? error.message : 'Unknown error',
 //         timestamp: new Date().toISOString()
 //       },
 //       { status: 500 }
@@ -173,7 +173,7 @@
 
 
 
-// // POST - Create new model
+// // POST - Create new spec detail
 // export async function POST(request: NextRequest) {
 //   try {
 //     // Verify authentication
@@ -190,11 +190,10 @@
 //       )
 //     }
 
-//     // Extract employee ID from token
-//     const employeeId = getEmployeeIdFromToken(accessToken)
-
+//     let loggedInEmployeeId: number;
 //     try {
 //       verifyAccessToken(accessToken)
+//       loggedInEmployeeId = getEmployeeIdFromToken(accessToken)
 //     } catch (error) {
 //       return NextResponse.json(
 //         { 
@@ -207,87 +206,39 @@
 //       )
 //     }
 
-//     const body = await request.json()
-//     const { modelName, description, brandID, isActive = true } = body
-
-//     console.log('Received model data:', { modelName, description, brandID, isActive })
-//     console.log('Employee ID from token:', employeeId)
-
-//     // Validate required fields
-//     if (!modelName) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 400,
-//           message: 'Model name is required',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 400 }
-//       )
-//     }
-
-//     if (!brandID) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 400,
-//           message: 'Brand ID is required',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 400 }
-//       )
-//     }
-
 //     const supabase = createServerClient()
-
-//     // Check if brand exists
-//     const { data: brand, error: brandError } = await supabase
-//       .from('brand')
-//       .select('brandId')
-//       .eq('brandId', brandID)
-//       .maybeSingle()
-
-//     if (brandError) {
-//       console.error('Error checking brand:', brandError)
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 500,
-//           message: 'Failed to validate brand',
-//           error: brandError.message,
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 500 }
-//       )
-//     }
-
-//     if (!brand) {
+//     const body = await request.json()
+    
+//     // Validate required fields
+//     const { variationId, specId, specValue } = body
+//     if (!variationId || !specId || !specValue) {
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 400,
-//           message: 'Invalid Brand ID',
+//           message: 'Variation ID, spec ID, and spec value are required',
 //           timestamp: new Date().toISOString()
 //         },
 //         { status: 400 }
 //       )
 //     }
 
-//     // Check if model name already exists for the same brand
-//     const { data: existingModel, error: checkError } = await supabase
-//       .from('model')
-//       .select('modelId')
-//       .eq('modelName', modelName)
-//       .eq('brandId', brandID)
+//     // Check if spec detail with same variation and spec already exists (only non-deleted)
+//     const { data: existingSpecDetail, error: checkError } = await supabase
+//       .from('specdetails')
+//       .select('specDetailId')
+//       .eq('variationId', variationId)
+//       .eq('specId', specId)
+//       .is('deletedAt', null)
 //       .maybeSingle()
 
 //     if (checkError) {
-//       console.error('Error checking existing model:', checkError)
+//       console.error('Error checking existing spec detail:', checkError);
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 500,
-//           message: 'Failed to check existing model',
+//           message: 'Failed to check existing spec detail',
 //           error: checkError.message,
 //           timestamp: new Date().toISOString()
 //         },
@@ -295,43 +246,38 @@
 //       )
 //     }
 
-//     if (existingModel) {
+//     if (existingSpecDetail) {
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 409,
-//           message: 'Model name already exists for this brand',
+//           message: 'Spec detail with this variation and spec already exists',
 //           timestamp: new Date().toISOString()
 //         },
 //         { status: 409 }
 //       )
 //     }
 
-//     // Prepare insert data with employee ID from auth token
-//     const currentTimestamp = new Date().toISOString()
-//     const insertData = {
-//       modelName: modelName,
-//       description: description || '',
-//       brandId: brandID,
-//       isActive: isActive,
+//     // Prepare spec detail data with logged-in employee ID
+//     const currentTimestamp = new Date().toISOString();
+//     const specDetailData = {
+//       variationId,
+//       specId,
+//       specValue,
 //       createdAt: currentTimestamp,
-//       createdBy: employeeId, // Use employee ID from auth token
+//       createdBy: loggedInEmployeeId,
 //       updatedAt: currentTimestamp,
-//       updatedBy: employeeId  // Use employee ID from auth token
+//       updatedBy: loggedInEmployeeId
 //     }
-
-//     console.log('Insert model data:', insertData)
-
-//     // Create new model
-//     const { data: newModel, error } = await supabase
-//       .from('model')
-//       .insert([insertData])
+    
+//     const { data: specDetail, error } = await supabase
+//       .from('specdetails')
+//       .insert([specDetailData])
 //       .select(`
-//         modelId,
-//         modelName,
-//         description,
-//         brandId,
-//         isActive,
+//         specDetailId,
+//         variationId,
+//         specId,
+//         specValue,
 //         createdAt,
 //         createdBy,
 //         updatedAt,
@@ -340,53 +286,47 @@
 //       .single()
 
 //     if (error) {
-//       console.error('Database error:', error)
+//       console.error('Error creating spec detail:', error)
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 500,
-//           message: 'Failed to create model',
-//           error: error.message,
-//           timestamp: new Date().toISOString()
+//           message: 'Failed to create spec detail',
+//           timestamp: new Date().toISOString(),
+//           details: error.message
 //         },
 //         { status: 500 }
 //       )
 //     }
 
-//     console.log('Created model:', newModel)
-
 //     // Transform response
-//     const transformedModel = {
-//       modelID: newModel.modelId,
-//       modelName: newModel.modelName,
-//       description: newModel.description,
-//       brandID: newModel.brandId,
-//       isActive: newModel.isActive,
-//       createdAt: newModel.createdAt,
-//       createdBy: newModel.createdBy,
-//       updatedAt: newModel.updatedAt,
-//       updatedBy: newModel.updatedBy
+//     const transformedSpecDetail = {
+//       specDetailId: specDetail.specDetailId,
+//       variationId: specDetail.variationId,
+//       specId: specDetail.specId,
+//       specValue: specDetail.specValue,
+//       createdAt: specDetail.createdAt,
+//       updatedAt: specDetail.updatedAt
 //     }
 
 //     return NextResponse.json(
 //       {
 //         status: 'success',
 //         code: 201,
-//         message: 'Model created successfully',
+//         message: 'Spec detail created successfully',
 //         timestamp: new Date().toISOString(),
-//         data: transformedModel
+//         data: transformedSpecDetail
 //       },
 //       { status: 201 }
 //     )
 
 //   } catch (error) {
-//     console.error('Models POST error:', error)
+//     console.error('Spec details POST error:', error)
 //     return NextResponse.json(
 //       { 
 //         status: 'error',
 //         code: 500,
 //         message: 'Internal server error',
-//         error: error instanceof Error ? error.message : 'Unknown error',
 //         timestamp: new Date().toISOString()
 //       },
 //       { status: 500 }
@@ -394,7 +334,8 @@
 //   }
 // }
 
-// // PUT - Update model
+
+// // PUT - Update spec detail
 // export async function PUT(request: NextRequest) {
 //   try {
 //     // Verify authentication
@@ -411,11 +352,10 @@
 //       )
 //     }
 
-//     // Extract employee ID from token
-//     const employeeId = getEmployeeIdFromToken(accessToken)
-
+//     let loggedInEmployeeId: number;
 //     try {
 //       verifyAccessToken(accessToken)
+//       loggedInEmployeeId = getEmployeeIdFromToken(accessToken)
 //     } catch (error) {
 //       return NextResponse.json(
 //         { 
@@ -428,123 +368,96 @@
 //       )
 //     }
 
+//     const supabase = createServerClient()
 //     const body = await request.json()
-//     const { modelID, modelName, description, brandID, isActive } = body
-
-//     console.log('Employee ID from token for update:', employeeId)
-
-//     // Validate required fields
-//     if (!modelID) {
+//     const { specDetailId, ...updateData } = body
+    
+//     if (!specDetailId) {
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 400,
-//           message: 'Model ID is required',
+//           message: 'Spec detail ID is required',
 //           timestamp: new Date().toISOString()
 //         },
 //         { status: 400 }
 //       )
 //     }
 
-//     const supabase = createServerClient()
+//     // Check if spec detail exists and is not deleted
+//     const { data: existingSpecDetailCheck, error: existsError } = await supabase
+//       .from('specdetails')
+//       .select('specDetailId')
+//       .eq('specDetailId', specDetailId)
+//       .is('deletedAt', null)
+//       .maybeSingle()
 
-//     // Check if model exists
-//     const { data: existingModel } = await supabase
-//       .from('model')
-//       .select('modelId')
-//       .eq('modelId', modelID)
-//       .single()
+//     if (existsError) {
+//       console.error('Error checking spec detail existence:', existsError);
+//       return NextResponse.json(
+//         { 
+//           status: 'error',
+//           code: 500,
+//           message: 'Failed to check spec detail existence',
+//           error: existsError.message,
+//           timestamp: new Date().toISOString()
+//         },
+//         { status: 500 }
+//       )
+//     }
 
-//     if (!existingModel) {
+//     if (!existingSpecDetailCheck) {
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 404,
-//           message: 'Model not found',
+//           message: 'Spec detail not found',
 //           timestamp: new Date().toISOString()
 //         },
 //         { status: 404 }
 //       )
 //     }
 
-//     // If brandID is being updated, check if it exists
-//     if (brandID) {
-//       const { data: brand, error: brandError } = await supabase
-//         .from('brand')
-//         .select('brandId')
-//         .eq('brandId', brandID)
+//     // Check if variation and spec combination already exists (excluding current spec detail and deleted ones)
+//     if (updateData.variationId && updateData.specId) {
+//       const { data: duplicateSpecDetail } = await supabase
+//         .from('specdetails')
+//         .select('specDetailId')
+//         .eq('variationId', updateData.variationId)
+//         .eq('specId', updateData.specId)
+//         .neq('specDetailId', specDetailId)
+//         .is('deletedAt', null)
 //         .maybeSingle()
 
-//       if (brandError || !brand) {
+//       if (duplicateSpecDetail) {
 //         return NextResponse.json(
 //           { 
 //             status: 'error',
-//             code: 400,
-//             message: 'Invalid Brand ID',
+//             code: 409,
+//             message: 'Spec detail with this variation and spec already exists',
 //             timestamp: new Date().toISOString()
 //           },
-//           { status: 400 }
+//           { status: 409 }
 //         )
 //       }
 //     }
 
-//     // Check if model name already exists for the same brand (excluding current model)
-//     if (modelName || brandID) {
-//       const { data: currentModel } = await supabase
-//         .from('model')
-//         .select('modelName, brandId')
-//         .eq('modelId', modelID)
-//         .single()
-
-//       if (currentModel) {
-//         const modelNameToCheck = modelName || currentModel.modelName
-//         const brandIDToCheck = brandID || currentModel.brandId
-
-//         const { data: duplicateModel } = await supabase
-//           .from('model')
-//           .select('modelId')
-//           .eq('modelName', modelNameToCheck)
-//           .eq('brandId', brandIDToCheck)
-//           .neq('modelId', modelID)
-//           .maybeSingle()
-
-//         if (duplicateModel) {
-//           return NextResponse.json(
-//             { 
-//               status: 'error',
-//               code: 409,
-//               message: 'Model name already exists for this brand',
-//               timestamp: new Date().toISOString()
-//             },
-//             { status: 409 }
-//           )
-//         }
-//       }
-//     }
-
-//     // Prepare update data with employee ID from auth token
-//     const updateData: any = {
+//     // Add update timestamp and logged-in employee ID
+//     const updateDataWithTimestamp = {
+//       ...updateData,
 //       updatedAt: new Date().toISOString(),
-//       updatedBy: employeeId // Use employee ID from auth token
+//       updatedBy: loggedInEmployeeId
 //     }
-//     if (modelName !== undefined) updateData.modelName = modelName
-//     if (description !== undefined) updateData.description = description
-//     if (brandID !== undefined) updateData.brandId = brandID
-//     if (isActive !== undefined) updateData.isActive = isActive
-
-//     console.log('Update data with employee ID:', updateData)
-
-//     // Update model
-//     const { data: updatedModel, error } = await supabase
-//       .from('model')
-//       .update(updateData)
-//       .eq('modelId', modelID)
+    
+//     const { data: specDetail, error } = await supabase
+//       .from('specdetails')
+//       .update(updateDataWithTimestamp)
+//       .eq('specDetailId', specDetailId)
 //       .select(`
-//         modelId,
-//         modelName,
-//         description,
-//         brandId,
-//         isActive,
+//         specDetailId,
+//         variationId,
+//         specId,
+//         specValue,
 //         createdAt,
 //         createdBy,
 //         updatedAt,
@@ -553,51 +466,59 @@
 //       .single()
 
 //     if (error) {
-//       console.error('Database error:', error)
+//       console.error('Error updating spec detail:', error)
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 500,
-//           message: 'Failed to update model',
-//           error: error.message,
-//           timestamp: new Date().toISOString()
+//           message: 'Failed to update spec detail',
+//           timestamp: new Date().toISOString(),
+//           details: error.message
 //         },
 //         { status: 500 }
 //       )
 //     }
 
+//     if (!specDetail) {
+//       return NextResponse.json(
+//         { 
+//           status: 'error',
+//           code: 404,
+//           message: 'Spec detail not found after update',
+//           timestamp: new Date().toISOString()
+//         },
+//         { status: 404 }
+//       )
+//     }
+
 //     // Transform response
-//     const transformedModel = {
-//       modelID: updatedModel.modelId,
-//       modelName: updatedModel.modelName,
-//       description: updatedModel.description,
-//       brandID: updatedModel.brandId,
-//       isActive: updatedModel.isActive,
-//       createdAt: updatedModel.createdAt,
-//       createdBy: updatedModel.createdBy,
-//       updatedAt: updatedModel.updatedAt,
-//       updatedBy: updatedModel.updatedBy
+//     const transformedSpecDetail = {
+//       specDetailId: specDetail.specDetailId,
+//       variationId: specDetail.variationId,
+//       specId: specDetail.specId,
+//       specValue: specDetail.specValue,
+//       createdAt: specDetail.createdAt,
+//       updatedAt: specDetail.updatedAt
 //     }
 
 //     return NextResponse.json(
 //       {
 //         status: 'success',
 //         code: 200,
-//         message: 'Model updated successfully',
+//         message: 'Spec detail updated successfully',
 //         timestamp: new Date().toISOString(),
-//         data: transformedModel
+//         data: transformedSpecDetail
 //       },
 //       { status: 200 }
 //     )
 
 //   } catch (error) {
-//     console.error('Models PUT error:', error)
+//     console.error('Spec details PUT error:', error)
 //     return NextResponse.json(
 //       { 
 //         status: 'error',
 //         code: 500,
 //         message: 'Internal server error',
-//         error: error instanceof Error ? error.message : 'Unknown error',
 //         timestamp: new Date().toISOString()
 //       },
 //       { status: 500 }
@@ -605,9 +526,7 @@
 //   }
 // }
 
-
-
-// // DELETE - Delete model
+// // DELETE - Delete spec detail (soft delete)
 // export async function DELETE(request: NextRequest) {
 //   try {
 //     // Verify authentication
@@ -624,8 +543,10 @@
 //       )
 //     }
 
+//     let loggedInEmployeeId: number;
 //     try {
 //       verifyAccessToken(accessToken)
+//       loggedInEmployeeId = getEmployeeIdFromToken(accessToken)
 //     } catch (error) {
 //       return NextResponse.json(
 //         { 
@@ -639,14 +560,14 @@
 //     }
 
 //     const { searchParams } = new URL(request.url)
-//     const modelID = searchParams.get('modelID') || searchParams.get('id')
+//     const specDetailId = searchParams.get('specDetailId') || searchParams.get('id')
 
-//     if (!modelID) {
+//     if (!specDetailId) {
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 400,
-//           message: 'Model ID is required',
+//           message: 'Spec detail ID is required',
 //           timestamp: new Date().toISOString()
 //         },
 //         { status: 400 }
@@ -655,59 +576,58 @@
 
 //     const supabase = createServerClient()
 
-//     // Check if model exists
-//     const { data: existingModel } = await supabase
-//       .from('model')
-//       .select('modelId')
-//       .eq('modelId', parseInt(modelID))
-//       .single()
+//     // Check if spec detail exists and is not already deleted
+//     const { data: existingSpecDetail, error: fetchError } = await supabase
+//       .from('specdetails')
+//       .select('specDetailId')
+//       .eq('specDetailId', specDetailId)
+//       .is('deletedAt', null)
+//       .maybeSingle()
 
-//     if (!existingModel) {
+//     if (fetchError) {
+//       console.error('Error checking existing spec detail:', fetchError);
+//       return NextResponse.json(
+//         { 
+//           status: 'error',
+//           code: 500,
+//           message: 'Failed to check spec detail existence',
+//           error: fetchError.message,
+//           timestamp: new Date().toISOString()
+//         },
+//         { status: 500 }
+//       )
+//     }
+
+//     if (!existingSpecDetail) {
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 404,
-//           message: 'Model not found',
+//           message: 'Spec detail not found',
 //           timestamp: new Date().toISOString()
 //         },
 //         { status: 404 }
 //       )
 //     }
-
-//     // Optional: Check if model is being used by any products
-//     const { data: productsUsingModel } = await supabase
-//       .from('product')
-//       .select('productId')
-//       .eq('modelId', parseInt(modelID))
-//       .limit(1)
-
-//     if (productsUsingModel && productsUsingModel.length > 0) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 400,
-//           message: 'Cannot delete model that is being used by products',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 400 }
-//       )
-//     }
-
-//     // Delete model
+    
+//     // Soft delete the spec detail with logged-in employee ID
 //     const { error } = await supabase
-//       .from('model')
-//       .delete()
-//       .eq('modelId', parseInt(modelID))
+//       .from('specdetails')
+//       .update({
+//         deletedAt: new Date().toISOString(),
+//         deletedBy: loggedInEmployeeId
+//       })
+//       .eq('specDetailId', specDetailId)
 
 //     if (error) {
-//       console.error('Database error:', error)
+//       console.error('Error deleting spec detail:', error)
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 500,
-//           message: 'Failed to delete model',
-//           error: error.message,
-//           timestamp: new Date().toISOString()
+//           message: 'Failed to delete spec detail',
+//           timestamp: new Date().toISOString(),
+//           details: error.message
 //         },
 //         { status: 500 }
 //       )
@@ -717,20 +637,19 @@
 //       {
 //         status: 'success',
 //         code: 200,
-//         message: 'Model deleted successfully',
+//         message: 'Spec detail deleted successfully',
 //         timestamp: new Date().toISOString()
 //       },
 //       { status: 200 }
 //     )
 
 //   } catch (error) {
-//     console.error('Models DELETE error:', error)
+//     console.error('Spec details DELETE error:', error)
 //     return NextResponse.json(
 //       { 
 //         status: 'error',
 //         code: 500,
 //         message: 'Internal server error',
-//         error: error instanceof Error ? error.message : 'Unknown error',
 //         timestamp: new Date().toISOString()
 //       },
 //       { status: 500 }
@@ -740,17 +659,23 @@
 
 
 
+
+
+
+
+
+
+
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { verifyAccessToken } from '@/lib/jwt'
 import { getAuthTokenFromCookies } from '@/lib/cookies'
 
-interface Model {
-  modelId: number
-  modelName: string
-  description: string | null
-  brandId: number
-  isActive: boolean
+interface SpecDetail {
+  specDetailId: number
+  variationId: number
+  specId: number
+  specValue: string
   createdAt: Date
   createdBy: number
   updatedAt: Date
@@ -770,9 +695,10 @@ function getEmployeeIdFromToken(accessToken: string): number {
   }
 }
 
-// GET - Retrieve models with pagination, sorting, search, and filtering
+
+// GET - Retrieve spec details with pagination, sorting, search, and filtering
 export async function GET(request: NextRequest) {
-  console.log(' Model GET request started');
+  console.log(' SpecDetail GET request started');
   
   try {
     // Verify authentication
@@ -811,71 +737,67 @@ export async function GET(request: NextRequest) {
     // Parse query parameters
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '100')
-    const sortBy = searchParams.get('sortBy') || 'modelId'
+    const sortBy = searchParams.get('sortBy') || 'specValue'
     const sortOrder = searchParams.get('sortOrder') || 'asc'
     const search = searchParams.get('search') || ''
-    const brandId = searchParams.get('brandId')
-    const isActive = searchParams.get('isActive')
+    const variationId = searchParams.get('variationId')
+    const specId = searchParams.get('specId')
 
-    console.log(' Query parameters:', { page, limit, sortBy, sortOrder, search, brandId, isActive });
+    console.log(' Query parameters:', { page, limit, sortBy, sortOrder, search, variationId, specId });
 
     // Calculate offset for pagination
     const offset = (page - 1) * limit
 
     // Build where clause
     const where: any = {
-      deletedAt: null // Only get non-deleted models
+      deletedAt: null // Only get non-deleted spec details
     }
 
     // Apply search filter
     if (search) {
-      where.OR = [
-        { modelName: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } }
-      ]
+      where.specValue = { contains: search, mode: 'insensitive' }
     }
 
     // Apply filters
-    if (brandId) {
-      where.brandId = parseInt(brandId)
+    if (variationId) {
+      where.variationId = parseInt(variationId)
     }
 
-    if (isActive !== null && isActive !== undefined && isActive !== '') {
-      where.isActive = isActive === 'true'
+    if (specId) {
+      where.specId = parseInt(specId)
     }
 
     // Build orderBy
     const orderBy: any = {}
-    const validSortColumns = ['modelName', 'modelId', 'description', 'brandId', 'isActive', 'createdAt']
-    const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'modelName'
+    const validSortColumns = ['specDetailId', 'variationId', 'specId', 'specValue', 'createdAt']
+    const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'specValue'
     orderBy[sortColumn] = sortOrder === 'asc' ? 'asc' : 'desc'
 
-    console.log('🔍 Where clause:', JSON.stringify(where, null, 2));
-    console.log('📈 Order by:', orderBy);
+    console.log(' Where clause:', JSON.stringify(where, null, 2));
+    console.log(' Order by:', orderBy);
 
     try {
-      console.log('🔌 Testing database connection...');
+      console.log(' Testing database connection...');
       await prisma.$connect();
       console.log(' Database connected successfully');
 
       // Get total count for pagination
       console.log(' Getting total count...');
-      const totalCount = await prisma.model.count({ where });
+      const totalCount = await prisma.specdetails.count({ where });
       console.log(` Total count: ${totalCount}`);
 
-      // Get models with pagination
-      console.log(' Fetching models...');
-      const models: Model[] = await prisma.model.findMany({
+      // Get spec details with pagination
+      console.log(' Fetching spec details...');
+      const specDetails: SpecDetail[] = await prisma.specdetails.findMany({
         where,
         orderBy,
         skip: offset,
         take: limit,
         select: {
-          modelId: true,
-          modelName: true,
-          description: true,
-          brandId: true,
-          isActive: true,
+          specDetailId: true,
+          variationId: true,
+          specId: true,
+          specValue: true,
           createdAt: true,
           createdBy: true,
           updatedAt: true,
@@ -883,40 +805,44 @@ export async function GET(request: NextRequest) {
           deletedAt: true,
           deletedBy: true,
         }
-      }) as Model[];
+      }) as SpecDetail[];
 
-      console.log(` Found ${models.length} models`);
+      console.log(` Found ${specDetails.length} spec details`);
 
       // Transform data to match response format
-      const transformedModels = models.map((model: any) => ({
-        modelID: model.modelId,
-        modelName: model.modelName,
-        description: model.description,
-        brandID: model.brandId,
-        isActive: model.isActive,
-        createdAt: model.createdAt,
-        createdBy: model.createdBy || 1,
-        updatedAt: model.updatedAt,
-        updatedBy: model.updatedBy,
-        deletedAt: model.deletedAt,
-        deletedBy: model.deletedBy
+      const transformedSpecDetails = specDetails.map((specDetail: any) => ({
+        specDetailId: specDetail.specDetailId,
+        variationId: specDetail.variationId,
+        specId: specDetail.specId,
+        specValue: specDetail.specValue,
+        createdAt: specDetail.createdAt,
+        updatedAt: specDetail.updatedAt
       }));
 
-      console.log(' Models transformed successfully');
+      console.log(' Spec details transformed successfully');
 
       return NextResponse.json(
         {
           status: 'success',
           code: 200,
-          message: 'Models retrieved successfully',
+          message: 'Spec details retrieved successfully',
           timestamp: new Date().toISOString(),
           data: {
-            items: transformedModels,
+            items: transformedSpecDetails,
             pagination: {
               totalItems: totalCount,
               page,
               limit,
               totalPages: Math.ceil(totalCount / limit)
+            },
+            sorting: {
+              sortBy,
+              sortOrder
+            },
+            search: search || null,
+            filters: {
+              variationId: variationId || null,
+              specId: specId || null
             }
           }
         },
@@ -935,7 +861,7 @@ export async function GET(request: NextRequest) {
         { 
           status: 'error',
           code: 500,
-          message: 'Failed to retrieve models - Database error',
+          message: 'Failed to retrieve spec details - Database error',
           timestamp: new Date().toISOString(),
           details: dbError instanceof Error ? dbError.message : 'Unknown database error'
         },
@@ -944,7 +870,7 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error(' Models GET error:', error);
+    console.error(' Spec details GET error:', error);
     return NextResponse.json(
       { 
         status: 'error',
@@ -959,7 +885,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create new model
+
+// POST - Create new spec detail
 export async function POST(request: NextRequest) {
   try {
     // Verify authentication
@@ -995,26 +922,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     
     // Validate required fields
-    const { modelName, description, brandID, isActive } = body
+    const { variationId, specId, specValue } = body
     
-    if (!modelName) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 400,
-          message: 'Model name is required',
-          timestamp: new Date().toISOString()
-        },
-        { status: 400 }
-      )
-    }
+    console.log(' Received data:', { variationId, specId, specValue });
+    console.log(' Employee ID from token:', employeeId);
 
-    if (!brandID) {
+    if (!variationId || !specId || !specValue) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 400,
-          message: 'Brand ID is required',
+          message: 'Variation ID, spec ID, and spec value are required',
           timestamp: new Date().toISOString()
         },
         { status: 400 }
@@ -1022,63 +940,81 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      // Check if brand exists
-      const existingBrand = await prisma.brand.findFirst({
+      // Check if spec detail with same variation and spec already exists (only non-deleted)
+      const existingSpecDetail = await prisma.specdetails.findFirst({
         where: {
-          brandId: parseInt(brandID),
+          variationId: parseInt(variationId),
+          specId: parseInt(specId),
           deletedAt: null
         }
       })
 
-      if (!existingBrand) {
-        return NextResponse.json(
-          { 
-            status: 'error',
-            code: 400,
-            message: 'Invalid Brand ID',
-            timestamp: new Date().toISOString()
-          },
-          { status: 400 }
-        )
-      }
-
-      // Check if model name already exists for the same brand
-      const existingModel = await prisma.model.findFirst({
-        where: {
-          modelName,
-          brandId: parseInt(brandID),
-          deletedAt: null
-        }
-      })
-
-      if (existingModel) {
+      if (existingSpecDetail) {
         return NextResponse.json(
           { 
             status: 'error',
             code: 409,
-            message: 'Model name already exists for this brand',
+            message: 'Spec detail with this variation and spec already exists',
             timestamp: new Date().toISOString()
           },
           { status: 409 }
         )
       }
 
-      // Create new model
-      const model = await prisma.model.create({
+      // Check if variation exists
+      const existingVariation = await prisma.productvariation.findFirst({
+        where: {
+          variationId: parseInt(variationId),
+          deletedAt: null
+        }
+      })
+
+      if (!existingVariation) {
+        return NextResponse.json(
+          { 
+            status: 'error',
+            code: 400,
+            message: 'Invalid variation ID',
+            timestamp: new Date().toISOString()
+          },
+          { status: 400 }
+        )
+      }
+
+      // Check if spec exists
+      const existingSpec = await prisma.specs.findFirst({
+        where: {
+          specId: parseInt(specId),
+          deletedAt: null
+        }
+      })
+
+      if (!existingSpec) {
+        return NextResponse.json(
+          { 
+            status: 'error',
+            code: 400,
+            message: 'Invalid spec ID',
+            timestamp: new Date().toISOString()
+          },
+          { status: 400 }
+        )
+      }
+
+      // Create new spec detail
+      const specDetail = await prisma.specdetails.create({
         data: {
-          modelName,
-          description: description || '',
-          brandId: parseInt(brandID),
-          isActive: isActive !== undefined ? isActive : true,
+          variationId: parseInt(variationId),
+          specId: parseInt(specId),
+          specValue,
           createdBy: employeeId,
           updatedBy: employeeId
         },
         select: {
-          modelId: true,
-          modelName: true,
-          description: true,
-          brandId: true,
-          isActive: true,
+          specDetailId: true,
+          variationId: true,
+          specId: true,
+          specValue: true,
           createdAt: true,
           createdBy: true,
           updatedAt: true,
@@ -1088,39 +1024,36 @@ export async function POST(request: NextRequest) {
         }
       })
 
+      console.log(' Spec detail created:', specDetail);
+
       // Transform response
-      const transformedModel = {
-        modelID: model.modelId,
-        modelName: model.modelName,
-        description: model.description,
-        brandID: model.brandId,
-        isActive: model.isActive,
-        createdAt: model.createdAt,
-        createdBy: model.createdBy,
-        updatedAt: model.updatedAt,
-        updatedBy: model.updatedBy,
-        deletedAt: model.deletedAt,
-        deletedBy: model.deletedBy
+      const transformedSpecDetail = {
+        specDetailId: specDetail.specDetailId,
+        variationId: specDetail.variationId,
+        specId: specDetail.specId,
+        specValue: specDetail.specValue,
+        createdAt: specDetail.createdAt,
+        updatedAt: specDetail.updatedAt
       }
 
       return NextResponse.json(
         {
           status: 'success',
           code: 201,
-          message: 'Model created successfully',
+          message: 'Spec detail created successfully',
           timestamp: new Date().toISOString(),
-          data: transformedModel
+          data: transformedSpecDetail
         },
         { status: 201 }
       )
 
     } catch (dbError) {
-      console.error('Database error:', dbError)
+      console.error(' Database error:', dbError)
       return NextResponse.json(
         { 
           status: 'error',
           code: 500,
-          message: 'Failed to create model',
+          message: 'Failed to create spec detail',
           timestamp: new Date().toISOString(),
           details: dbError instanceof Error ? dbError.message : 'Unknown database error'
         },
@@ -1129,7 +1062,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Models POST error:', error)
+    console.error(' Spec details POST error:', error)
     return NextResponse.json(
       { 
         status: 'error',
@@ -1142,7 +1075,8 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT - Update model
+
+// PUT - Update spec detail
 export async function PUT(request: NextRequest) {
   try {
     // Verify authentication
@@ -1176,14 +1110,16 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { modelID, ...updateData } = body
+    const { specDetailId, ...updateData } = body
+
+    console.log(' Update - Employee ID from token:', employeeId);
     
-    if (!modelID) {
+    if (!specDetailId) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 400,
-          message: 'Model ID is required',
+          message: 'Spec detail ID is required',
           timestamp: new Date().toISOString()
         },
         { status: 400 }
@@ -1191,41 +1127,65 @@ export async function PUT(request: NextRequest) {
     }
 
     try {
-      // Check if model exists
-      const existingModel = await prisma.model.findFirst({
+      // Check if spec detail exists and is not deleted
+      const existingSpecDetail = await prisma.specdetails.findFirst({
         where: {
-          modelId: parseInt(modelID),
+          specDetailId: parseInt(specDetailId),
           deletedAt: null
         }
       })
 
-      if (!existingModel) {
+      if (!existingSpecDetail) {
         return NextResponse.json(
           { 
             status: 'error',
             code: 404,
-            message: 'Model not found',
+            message: 'Spec detail not found',
             timestamp: new Date().toISOString()
           },
           { status: 404 }
         )
       }
 
-      // If brandID is being updated, check if it exists
-      if (updateData.brandID) {
-        const existingBrand = await prisma.brand.findFirst({
+      // Check if variation and spec combination already exists (excluding current spec detail and deleted ones)
+      if (updateData.variationId && updateData.specId) {
+        const duplicateSpecDetail = await prisma.specdetails.findFirst({
           where: {
-            brandId: parseInt(updateData.brandID),
+            variationId: parseInt(updateData.variationId),
+            specId: parseInt(updateData.specId),
+            specDetailId: { not: parseInt(specDetailId) },
             deletedAt: null
           }
         })
 
-        if (!existingBrand) {
+        if (duplicateSpecDetail) {
+          return NextResponse.json(
+            { 
+              status: 'error',
+              code: 409,
+              message: 'Spec detail with this variation and spec already exists',
+              timestamp: new Date().toISOString()
+            },
+            { status: 409 }
+          )
+        }
+      }
+
+      // If variationId is being updated, check if it exists
+      if (updateData.variationId) {
+        const existingVariation = await prisma.productvariation.findFirst({
+          where: {
+            variationId: parseInt(updateData.variationId),
+            deletedAt: null
+          }
+        })
+
+        if (!existingVariation) {
           return NextResponse.json(
             { 
               status: 'error',
               code: 400,
-              message: 'Invalid Brand ID',
+              message: 'Invalid variation ID',
               timestamp: new Date().toISOString()
             },
             { status: 400 }
@@ -1233,29 +1193,24 @@ export async function PUT(request: NextRequest) {
         }
       }
 
-      // Check if model name already exists for the brand (excluding current model)
-      if (updateData.modelName || updateData.brandID) {
-        const modelNameToCheck = updateData.modelName || existingModel.modelName
-        const brandIdToCheck = updateData.brandID ? parseInt(updateData.brandID) : existingModel.brandId
-
-        const duplicateModel = await prisma.model.findFirst({
+      // If specId is being updated, check if it exists
+      if (updateData.specId) {
+        const existingSpec = await prisma.specs.findFirst({
           where: {
-            modelName: modelNameToCheck,
-            brandId: brandIdToCheck,
-            modelId: { not: parseInt(modelID) },
+            specId: parseInt(updateData.specId),
             deletedAt: null
           }
         })
 
-        if (duplicateModel) {
+        if (!existingSpec) {
           return NextResponse.json(
             { 
               status: 'error',
-              code: 409,
-              message: 'Model name already exists for this brand',
+              code: 400,
+              message: 'Invalid spec ID',
               timestamp: new Date().toISOString()
             },
-            { status: 409 }
+            { status: 400 }
           )
         }
       }
@@ -1265,23 +1220,23 @@ export async function PUT(request: NextRequest) {
         updatedBy: employeeId
       }
 
-      if (updateData.modelName !== undefined) prismaUpdateData.modelName = updateData.modelName
-      if (updateData.description !== undefined) prismaUpdateData.description = updateData.description
-      if (updateData.brandID !== undefined) prismaUpdateData.brandId = parseInt(updateData.brandID)
-      if (updateData.isActive !== undefined) prismaUpdateData.isActive = updateData.isActive
+      if (updateData.variationId !== undefined) prismaUpdateData.variationId = parseInt(updateData.variationId)
+      if (updateData.specId !== undefined) prismaUpdateData.specId = parseInt(updateData.specId)
+      if (updateData.specValue !== undefined) prismaUpdateData.specValue = updateData.specValue
 
-      // Update model
-      const model = await prisma.model.update({
+      console.log('📝 Update data:', prismaUpdateData);
+
+      // Update spec detail
+      const specDetail = await prisma.specdetails.update({
         where: {
-          modelId: parseInt(modelID)
+          specDetailId: parseInt(specDetailId)
         },
         data: prismaUpdateData,
         select: {
-          modelId: true,
-          modelName: true,
-          description: true,
-          brandId: true,
-          isActive: true,
+          specDetailId: true,
+          variationId: true,
+          specId: true,
+          specValue: true,
           createdAt: true,
           createdBy: true,
           updatedAt: true,
@@ -1292,38 +1247,33 @@ export async function PUT(request: NextRequest) {
       })
 
       // Transform response
-      const transformedModel = {
-        modelID: model.modelId,
-        modelName: model.modelName,
-        description: model.description,
-        brandID: model.brandId,
-        isActive: model.isActive,
-        createdAt: model.createdAt,
-        createdBy: model.createdBy,
-        updatedAt: model.updatedAt,
-        updatedBy: model.updatedBy,
-        deletedAt: model.deletedAt,
-        deletedBy: model.deletedBy
+      const transformedSpecDetail = {
+        specDetailId: specDetail.specDetailId,
+        variationId: specDetail.variationId,
+        specId: specDetail.specId,
+        specValue: specDetail.specValue,
+        createdAt: specDetail.createdAt,
+        updatedAt: specDetail.updatedAt
       }
 
       return NextResponse.json(
         {
           status: 'success',
           code: 200,
-          message: 'Model updated successfully',
+          message: 'Spec detail updated successfully',
           timestamp: new Date().toISOString(),
-          data: transformedModel
+          data: transformedSpecDetail
         },
         { status: 200 }
       )
 
     } catch (dbError) {
-      console.error('Database error:', dbError)
+      console.error(' Database error:', dbError)
       return NextResponse.json(
         { 
           status: 'error',
           code: 500,
-          message: 'Failed to update model',
+          message: 'Failed to update spec detail',
           timestamp: new Date().toISOString(),
           details: dbError instanceof Error ? dbError.message : 'Unknown database error'
         },
@@ -1332,7 +1282,7 @@ export async function PUT(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Models PUT error:', error)
+    console.error(' Spec details PUT error:', error)
     return NextResponse.json(
       { 
         status: 'error',
@@ -1345,7 +1295,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE - Delete model (soft delete)
+// DELETE - Delete spec detail (soft delete)
 export async function DELETE(request: NextRequest) {
   try {
     // Verify authentication
@@ -1379,14 +1329,14 @@ export async function DELETE(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const modelID = searchParams.get('modelID') || searchParams.get('id')
+    const specDetailId = searchParams.get('specDetailId') || searchParams.get('id')
 
-    if (!modelID) {
+    if (!specDetailId) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 400,
-          message: 'Model ID is required',
+          message: 'Spec detail ID is required',
           timestamp: new Date().toISOString()
         },
         { status: 400 }
@@ -1394,55 +1344,34 @@ export async function DELETE(request: NextRequest) {
     }
 
     try {
-      // Check if model exists
-      const existingModel = await prisma.model.findFirst({
+      // Check if spec detail exists and is not already deleted
+      const existingSpecDetail = await prisma.specdetails.findFirst({
         where: {
-          modelId: parseInt(modelID),
+          specDetailId: parseInt(specDetailId),
           deletedAt: null
         }
       })
 
-      if (!existingModel) {
+      if (!existingSpecDetail) {
         return NextResponse.json(
           { 
             status: 'error',
             code: 404,
-            message: 'Model not found',
+            message: 'Spec detail not found',
             timestamp: new Date().toISOString()
           },
           { status: 404 }
         )
       }
 
-      // Check if model is being used by any products
-      const productsUsingModel = await prisma.product.findFirst({
+      // Soft delete the spec detail
+      await prisma.specdetails.update({
         where: {
-          modelId: parseInt(modelID),
-          deletedAt: null
-        }
-      })
-
-      if (productsUsingModel) {
-        return NextResponse.json(
-          { 
-            status: 'error',
-            code: 400,
-            message: 'Cannot delete model that is being used by products',
-            timestamp: new Date().toISOString()
-          },
-          { status: 400 }
-        )
-      }
-
-      // Soft delete the model
-      await prisma.model.update({
-        where: {
-          modelId: parseInt(modelID)
+          specDetailId: parseInt(specDetailId)
         },
         data: {
           deletedAt: new Date(),
-          deletedBy: employeeId,
-          isActive: false
+          deletedBy: employeeId
         }
       })
 
@@ -1450,19 +1379,19 @@ export async function DELETE(request: NextRequest) {
         {
           status: 'success',
           code: 200,
-          message: 'Model deleted successfully',
+          message: 'Spec detail deleted successfully',
           timestamp: new Date().toISOString()
         },
         { status: 200 }
       )
 
     } catch (dbError) {
-      console.error('Database error:', dbError)
+      console.error(' Database error:', dbError)
       return NextResponse.json(
         { 
           status: 'error',
           code: 500,
-          message: 'Failed to delete model',
+          message: 'Failed to delete spec detail',
           timestamp: new Date().toISOString(),
           details: dbError instanceof Error ? dbError.message : 'Unknown database error'
         },
@@ -1471,7 +1400,7 @@ export async function DELETE(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Models DELETE error:', error)
+    console.error(' Spec details DELETE error:', error)
     return NextResponse.json(
       { 
         status: 'error',
@@ -1484,14 +1413,26 @@ export async function DELETE(request: NextRequest) {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
 /**
  * @swagger
- * /api/model:
+ * /api/specdetails:
  *   get:
  *     tags:
- *       - Models
- *     summary: Get all models
- *     description: Retrieve all models with pagination, sorting, search, and filtering
+ *       - Specification Details
+ *     summary: Get all specification details
+ *     description: Retrieve all specification details with pagination, sorting, search, and filtering
  *     security:
  *       - cookieAuth: []
  *     parameters:
@@ -1511,8 +1452,8 @@ export async function DELETE(request: NextRequest) {
  *         name: sortBy
  *         schema:
  *           type: string
- *           default: modelName
- *           enum: [modelName, description, brandId, isActive, createdAt]
+ *           default: specValue
+ *           enum: [specDetailId, variationId, specId, specValue, createdAt]
  *         description: Sort by field
  *       - in: query
  *         name: sortOrder
@@ -1525,20 +1466,20 @@ export async function DELETE(request: NextRequest) {
  *         name: search
  *         schema:
  *           type: string
- *         description: Search term for model name or description
+ *         description: Search term for specification value
  *       - in: query
- *         name: brandId
+ *         name: variationId
  *         schema:
  *           type: integer
- *         description: Filter by brand ID
+ *         description: Filter by variation ID
  *       - in: query
- *         name: isActive
+ *         name: specId
  *         schema:
- *           type: boolean
- *         description: Filter by active status
+ *           type: integer
+ *         description: Filter by specification ID
  *     responses:
  *       200:
- *         description: Models retrieved successfully
+ *         description: Specification details retrieved successfully
  *         content:
  *           application/json:
  *             schema:
@@ -1552,7 +1493,49 @@ export async function DELETE(request: NextRequest) {
  *                         items:
  *                           type: array
  *                           items:
- *                             $ref: '#/components/schemas/Model'
+ *                             type: object
+ *                             properties:
+ *                               specDetailId:
+ *                                 type: integer
+ *                                 description: Specification detail ID
+ *                                 example: 1
+ *                               variationId:
+ *                                 type: integer
+ *                                 description: Product variation ID
+ *                                 example: 1
+ *                               specId:
+ *                                 type: integer
+ *                                 description: Specification ID
+ *                                 example: 1
+ *                               specValue:
+ *                                 type: string
+ *                                 description: Specification value
+ *                                 example: "16GB"
+ *                               createdAt:
+ *                                 type: string
+ *                                 format: date-time
+ *                               updatedAt:
+ *                                 type: string
+ *                                 format: date-time
+ *                         sorting:
+ *                           type: object
+ *                           properties:
+ *                             sortBy:
+ *                               type: string
+ *                             sortOrder:
+ *                               type: string
+ *                         search:
+ *                           type: string
+ *                           nullable: true
+ *                         filters:
+ *                           type: object
+ *                           properties:
+ *                             variationId:
+ *                               type: integer
+ *                               nullable: true
+ *                             specId:
+ *                               type: integer
+ *                               nullable: true
  *       401:
  *         description: Unauthorized
  *         content:
@@ -1567,14 +1550,16 @@ export async function DELETE(request: NextRequest) {
  *               $ref: '#/components/schemas/ApiResponse'
  */
 
+
+
 /**
  * @swagger
- * /api/model:
+ * /api/specdetails:
  *   post:
  *     tags:
- *       - Models
- *     summary: Create a new model
- *     description: Create a new model in the system
+ *       - Specification Details
+ *     summary: Create a new specification detail
+ *     description: Create a new specification detail in the system
  *     security:
  *       - cookieAuth: []
  *     requestBody:
@@ -1582,10 +1567,27 @@ export async function DELETE(request: NextRequest) {
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/CreateModelRequest'
+ *             type: object
+ *             required:
+ *               - variationId
+ *               - specId
+ *               - specValue
+ *             properties:
+ *               variationId:
+ *                 type: integer
+ *                 description: Product variation ID
+ *                 example: 1
+ *               specId:
+ *                 type: integer
+ *                 description: Specification ID
+ *                 example: 1
+ *               specValue:
+ *                 type: string
+ *                 description: Specification value
+ *                 example: "16GB"
  *     responses:
  *       201:
- *         description: Model created successfully
+ *         description: Specification detail created successfully
  *         content:
  *           application/json:
  *             schema:
@@ -1594,9 +1596,24 @@ export async function DELETE(request: NextRequest) {
  *                 - type: object
  *                   properties:
  *                     data:
- *                       $ref: '#/components/schemas/Model'
+ *                       type: object
+ *                       properties:
+ *                         specDetailId:
+ *                           type: integer
+ *                         variationId:
+ *                           type: integer
+ *                         specId:
+ *                           type: integer
+ *                         specValue:
+ *                           type: string
+ *                         createdAt:
+ *                           type: string
+ *                           format: date-time
+ *                         updatedAt:
+ *                           type: string
+ *                           format: date-time
  *       400:
- *         description: Bad request - Missing required fields or invalid brand ID
+ *         description: Bad request - Missing required fields
  *         content:
  *           application/json:
  *             schema:
@@ -1608,7 +1625,7 @@ export async function DELETE(request: NextRequest) {
  *             schema:
  *               $ref: '#/components/schemas/ApiResponse'
  *       409:
- *         description: Model name already exists for this brand
+ *         description: Specification detail with this variation and spec already exists
  *         content:
  *           application/json:
  *             schema:
@@ -1621,14 +1638,17 @@ export async function DELETE(request: NextRequest) {
  *               $ref: '#/components/schemas/ApiResponse'
  */
 
+
+
+
 /**
  * @swagger
- * /api/model:
+ * /api/specdetails:
  *   put:
  *     tags:
- *       - Models
- *     summary: Update a model
- *     description: Update an existing model in the system
+ *       - Specification Details
+ *     summary: Update a specification detail
+ *     description: Update an existing specification detail in the system
  *     security:
  *       - cookieAuth: []
  *     requestBody:
@@ -1636,31 +1656,29 @@ export async function DELETE(request: NextRequest) {
  *       content:
  *         application/json:
  *           schema:
- *             allOf:
- *               - type: object
- *                 required:
- *                   - modelID
- *                 properties:
- *                   modelID:
- *                     type: integer
- *                     description: Model ID to update
- *               - type: object
- *                 properties:
- *                   modelName:
- *                     type: string
- *                     description: Model name
- *                   description:
- *                     type: string
- *                     description: Model description
- *                   brandID:
- *                     type: integer
- *                     description: Brand ID
- *                   isActive:
- *                     type: boolean
- *                     description: Active status
+ *             type: object
+ *             required:
+ *               - specDetailId
+ *             properties:
+ *               specDetailId:
+ *                 type: integer
+ *                 description: Specification detail ID to update
+ *                 example: 1
+ *               variationId:
+ *                 type: integer
+ *                 description: Product variation ID
+ *                 example: 1
+ *               specId:
+ *                 type: integer
+ *                 description: Specification ID
+ *                 example: 1
+ *               specValue:
+ *                 type: string
+ *                 description: Specification value
+ *                 example: "32GB"
  *     responses:
  *       200:
- *         description: Model updated successfully
+ *         description: Specification detail updated successfully
  *         content:
  *           application/json:
  *             schema:
@@ -1669,9 +1687,24 @@ export async function DELETE(request: NextRequest) {
  *                 - type: object
  *                   properties:
  *                     data:
- *                       $ref: '#/components/schemas/Model'
+ *                       type: object
+ *                       properties:
+ *                         specDetailId:
+ *                           type: integer
+ *                         variationId:
+ *                           type: integer
+ *                         specId:
+ *                           type: integer
+ *                         specValue:
+ *                           type: string
+ *                         createdAt:
+ *                           type: string
+ *                           format: date-time
+ *                         updatedAt:
+ *                           type: string
+ *                           format: date-time
  *       400:
- *         description: Bad request - Missing model ID or invalid brand ID
+ *         description: Bad request - Missing specification detail ID
  *         content:
  *           application/json:
  *             schema:
@@ -1683,13 +1716,13 @@ export async function DELETE(request: NextRequest) {
  *             schema:
  *               $ref: '#/components/schemas/ApiResponse'
  *       404:
- *         description: Model not found
+ *         description: Specification detail not found
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ApiResponse'
  *       409:
- *         description: Model name already exists for this brand
+ *         description: Specification detail with this variation and spec already exists
  *         content:
  *           application/json:
  *             schema:
@@ -1702,38 +1735,40 @@ export async function DELETE(request: NextRequest) {
  *               $ref: '#/components/schemas/ApiResponse'
  */
 
+
+
 /**
  * @swagger
- * /api/model:
+ * /api/specdetails:
  *   delete:
  *     tags:
- *       - Models
- *     summary: Delete a model
- *     description: Delete a model from the system (soft delete)
+ *       - Specification Details
+ *     summary: Delete a specification detail
+ *     description: Soft delete a specification detail from the system
  *     security:
  *       - cookieAuth: []
  *     parameters:
  *       - in: query
- *         name: modelID
+ *         name: specDetailId
  *         required: false
  *         schema:
  *           type: integer
- *         description: Model ID to delete
+ *         description: Specification detail ID to delete
  *       - in: query
  *         name: id
  *         required: false
  *         schema:
  *           type: integer
- *         description: Alternative model ID parameter
+ *         description: Alternative specification detail ID parameter
  *     responses:
  *       200:
- *         description: Model deleted successfully
+ *         description: Specification detail deleted successfully
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ApiResponse'
  *       400:
- *         description: Bad request - Missing model ID or model in use by products
+ *         description: Bad request - Missing specification detail ID
  *         content:
  *           application/json:
  *             schema:
@@ -1745,7 +1780,7 @@ export async function DELETE(request: NextRequest) {
  *             schema:
  *               $ref: '#/components/schemas/ApiResponse'
  *       404:
- *         description: Model not found
+ *         description: Specification detail not found
  *         content:
  *           application/json:
  *             schema:

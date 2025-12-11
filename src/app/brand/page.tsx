@@ -590,7 +590,7 @@ const BrandPage: React.FC = () => {
                   fields={getFormFields(true)}
                   onSubmit={handleUpdateBrand}
                   title="Update Brand"
-                  updateButtonLabel="Update Brand"
+                  //updateButtonLabel="Update Brand"
                   loading={isSubmitting}
                   initialData={{
                     brandName: selectedBrand.BrandName,

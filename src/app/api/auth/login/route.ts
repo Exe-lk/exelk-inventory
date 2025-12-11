@@ -6,6 +6,49 @@ import { generateTokenPair } from '@/lib/jwt'
 import { setAuthCookies } from '@/lib/cookies'
 import { verifyPassword } from '@/lib/password'
 
+
+// Add this to src/app/api/auth/login/route.ts
+
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     tags:
+ *       - Authentication
+ *     summary: User login
+ *     description: Authenticate user and return access token
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginRequest'
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
+ *         headers:
+ *           Set-Cookie:
+ *             description: Sets httpOnly cookies for accessToken and refreshToken
+ *             schema:
+ *               type: string
+ *       401:
+ *         description: Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       400:
+ *         description: Missing username or password
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
+
 export async function POST(request: NextRequest) {
   try {
     const body: LoginRequest = await request.json()

@@ -1,0 +1,12 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Exelk Inventory API",
+    "version": "1.0.0",
+    "description": "API documentation for Exelk Inventory Management System (Next.js + Supabase)"
+  },
+  "servers": [
+    { "url": "http://localhost:3000" }
+  ],
+  "paths": {}
+}

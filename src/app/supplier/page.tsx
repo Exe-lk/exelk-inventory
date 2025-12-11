@@ -681,7 +681,7 @@ const SupplierPage: React.FC = () => {
                   fields={getFormFields(true)}
                   onSubmit={handleUpdateSupplier}
                   title="Update Supplier"
-                  updateButtonLabel="Update Supplier"
+                  //updateButtonLabel="Update Supplier"
                   loading={isSubmitting}
                   initialData={{
                     supplierName: selectedSupplier.SupplierName,

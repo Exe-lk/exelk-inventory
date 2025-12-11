@@ -16,7 +16,9 @@
 // }
 
 
-// // GET - Retrieve suppliers with pagination, sorting, search, and filtering
+
+
+// // GET - Retrieve specs with pagination, sorting, search, and filtering
 // export async function GET(request: NextRequest) {
 //   try {
 //     // Verify authentication
@@ -53,78 +55,50 @@
 //     // Parse query parameters
 //     const page = parseInt(searchParams.get('page') || '1')
 //     const limit = parseInt(searchParams.get('limit') || '100')
-//     const sortBy = searchParams.get('sortBy') || 'supplierName'
+//     const sortBy = searchParams.get('sortBy') || 'specName'
 //     const sortOrder = searchParams.get('sortOrder') || 'asc'
 //     const search = searchParams.get('search') || ''
-//     const city = searchParams.get('city')
-//     const country = searchParams.get('country')
-//     const isActive = searchParams.get('isActive')
 
 //     // Calculate offset for pagination
 //     const offset = (page - 1) * limit
 
 //     // Build query - select only non-deleted records
 //     let query = supabase
-//       .from('supplier')
+//       .from('specs')
 //       .select(`
-//         supplierId,
-//         supplierName,
-//         contactPerson,
-//         email,
-//         phone,
-//         address,
-//         city,
-//         country,
-//         isActive,
+//         specId,
+//         specName,
 //         createdAt,
 //         createdBy,
 //         updatedAt,
 //         updatedBy
 //       `, { count: 'exact' })
-//       .is('deletedAt', null) // Only get non-deleted suppliers
+//       .is('deletedAt', null) // Only get non-deleted specs
 
 //     // Apply search filter
 //     if (search) {
-//       query = query.or(`supplierName.ilike.%${search}%,contactPerson.ilike.%${search}%,email.ilike.%${search}%`)
-//     }
-
-//     // Apply filters
-//     if (city) {
-//       query = query.eq('city', city)
-//     }
-
-//     if (country) {
-//       query = query.eq('country', country)
-//     }
-
-//     if (isActive !== null && isActive !== undefined && isActive !== '') {
-//       query = query.eq('isActive', isActive === 'true')
+//       query = query.ilike('specName', `%${search}%`)
 //     }
 
 //     // Apply sorting
-//     const dbSortBy = sortBy === 'supplierName' ? 'supplierName' : 
-//                      sortBy === 'supplierId' ? 'supplierId' :
-//                      sortBy === 'contactPerson' ? 'contactPerson' :
-//                      sortBy === 'email' ? 'email' :
-//                      sortBy === 'city' ? 'city' :
-//                      sortBy === 'country' ? 'country' :
-//                      sortBy === 'isActive' ? 'isActive' :
-//                      sortBy === 'createdAt' ? 'createdAt' : 'supplierName'
+//     const dbSortBy = sortBy === 'specName' ? 'specName' : 
+//                      sortBy === 'specId' ? 'specId' :
+//                      sortBy === 'createdAt' ? 'createdAt' : 'specName'
 
 //     query = query.order(dbSortBy, { ascending: sortOrder === 'asc' })
 
 //     // Apply pagination
 //     query = query.range(offset, offset + limit - 1)
 
-//     const { data: suppliers, error, count } = await query
+//     const { data: specs, error, count } = await query
 
 //     if (error) {
-//       console.error('Error fetching suppliers:', error)
+//       console.error('Error fetching specs:', error)
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 500,
-//           message: 'Failed to retrieve suppliers',
+//           message: 'Failed to retrieve specs',
 //           timestamp: new Date().toISOString(),
 //           details: error.message
 //         },
@@ -133,28 +107,21 @@
 //     }
 
 //     // Transform data to match response format
-//     const transformedSuppliers = suppliers?.map(supplier => ({
-//       supplierID: supplier.supplierId,
-//       supplierName: supplier.supplierName,
-//       contactPerson: supplier.contactPerson,
-//       email: supplier.email,
-//       phone: supplier.phone,
-//       address: supplier.address,
-//       city: supplier.city,
-//       country: supplier.country,
-//       isActive: supplier.isActive,
-//       createdDate: supplier.createdAt,
-//       updatedDate: supplier.updatedAt
+//     const transformedSpecs = specs?.map(spec => ({
+//       specId: spec.specId,
+//       specName: spec.specName,
+//       createdAt: spec.createdAt,
+//       updatedAt: spec.updatedAt
 //     })) || []
 
 //     return NextResponse.json(
 //       {
 //         status: 'success',
 //         code: 200,
-//         message: 'Suppliers retrieved successfully',
+//         message: 'Specs retrieved successfully',
 //         timestamp: new Date().toISOString(),
 //         data: {
-//           items: transformedSuppliers,
+//           items: transformedSpecs,
 //           pagination: {
 //             totalItems: count || 0,
 //             page,
@@ -165,19 +132,14 @@
 //             sortBy,
 //             sortOrder
 //           },
-//           search: search || null,
-//           filters: {
-//             city: city || null,
-//             country: country || null,
-//             isActive: isActive || null
-//           }
+//           search: search || null
 //         }
 //       },
 //       { status: 200 }
 //     )
 
 //   } catch (error) {
-//     console.error('Suppliers GET error:', error)
+//     console.error('Specs GET error:', error)
 //     return NextResponse.json(
 //       { 
 //         status: 'error',
@@ -191,8 +153,7 @@
 // }
 
 
-
-// // POST - Create new supplier
+// // POST - Create new spec
 // export async function POST(request: NextRequest) {
 //   try {
 //     // Verify authentication
@@ -229,34 +190,34 @@
 //     const body = await request.json()
     
 //     // Validate required fields
-//     const { supplierName, contactPerson, email, phone } = body
-//     if (!supplierName || !contactPerson || !email || !phone) {
+//     const { specName } = body
+//     if (!specName) {
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 400,
-//           message: 'Supplier name, contact person, email, and phone are required',
+//           message: 'Spec name is required',
 //           timestamp: new Date().toISOString()
 //         },
 //         { status: 400 }
 //       )
 //     }
 
-//     // Check if supplier with same email already exists (only non-deleted)
-//     const { data: existingSupplier, error: checkError } = await supabase
-//       .from('supplier')
-//       .select('supplierId')
-//       .eq('email', email)
+//     // Check if spec with same name already exists (only non-deleted)
+//     const { data: existingSpec, error: checkError } = await supabase
+//       .from('specs')
+//       .select('specId')
+//       .eq('specName', specName)
 //       .is('deletedAt', null)
 //       .maybeSingle()
 
 //     if (checkError) {
-//       console.error('Error checking existing supplier:', checkError);
+//       console.error('Error checking existing spec:', checkError);
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 500,
-//           message: 'Failed to check existing supplier',
+//           message: 'Failed to check existing spec',
 //           error: checkError.message,
 //           timestamp: new Date().toISOString()
 //         },
@@ -264,48 +225,34 @@
 //       )
 //     }
 
-//     if (existingSupplier) {
+//     if (existingSpec) {
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 409,
-//           message: 'Supplier with this email already exists',
+//           message: 'Spec with this name already exists',
 //           timestamp: new Date().toISOString()
 //         },
 //         { status: 409 }
 //       )
 //     }
 
-//     // Prepare supplier data with logged-in employee ID
+//     // Prepare spec data with logged-in employee ID
 //     const currentTimestamp = new Date().toISOString();
-//     const supplierData = {
-//       supplierName,
-//       contactPerson,
-//       email,
-//       phone,
-//       address: body.address || '',
-//       city: body.city || '',
-//       country: body.country || '',
-//       isActive: body.isActive !== undefined ? body.isActive : true,
+//     const specData = {
+//       specName,
 //       createdAt: currentTimestamp,
 //       createdBy: loggedInEmployeeId, // Using logged-in employee ID
 //       updatedAt: currentTimestamp,
 //       updatedBy: loggedInEmployeeId  // Using logged-in employee ID
 //     }
     
-//     const { data: supplier, error } = await supabase
-//       .from('supplier')
-//       .insert([supplierData])
+//     const { data: spec, error } = await supabase
+//       .from('specs')
+//       .insert([specData])
 //       .select(`
-//         supplierId,
-//         supplierName,
-//         contactPerson,
-//         email,
-//         phone,
-//         address,
-//         city,
-//         country,
-//         isActive,
+//         specId,
+//         specName,
 //         createdAt,
 //         createdBy,
 //         updatedAt,
@@ -314,12 +261,12 @@
 //       .single()
 
 //     if (error) {
-//       console.error('Error creating supplier:', error)
+//       console.error('Error creating spec:', error)
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 500,
-//           message: 'Failed to create supplier',
+//           message: 'Failed to create spec',
 //           timestamp: new Date().toISOString(),
 //           details: error.message
 //         },
@@ -328,33 +275,26 @@
 //     }
 
 //     // Transform response
-//     const transformedSupplier = {
-//       supplierID: supplier.supplierId,
-//       supplierName: supplier.supplierName,
-//       contactPerson: supplier.contactPerson,
-//       email: supplier.email,
-//       phone: supplier.phone,
-//       address: supplier.address,
-//       city: supplier.city,
-//       country: supplier.country,
-//       isActive: supplier.isActive,
-//       createdDate: supplier.createdAt,
-//       updatedDate: supplier.updatedAt
+//     const transformedSpec = {
+//       specId: spec.specId,
+//       specName: spec.specName,
+//       createdAt: spec.createdAt,
+//       updatedAt: spec.updatedAt
 //     }
 
 //     return NextResponse.json(
 //       {
 //         status: 'success',
 //         code: 201,
-//         message: 'Supplier created successfully',
+//         message: 'Spec created successfully',
 //         timestamp: new Date().toISOString(),
-//         data: transformedSupplier
+//         data: transformedSpec
 //       },
 //       { status: 201 }
 //     )
 
 //   } catch (error) {
-//     console.error('Suppliers POST error:', error)
+//     console.error('Specs POST error:', error)
 //     return NextResponse.json(
 //       { 
 //         status: 'error',
@@ -368,9 +308,7 @@
 // }
 
 
-
-
-// // PUT - Update supplier
+// // PUT - Update spec
 // export async function PUT(request: NextRequest) {
 //   try {
 //     // Verify authentication
@@ -405,35 +343,35 @@
 
 //     const supabase = createServerClient()
 //     const body = await request.json()
-//     const { supplierId, ...updateData } = body
+//     const { specId, ...updateData } = body
     
-//     if (!supplierId) {
+//     if (!specId) {
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 400,
-//           message: 'Supplier ID is required',
+//           message: 'Spec ID is required',
 //           timestamp: new Date().toISOString()
 //         },
 //         { status: 400 }
 //       )
 //     }
 
-//     // Check if supplier exists and is not deleted
-//     const { data: existingSupplierCheck, error: existsError } = await supabase
-//       .from('supplier')
-//       .select('supplierId')
-//       .eq('supplierId', supplierId)
+//     // Check if spec exists and is not deleted
+//     const { data: existingSpecCheck, error: existsError } = await supabase
+//       .from('specs')
+//       .select('specId')
+//       .eq('specId', specId)
 //       .is('deletedAt', null)
 //       .maybeSingle()
 
 //     if (existsError) {
-//       console.error('Error checking supplier existence:', existsError);
+//       console.error('Error checking spec existence:', existsError);
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 500,
-//           message: 'Failed to check supplier existence',
+//           message: 'Failed to check spec existence',
 //           error: existsError.message,
 //           timestamp: new Date().toISOString()
 //         },
@@ -441,34 +379,34 @@
 //       )
 //     }
 
-//     if (!existingSupplierCheck) {
+//     if (!existingSpecCheck) {
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 404,
-//           message: 'Supplier not found',
+//           message: 'Spec not found',
 //           timestamp: new Date().toISOString()
 //         },
 //         { status: 404 }
 //       )
 //     }
 
-//     // Check if email already exists (excluding current supplier and deleted ones)
-//     if (updateData.email) {
-//       const { data: duplicateSupplier } = await supabase
-//         .from('supplier')
-//         .select('supplierId')
-//         .eq('email', updateData.email)
-//         .neq('supplierId', supplierId)
+//     // Check if spec name already exists (excluding current spec and deleted ones)
+//     if (updateData.specName) {
+//       const { data: duplicateSpec } = await supabase
+//         .from('specs')
+//         .select('specId')
+//         .eq('specName', updateData.specName)
+//         .neq('specId', specId)
 //         .is('deletedAt', null)
 //         .maybeSingle()
 
-//       if (duplicateSupplier) {
+//       if (duplicateSpec) {
 //         return NextResponse.json(
 //           { 
 //             status: 'error',
 //             code: 409,
-//             message: 'Supplier with this email already exists',
+//             message: 'Spec with this name already exists',
 //             timestamp: new Date().toISOString()
 //           },
 //           { status: 409 }
@@ -483,20 +421,13 @@
 //       updatedBy: loggedInEmployeeId // Using logged-in employee ID
 //     }
     
-//     const { data: supplier, error } = await supabase
-//       .from('supplier')
+//     const { data: spec, error } = await supabase
+//       .from('specs')
 //       .update(updateDataWithTimestamp)
-//       .eq('supplierId', supplierId)
+//       .eq('specId', specId)
 //       .select(`
-//         supplierId,
-//         supplierName,
-//         contactPerson,
-//         email,
-//         phone,
-//         address,
-//         city,
-//         country,
-//         isActive,
+//         specId,
+//         specName,
 //         createdAt,
 //         createdBy,
 //         updatedAt,
@@ -505,12 +436,12 @@
 //       .single()
 
 //     if (error) {
-//       console.error('Error updating supplier:', error)
+//       console.error('Error updating spec:', error)
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 500,
-//           message: 'Failed to update supplier',
+//           message: 'Failed to update spec',
 //           timestamp: new Date().toISOString(),
 //           details: error.message
 //         },
@@ -518,12 +449,12 @@
 //       )
 //     }
 
-//     if (!supplier) {
+//     if (!spec) {
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 404,
-//           message: 'Supplier not found after update',
+//           message: 'Spec not found after update',
 //           timestamp: new Date().toISOString()
 //         },
 //         { status: 404 }
@@ -531,33 +462,26 @@
 //     }
 
 //     // Transform response
-//     const transformedSupplier = {
-//       supplierID: supplier.supplierId,
-//       supplierName: supplier.supplierName,
-//       contactPerson: supplier.contactPerson,
-//       email: supplier.email,
-//       phone: supplier.phone,
-//       address: supplier.address,
-//       city: supplier.city,
-//       country: supplier.country,
-//       isActive: supplier.isActive,
-//       createdDate: supplier.createdAt,
-//       updatedDate: supplier.updatedAt
+//     const transformedSpec = {
+//       specId: spec.specId,
+//       specName: spec.specName,
+//       createdAt: spec.createdAt,
+//       updatedAt: spec.updatedAt
 //     }
 
 //     return NextResponse.json(
 //       {
 //         status: 'success',
 //         code: 200,
-//         message: 'Supplier updated successfully',
+//         message: 'Spec updated successfully',
 //         timestamp: new Date().toISOString(),
-//         data: transformedSupplier
+//         data: transformedSpec
 //       },
 //       { status: 200 }
 //     )
 
 //   } catch (error) {
-//     console.error('Suppliers PUT error:', error)
+//     console.error('Specs PUT error:', error)
 //     return NextResponse.json(
 //       { 
 //         status: 'error',
@@ -571,7 +495,8 @@
 // }
 
 
-// // DELETE - Delete supplier (soft delete)
+
+// // DELETE - Delete spec (soft delete)
 // export async function DELETE(request: NextRequest) {
 //   try {
 //     // Verify authentication
@@ -605,14 +530,14 @@
 //     }
 
 //     const { searchParams } = new URL(request.url)
-//     const supplierId = searchParams.get('supplierId') || searchParams.get('supplierID') || searchParams.get('id')
+//     const specId = searchParams.get('specId') || searchParams.get('id')
 
-//     if (!supplierId) {
+//     if (!specId) {
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 400,
-//           message: 'Supplier ID is required',
+//           message: 'Spec ID is required',
 //           timestamp: new Date().toISOString()
 //         },
 //         { status: 400 }
@@ -621,21 +546,21 @@
 
 //     const supabase = createServerClient()
 
-//     // Check if supplier exists and is not already deleted
-//     const { data: existingSupplier, error: fetchError } = await supabase
-//       .from('supplier')
-//       .select('supplierId')
-//       .eq('supplierId', supplierId)
+//     // Check if spec exists and is not already deleted
+//     const { data: existingSpec, error: fetchError } = await supabase
+//       .from('specs')
+//       .select('specId')
+//       .eq('specId', specId)
 //       .is('deletedAt', null)
 //       .maybeSingle()
 
 //     if (fetchError) {
-//       console.error('Error checking existing supplier:', fetchError);
+//       console.error('Error checking existing spec:', fetchError);
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 500,
-//           message: 'Failed to check supplier existence',
+//           message: 'Failed to check spec existence',
 //           error: fetchError.message,
 //           timestamp: new Date().toISOString()
 //         },
@@ -643,54 +568,34 @@
 //       )
 //     }
 
-//     if (!existingSupplier) {
+//     if (!existingSpec) {
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 404,
-//           message: 'Supplier not found',
+//           message: 'Spec not found',
 //           timestamp: new Date().toISOString()
 //         },
 //         { status: 404 }
 //       )
 //     }
-
-//     // Optional: Check if supplier is being used by any products
-//     const { data: productsUsingSupplier } = await supabase
-//       .from('product')
-//       .select('productId')
-//       .eq('supplierId', supplierId)
-//       .limit(1)
-
-//     if (productsUsingSupplier && productsUsingSupplier.length > 0) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 400,
-//           message: 'Cannot delete supplier that is being used by products',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 400 }
-//       )
-//     }
     
-//     // Soft delete the supplier with logged-in employee ID
+//     // Soft delete the spec with logged-in employee ID
 //     const { error } = await supabase
-//       .from('supplier')
+//       .from('specs')
 //       .update({
 //         deletedAt: new Date().toISOString(),
-//         deletedBy: loggedInEmployeeId, // Using logged-in employee ID
-//         isActive: false
+//         deletedBy: loggedInEmployeeId // Using logged-in employee ID
 //       })
-//       .eq('supplierId', supplierId)
+//       .eq('specId', specId)
 
 //     if (error) {
-//       console.error('Error deleting supplier:', error)
+//       console.error('Error deleting spec:', error)
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 500,
-//           message: 'Failed to delete supplier',
+//           message: 'Failed to delete spec',
 //           timestamp: new Date().toISOString(),
 //           details: error.message
 //         },
@@ -702,14 +607,14 @@
 //       {
 //         status: 'success',
 //         code: 200,
-//         message: 'Supplier deleted successfully',
+//         message: 'Spec deleted successfully',
 //         timestamp: new Date().toISOString()
 //       },
 //       { status: 200 }
 //     )
 
 //   } catch (error) {
-//     console.error('Suppliers DELETE error:', error)
+//     console.error('Specs DELETE error:', error)
 //     return NextResponse.json(
 //       { 
 //         status: 'error',
@@ -725,21 +630,15 @@
 
 
 
+
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { verifyAccessToken } from '@/lib/jwt'
 import { getAuthTokenFromCookies } from '@/lib/cookies'
 
-interface Supplier {
-  supplierId: number
-  supplierName: string
-  contactPerson: string
-  email: string
-  phone: string
-  address: string | null
-  city: string | null
-  country: string | null
-  isActive: boolean
+interface Spec {
+  specId: number
+  specName: string
   createdAt: Date
   createdBy: number
   updatedAt: Date
@@ -761,12 +660,12 @@ function getEmployeeIdFromToken(accessToken: string): number {
 
 /**
  * @swagger
- * /api/supplier:
+ * /api/spec:
  *   get:
  *     tags:
- *       - Suppliers
- *     summary: Get all suppliers
- *     description: Retrieve all suppliers with pagination, sorting, search, and filtering
+ *       - Specifications
+ *     summary: Get all specifications
+ *     description: Retrieve all specifications with pagination, sorting, and search
  *     security:
  *       - cookieAuth: []
  *     parameters:
@@ -786,8 +685,8 @@ function getEmployeeIdFromToken(accessToken: string): number {
  *         name: sortBy
  *         schema:
  *           type: string
- *           default: supplierName
- *           enum: [supplierName, supplierId, contactPerson, email, city, country, isActive, createdAt]
+ *           default: specName
+ *           enum: [specName, specId, createdAt]
  *         description: Sort by field
  *       - in: query
  *         name: sortOrder
@@ -800,78 +699,19 @@ function getEmployeeIdFromToken(accessToken: string): number {
  *         name: search
  *         schema:
  *           type: string
- *         description: Search term for supplier name, contact person, or email
- *       - in: query
- *         name: city
- *         schema:
- *           type: string
- *         description: Filter by city
- *       - in: query
- *         name: country
- *         schema:
- *           type: string
- *         description: Filter by country
- *       - in: query
- *         name: isActive
- *         schema:
- *           type: boolean
- *         description: Filter by active status
+ *         description: Search term for specification name
  *     responses:
  *       200:
- *         description: Suppliers retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/PaginationResponse'
- *                 - type: object
- *                   properties:
- *                     data:
- *                       type: object
- *                       properties:
- *                         items:
- *                           type: array
- *                           items:
- *                             $ref: '#/components/schemas/Supplier'
- *                         sorting:
- *                           type: object
- *                           properties:
- *                             sortBy:
- *                               type: string
- *                             sortOrder:
- *                               type: string
- *                         search:
- *                           type: string
- *                           nullable: true
- *                         filters:
- *                           type: object
- *                           properties:
- *                             city:
- *                               type: string
- *                               nullable: true
- *                             country:
- *                               type: string
- *                               nullable: true
- *                             isActive:
- *                               type: string
- *                               nullable: true
+ *         description: Specifications retrieved successfully
  *       401:
  *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
  *       500:
  *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
  */
 
-// GET - Retrieve suppliers with pagination, sorting, search, and filtering
+// GET - Retrieve specs with pagination, sorting, search, and filtering
 export async function GET(request: NextRequest) {
-  console.log(' Supplier GET request started');
+  console.log(' Spec GET request started');
   
   try {
     // Verify authentication
@@ -910,81 +750,54 @@ export async function GET(request: NextRequest) {
     // Parse query parameters
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '100')
-    const sortBy = searchParams.get('sortBy') || 'supplierId'
+    const sortBy = searchParams.get('sortBy') || 'specName'
     const sortOrder = searchParams.get('sortOrder') || 'asc'
     const search = searchParams.get('search') || ''
-    const city = searchParams.get('city')
-    const country = searchParams.get('country')
-    const isActive = searchParams.get('isActive')
 
-    console.log(' Query parameters:', { page, limit, sortBy, sortOrder, search, city, country, isActive });
+    console.log(' Query parameters:', { page, limit, sortBy, sortOrder, search });
 
     // Calculate offset for pagination
     const offset = (page - 1) * limit
 
     // Build where clause
     const where: any = {
-      deletedAt: null // Only get non-deleted suppliers
+      deletedAt: null // Only get non-deleted specs
     }
 
     // Apply search filter
     if (search) {
-      where.OR = [
-        { supplierName: { contains: search, mode: 'insensitive' } },
-        { contactPerson: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } }
-      ]
-    }
-
-    // Apply filters
-    if (city) {
-      where.city = city
-    }
-
-    if (country) {
-      where.country = country
-    }
-
-    if (isActive !== null && isActive !== undefined && isActive !== '') {
-      where.isActive = isActive === 'true'
+      where.specName = { contains: search, mode: 'insensitive' }
     }
 
     // Build orderBy
     const orderBy: any = {}
-    const validSortColumns = ['supplierName', 'supplierId', 'contactPerson', 'email', 'city', 'country', 'isActive', 'createdAt']
-    const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'supplierName'
+    const validSortColumns = ['specName', 'specId', 'createdAt']
+    const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'specName'
     orderBy[sortColumn] = sortOrder === 'asc' ? 'asc' : 'desc'
 
     console.log(' Where clause:', JSON.stringify(where, null, 2));
     console.log(' Order by:', orderBy);
 
     try {
-      console.log(' Testing database connection...');
+      console.log('🔌 Testing database connection...');
       await prisma.$connect();
       console.log(' Database connected successfully');
 
       // Get total count for pagination
       console.log(' Getting total count...');
-      const totalCount = await prisma.supplier.count({ where });
+      const totalCount = await prisma.specs.count({ where });
       console.log(` Total count: ${totalCount}`);
 
-      // Get suppliers with pagination
-      console.log(' Fetching suppliers...');
-      const suppliers: Supplier[] = await prisma.supplier.findMany({
+      // Get specs with pagination
+      console.log(' Fetching specs...');
+      const specs: Spec[] = await prisma.specs.findMany({
         where,
         orderBy,
         skip: offset,
         take: limit,
         select: {
-          supplierId: true,
-          supplierName: true,
-          contactPerson: true,
-          email: true,
-          phone: true,
-          address: true,
-          city: true,
-          country: true,
-          isActive: true,
+          specId: true,
+          specName: true,
           createdAt: true,
           createdBy: true,
           updatedAt: true,
@@ -992,35 +805,28 @@ export async function GET(request: NextRequest) {
           deletedAt: true,
           deletedBy: true,
         }
-      }) as Supplier[];
+      }) as Spec[];
 
-      console.log(` Found ${suppliers.length} suppliers`);
+      console.log(` Found ${specs.length} specs`);
 
       // Transform data to match response format
-      const transformedSuppliers = suppliers.map((supplier: any) => ({
-        supplierID: supplier.supplierId,
-        supplierName: supplier.supplierName,
-        contactPerson: supplier.contactPerson,
-        email: supplier.email,
-        phone: supplier.phone,
-        address: supplier.address,
-        city: supplier.city,
-        country: supplier.country,
-        isActive: supplier.isActive,
-        createdDate: supplier.createdAt,
-        updatedDate: supplier.updatedAt
+      const transformedSpecs = specs.map((spec: any) => ({
+        specId: spec.specId,
+        specName: spec.specName,
+        createdAt: spec.createdAt,
+        updatedAt: spec.updatedAt
       }));
 
-      console.log(' Suppliers transformed successfully');
+      console.log(' Specs transformed successfully');
 
       return NextResponse.json(
         {
           status: 'success',
           code: 200,
-          message: 'Suppliers retrieved successfully',
+          message: 'Specs retrieved successfully',
           timestamp: new Date().toISOString(),
           data: {
-            items: transformedSuppliers,
+            items: transformedSpecs,
             pagination: {
               totalItems: totalCount,
               page,
@@ -1031,12 +837,7 @@ export async function GET(request: NextRequest) {
               sortBy,
               sortOrder
             },
-            search: search || null,
-            filters: {
-              city: city || null,
-              country: country || null,
-              isActive: isActive || null
-            }
+            search: search || null
           }
         },
         { status: 200 }
@@ -1054,7 +855,7 @@ export async function GET(request: NextRequest) {
         { 
           status: 'error',
           code: 500,
-          message: 'Failed to retrieve suppliers - Database error',
+          message: 'Failed to retrieve specs - Database error',
           timestamp: new Date().toISOString(),
           details: dbError instanceof Error ? dbError.message : 'Unknown database error'
         },
@@ -1063,7 +864,7 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error(' Suppliers GET error:', error);
+    console.error(' Specs GET error:', error);
     return NextResponse.json(
       { 
         status: 'error',
@@ -1080,12 +881,12 @@ export async function GET(request: NextRequest) {
 
 /**
  * @swagger
- * /api/supplier:
+ * /api/spec:
  *   post:
  *     tags:
- *       - Suppliers
- *     summary: Create a new supplier
- *     description: Create a new supplier in the system
+ *       - Specifications
+ *     summary: Create a new specification
+ *     description: Create a new specification in the system
  *     security:
  *       - cookieAuth: []
  *     requestBody:
@@ -1093,46 +894,28 @@ export async function GET(request: NextRequest) {
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/CreateSupplierRequest'
+ *             type: object
+ *             required:
+ *               - specName
+ *             properties:
+ *               specName:
+ *                 type: string
+ *                 description: Specification name
+ *                 example: "RAM"
  *     responses:
  *       201:
- *         description: Supplier created successfully
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/ApiResponse'
- *                 - type: object
- *                   properties:
- *                     data:
- *                       $ref: '#/components/schemas/Supplier'
+ *         description: Specification created successfully
  *       400:
- *         description: Bad request - Missing required fields
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
+ *         description: Bad request - Missing specification name
  *       401:
  *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
  *       409:
- *         description: Supplier with this email already exists
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
+ *         description: Specification name already exists
  *       500:
  *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
  */
 
-// POST - Create new supplier
+// POST - Create new spec
 export async function POST(request: NextRequest) {
   try {
     // Verify authentication
@@ -1168,17 +951,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     
     // Validate required fields
-    const { supplierName, contactPerson, email, phone } = body
+    const { specName } = body
     
-    console.log(' Received data:', { supplierName, contactPerson, email, phone });
+    console.log(' Received data:', { specName });
     console.log(' Employee ID from token:', employeeId);
 
-    if (!supplierName || !contactPerson || !email || !phone) {
+    if (!specName) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 400,
-          message: 'Supplier name, contact person, email, and phone are required',
+          message: 'Spec name is required',
           timestamp: new Date().toISOString()
         },
         { status: 400 }
@@ -1186,50 +969,36 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      // Check if supplier with same email already exists (only non-deleted)
-      const existingSupplier = await prisma.supplier.findFirst({
+      // Check if spec with same name already exists (only non-deleted)
+      const existingSpec = await prisma.specs.findFirst({
         where: {
-          email,
+          specName,
           deletedAt: null
         }
       })
 
-      if (existingSupplier) {
+      if (existingSpec) {
         return NextResponse.json(
           { 
             status: 'error',
             code: 409,
-            message: 'Supplier with this email already exists',
+            message: 'Spec with this name already exists',
             timestamp: new Date().toISOString()
           },
           { status: 409 }
         )
       }
 
-      // Create new supplier
-      const supplier = await prisma.supplier.create({
+      // Create new spec
+      const spec = await prisma.specs.create({
         data: {
-          supplierName,
-          contactPerson,
-          email,
-          phone,
-          address: body.address || '',
-          city: body.city || '',
-          country: body.country || '',
-          isActive: body.isActive !== undefined ? body.isActive : true,
+          specName,
           createdBy: employeeId,
           updatedBy: employeeId
         },
         select: {
-          supplierId: true,
-          supplierName: true,
-          contactPerson: true,
-          email: true,
-          phone: true,
-          address: true,
-          city: true,
-          country: true,
-          isActive: true,
+          specId: true,
+          specName: true,
           createdAt: true,
           createdBy: true,
           updatedAt: true,
@@ -1239,30 +1008,23 @@ export async function POST(request: NextRequest) {
         }
       })
 
-      console.log(' Supplier created:', supplier);
+      console.log(' Spec created:', spec);
 
       // Transform response
-      const transformedSupplier = {
-        supplierID: supplier.supplierId,
-        supplierName: supplier.supplierName,
-        contactPerson: supplier.contactPerson,
-        email: supplier.email,
-        phone: supplier.phone,
-        address: supplier.address,
-        city: supplier.city,
-        country: supplier.country,
-        isActive: supplier.isActive,
-        createdDate: supplier.createdAt,
-        updatedDate: supplier.updatedAt
+      const transformedSpec = {
+        specId: spec.specId,
+        specName: spec.specName,
+        createdAt: spec.createdAt,
+        updatedAt: spec.updatedAt
       }
 
       return NextResponse.json(
         {
           status: 'success',
           code: 201,
-          message: 'Supplier created successfully',
+          message: 'Spec created successfully',
           timestamp: new Date().toISOString(),
-          data: transformedSupplier
+          data: transformedSpec
         },
         { status: 201 }
       )
@@ -1273,7 +1035,7 @@ export async function POST(request: NextRequest) {
         { 
           status: 'error',
           code: 500,
-          message: 'Failed to create supplier',
+          message: 'Failed to create spec',
           timestamp: new Date().toISOString(),
           details: dbError instanceof Error ? dbError.message : 'Unknown database error'
         },
@@ -1282,7 +1044,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error(' Suppliers POST error:', error)
+    console.error(' Specs POST error:', error)
     return NextResponse.json(
       { 
         status: 'error',
@@ -1297,12 +1059,12 @@ export async function POST(request: NextRequest) {
 
 /**
  * @swagger
- * /api/supplier:
+ * /api/spec:
  *   put:
  *     tags:
- *       - Suppliers
- *     summary: Update a supplier
- *     description: Update an existing supplier in the system
+ *       - Specifications
+ *     summary: Update a specification
+ *     description: Update an existing specification in the system
  *     security:
  *       - cookieAuth: []
  *     requestBody:
@@ -1310,86 +1072,34 @@ export async function POST(request: NextRequest) {
  *       content:
  *         application/json:
  *           schema:
- *             allOf:
- *               - type: object
- *                 required:
- *                   - supplierId
- *                 properties:
- *                   supplierId:
- *                     type: integer
- *                     description: Supplier ID to update
- *               - type: object
- *                 properties:
- *                   supplierName:
- *                     type: string
- *                     description: Supplier name
- *                   contactPerson:
- *                     type: string
- *                     description: Contact person
- *                   email:
- *                     type: string
- *                     format: email
- *                     description: Email address
- *                   phone:
- *                     type: string
- *                     description: Phone number
- *                   address:
- *                     type: string
- *                     description: Address
- *                   city:
- *                     type: string
- *                     description: City
- *                   country:
- *                     type: string
- *                     description: Country
- *                   isActive:
- *                     type: boolean
- *                     description: Active status
+ *             type: object
+ *             required:
+ *               - specId
+ *             properties:
+ *               specId:
+ *                 type: integer
+ *                 description: Specification ID to update
+ *                 example: 1
+ *               specName:
+ *                 type: string
+ *                 description: Specification name
+ *                 example: "Memory (RAM)"
  *     responses:
  *       200:
- *         description: Supplier updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/ApiResponse'
- *                 - type: object
- *                   properties:
- *                     data:
- *                       $ref: '#/components/schemas/Supplier'
+ *         description: Specification updated successfully
  *       400:
- *         description: Bad request - Missing supplier ID
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
+ *         description: Bad request - Missing specification ID
  *       401:
  *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
  *       404:
- *         description: Supplier not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
+ *         description: Specification not found
  *       409:
- *         description: Supplier with this email already exists
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
+ *         description: Specification name already exists
  *       500:
  *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
  */
 
-// PUT - Update supplier
+// PUT - Update spec
 export async function PUT(request: NextRequest) {
   try {
     // Verify authentication
@@ -1423,16 +1133,16 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { supplierId, ...updateData } = body
+    const { specId, ...updateData } = body
 
     console.log(' Update - Employee ID from token:', employeeId);
     
-    if (!supplierId) {
+    if (!specId) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 400,
-          message: 'Supplier ID is required',
+          message: 'Spec ID is required',
           timestamp: new Date().toISOString()
         },
         { status: 400 }
@@ -1440,42 +1150,42 @@ export async function PUT(request: NextRequest) {
     }
 
     try {
-      // Check if supplier exists and is not deleted
-      const existingSupplier = await prisma.supplier.findFirst({
+      // Check if spec exists and is not deleted
+      const existingSpec = await prisma.specs.findFirst({
         where: {
-          supplierId: parseInt(supplierId),
+          specId: parseInt(specId),
           deletedAt: null
         }
       })
 
-      if (!existingSupplier) {
+      if (!existingSpec) {
         return NextResponse.json(
           { 
             status: 'error',
             code: 404,
-            message: 'Supplier not found',
+            message: 'Spec not found',
             timestamp: new Date().toISOString()
           },
           { status: 404 }
         )
       }
 
-      // Check if email already exists (excluding current supplier and deleted ones)
-      if (updateData.email) {
-        const duplicateSupplier = await prisma.supplier.findFirst({
+      // Check if spec name already exists (excluding current spec and deleted ones)
+      if (updateData.specName) {
+        const duplicateSpec = await prisma.specs.findFirst({
           where: {
-            email: updateData.email,
-            supplierId: { not: parseInt(supplierId) },
+            specName: updateData.specName,
+            specId: { not: parseInt(specId) },
             deletedAt: null
           }
         })
 
-        if (duplicateSupplier) {
+        if (duplicateSpec) {
           return NextResponse.json(
             { 
               status: 'error',
               code: 409,
-              message: 'Supplier with this email already exists',
+              message: 'Spec with this name already exists',
               timestamp: new Date().toISOString()
             },
             { status: 409 }
@@ -1488,33 +1198,19 @@ export async function PUT(request: NextRequest) {
         updatedBy: employeeId
       }
 
-      if (updateData.supplierName !== undefined) prismaUpdateData.supplierName = updateData.supplierName
-      if (updateData.contactPerson !== undefined) prismaUpdateData.contactPerson = updateData.contactPerson
-      if (updateData.email !== undefined) prismaUpdateData.email = updateData.email
-      if (updateData.phone !== undefined) prismaUpdateData.phone = updateData.phone
-      if (updateData.address !== undefined) prismaUpdateData.address = updateData.address
-      if (updateData.city !== undefined) prismaUpdateData.city = updateData.city
-      if (updateData.country !== undefined) prismaUpdateData.country = updateData.country
-      if (updateData.isActive !== undefined) prismaUpdateData.isActive = updateData.isActive
+      if (updateData.specName !== undefined) prismaUpdateData.specName = updateData.specName
 
       console.log(' Update data:', prismaUpdateData);
 
-      // Update supplier
-      const supplier = await prisma.supplier.update({
+      // Update spec
+      const spec = await prisma.specs.update({
         where: {
-          supplierId: parseInt(supplierId)
+          specId: parseInt(specId)
         },
         data: prismaUpdateData,
         select: {
-          supplierId: true,
-          supplierName: true,
-          contactPerson: true,
-          email: true,
-          phone: true,
-          address: true,
-          city: true,
-          country: true,
-          isActive: true,
+          specId: true,
+          specName: true,
           createdAt: true,
           createdBy: true,
           updatedAt: true,
@@ -1525,27 +1221,20 @@ export async function PUT(request: NextRequest) {
       })
 
       // Transform response
-      const transformedSupplier = {
-        supplierID: supplier.supplierId,
-        supplierName: supplier.supplierName,
-        contactPerson: supplier.contactPerson,
-        email: supplier.email,
-        phone: supplier.phone,
-        address: supplier.address,
-        city: supplier.city,
-        country: supplier.country,
-        isActive: supplier.isActive,
-        createdDate: supplier.createdAt,
-        updatedDate: supplier.updatedAt
+      const transformedSpec = {
+        specId: spec.specId,
+        specName: spec.specName,
+        createdAt: spec.createdAt,
+        updatedAt: spec.updatedAt
       }
 
       return NextResponse.json(
         {
           status: 'success',
           code: 200,
-          message: 'Supplier updated successfully',
+          message: 'Spec updated successfully',
           timestamp: new Date().toISOString(),
-          data: transformedSupplier
+          data: transformedSpec
         },
         { status: 200 }
       )
@@ -1556,7 +1245,7 @@ export async function PUT(request: NextRequest) {
         { 
           status: 'error',
           code: 500,
-          message: 'Failed to update supplier',
+          message: 'Failed to update spec',
           timestamp: new Date().toISOString(),
           details: dbError instanceof Error ? dbError.message : 'Unknown database error'
         },
@@ -1565,7 +1254,7 @@ export async function PUT(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error(' Suppliers PUT error:', error)
+    console.error(' Specs PUT error:', error)
     return NextResponse.json(
       { 
         status: 'error',
@@ -1580,67 +1269,41 @@ export async function PUT(request: NextRequest) {
 
 /**
  * @swagger
- * /api/supplier:
+ * /api/spec:
  *   delete:
  *     tags:
- *       - Suppliers
- *     summary: Delete a supplier
- *     description: Soft delete a supplier from the system
+ *       - Specifications
+ *     summary: Delete a specification
+ *     description: Soft delete a specification from the system
  *     security:
  *       - cookieAuth: []
  *     parameters:
  *       - in: query
- *         name: supplierId
+ *         name: specId
  *         required: false
  *         schema:
  *           type: integer
- *         description: Supplier ID to delete
- *       - in: query
- *         name: supplierID
- *         required: false
- *         schema:
- *           type: integer
- *         description: Alternative supplier ID parameter
+ *         description: Specification ID to delete
  *       - in: query
  *         name: id
  *         required: false
  *         schema:
  *           type: integer
- *         description: Alternative ID parameter
+ *         description: Alternative specification ID parameter
  *     responses:
  *       200:
- *         description: Supplier deleted successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
+ *         description: Specification deleted successfully
  *       400:
- *         description: Bad request - Missing supplier ID or supplier in use by products
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
+ *         description: Bad request - Missing specification ID or spec in use
  *       401:
  *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
  *       404:
- *         description: Supplier not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
+ *         description: Specification not found
  *       500:
  *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
  */
 
-// DELETE - Delete supplier (soft delete)
+// DELETE - Delete spec (soft delete)
 export async function DELETE(request: NextRequest) {
   try {
     // Verify authentication
@@ -1674,14 +1337,14 @@ export async function DELETE(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const supplierId = searchParams.get('supplierId') || searchParams.get('supplierID') || searchParams.get('id')
+    const specId = searchParams.get('specId') || searchParams.get('id')
 
-    if (!supplierId) {
+    if (!specId) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 400,
-          message: 'Supplier ID is required',
+          message: 'Spec ID is required',
           timestamp: new Date().toISOString()
         },
         { status: 400 }
@@ -1689,55 +1352,54 @@ export async function DELETE(request: NextRequest) {
     }
 
     try {
-      // Check if supplier exists and is not already deleted
-      const existingSupplier = await prisma.supplier.findFirst({
+      // Check if spec exists and is not already deleted
+      const existingSpec = await prisma.specs.findFirst({
         where: {
-          supplierId: parseInt(supplierId),
+          specId: parseInt(specId),
           deletedAt: null
         }
       })
 
-      if (!existingSupplier) {
+      if (!existingSpec) {
         return NextResponse.json(
           { 
             status: 'error',
             code: 404,
-            message: 'Supplier not found',
+            message: 'Spec not found',
             timestamp: new Date().toISOString()
           },
           { status: 404 }
         )
       }
 
-      // Check if supplier is being used by any products
-      const productsUsingSupplier = await prisma.product.findFirst({
+      // Check if spec is being used by any spec details
+      const specDetailsUsingSpec = await prisma.specdetails.findFirst({
         where: {
-          supplierId: parseInt(supplierId),
+          specId: parseInt(specId),
           deletedAt: null
         }
       })
 
-      if (productsUsingSupplier) {
+      if (specDetailsUsingSpec) {
         return NextResponse.json(
           { 
             status: 'error',
             code: 400,
-            message: 'Cannot delete supplier that is being used by products',
+            message: 'Cannot delete specification that is being used by spec details',
             timestamp: new Date().toISOString()
           },
           { status: 400 }
         )
       }
 
-      // Soft delete the supplier
-      await prisma.supplier.update({
+      // Soft delete the spec
+      await prisma.specs.update({
         where: {
-          supplierId: parseInt(supplierId)
+          specId: parseInt(specId)
         },
         data: {
           deletedAt: new Date(),
-          deletedBy: employeeId,
-          isActive: false
+          deletedBy: employeeId
         }
       })
 
@@ -1745,7 +1407,7 @@ export async function DELETE(request: NextRequest) {
         {
           status: 'success',
           code: 200,
-          message: 'Supplier deleted successfully',
+          message: 'Spec deleted successfully',
           timestamp: new Date().toISOString()
         },
         { status: 200 }
@@ -1757,7 +1419,7 @@ export async function DELETE(request: NextRequest) {
         { 
           status: 'error',
           code: 500,
-          message: 'Failed to delete supplier',
+          message: 'Failed to delete spec',
           timestamp: new Date().toISOString(),
           details: dbError instanceof Error ? dbError.message : 'Unknown database error'
         },
@@ -1766,7 +1428,7 @@ export async function DELETE(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error(' Suppliers DELETE error:', error)
+    console.error(' Specs DELETE error:', error)
     return NextResponse.json(
       { 
         status: 'error',

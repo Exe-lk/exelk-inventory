@@ -9,12 +9,11 @@ import Form, { FormField } from '@/components/form-popup/create';
 import UpdateForm from '@/components/form-popup/update';
 import DeleteConfirmation from '@/components/form-popup/delete';
 import { Employee, hasAdminAccess, isStockKeeper } from '@/types/user';
-import { Model } from '@/types/model';
-import { Brand } from '@/types/brand';
-import { fetchModels, createModel, updateModel, deleteModel, fetchBrands } from '@/lib/services/modelService';
+import { ProductVariation } from '@/types/productvariation';
+import { fetchProductVariations, createProductVariation, updateProductVariation, deleteProductVariation } from '@/lib/services/productvariationService';
 import { getCurrentUser, logoutUser } from '@/lib/auth';
 
-const ModelPage: React.FC = () => {
+const ProductVariationPage: React.FC = () => {
   const router = useRouter();
   
   // Auth states
@@ -27,8 +26,7 @@ const ModelPage: React.FC = () => {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
   
   // Data states
-  const [models, setModels] = useState<Model[]>([]);
-  const [brands, setBrands] = useState<Brand[]>([]);
+  const [productVariations, setProductVariations] = useState<ProductVariation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<number | null>(null);
@@ -36,12 +34,12 @@ const ModelPage: React.FC = () => {
   // Form popup states
   const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
   const [isUpdateFormOpen, setIsUpdateFormOpen] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<Model | null>(null);
+  const [selectedProductVariation, setSelectedProductVariation] = useState<ProductVariation | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Delete confirmation states
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [modelToDelete, setModelToDelete] = useState<Model | null>(null);
+  const [productVariationToDelete, setProductVariationToDelete] = useState<ProductVariation | null>(null);
 
   // Check authentication and authorization
   useEffect(() => {
@@ -49,7 +47,6 @@ const ModelPage: React.FC = () => {
       try {
         const user = await getCurrentUser();
         if (user) {
-          // Only allow stockkeepers to access models
           if (!isStockKeeper(user.RoleID)) {
             router.push('/home');
             return;
@@ -67,7 +64,7 @@ const ModelPage: React.FC = () => {
     checkAuth();
   }, [router]);
 
-  // Fetch model data
+  // Fetch product variation data
   useEffect(() => {
     if (!isLoggedIn) return;
 
@@ -76,21 +73,14 @@ const ModelPage: React.FC = () => {
         setLoading(true);
         setError(null);
         
-        // Fetch both models and brands
-        const [modelsData, brandsData] = await Promise.all([
-          fetchModels(),
-          fetchBrands()
-        ]);
+        const productVariationsData = await fetchProductVariations();
+        setProductVariations(productVariationsData);
         
-        setModels(modelsData);
-        setBrands(brandsData);
-        
-        console.log('Loaded models:', modelsData.length);
-        console.log('Loaded brands:', brandsData.length);
+        console.log('Loaded product variations:', productVariationsData.length);
         
       } catch (err) {
-        console.error('Error loading data:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load data');
+        console.error('Error loading product variations:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load product variations');
       } finally {
         setLoading(false);
       }
@@ -102,7 +92,7 @@ const ModelPage: React.FC = () => {
   // Auth handlers
   const handleLogin = (user: Omit<Employee, 'Password'>) => {
     if (!isStockKeeper(user.RoleID)) {
-      alert('Access denied. Only stockkeepers can access model management.');
+      alert('Access denied. Only stockkeepers can access product variation management.');
       return;
     }
     setCurrentUser(user);
@@ -133,39 +123,30 @@ const ModelPage: React.FC = () => {
     setIsSidebarExpanded(isExpanded);
   };
 
-  // Helper function to get brand name
-  const getBrandName = (brandID: number): string => {
-    const brand = brands.find(b => b.BrandID === brandID);
-    return brand ? brand.BrandName : `Brand ${brandID}`;
-  };
-
-  // Handle model deletion - Updated to use modal
-  const handleDeleteModel = async (model: Model) => {
-    // Set model to delete and open modal
-    setModelToDelete(model);
+  // Handle product variation deletion
+  const handleDeleteProductVariation = async (productVariation: ProductVariation) => {
+    setProductVariationToDelete(productVariation);
     setIsDeleteModalOpen(true);
   };
 
   // Handle the actual deletion after confirmation
   const handleConfirmDelete = async () => {
-    if (!modelToDelete) return;
+    if (!productVariationToDelete) return;
 
     try {
-      setIsDeleting(modelToDelete.ModelID);
-      await deleteModel(modelToDelete.ModelID);
+      setIsDeleting(productVariationToDelete.variationId);
+      await deleteProductVariation(productVariationToDelete.variationId);
       
-      // Remove from local state
-      setModels(prev => prev.filter(model => model.ModelID !== modelToDelete.ModelID));
+      setProductVariations(prev => prev.filter(variation => variation.variationId !== productVariationToDelete.variationId));
       
-      // Close modal and clear state
       setIsDeleteModalOpen(false);
-      setModelToDelete(null);
+      setProductVariationToDelete(null);
       
-      alert('Model deleted successfully!');
-      console.log('Model deleted successfully');
+      alert('Product variation deleted successfully!');
+      console.log('Product variation deleted successfully');
     } catch (err) {
-      console.error('Error deleting model:', err);
-      alert('Failed to delete model. Please try again.');
+      console.error('Error deleting product variation:', err);
+      alert('Failed to delete product variation. Please try again.');
     } finally {
       setIsDeleting(null);
     }
@@ -173,114 +154,201 @@ const ModelPage: React.FC = () => {
 
   // Handle modal close
   const handleCloseDeleteModal = () => {
-    if (isDeleting) return; // Prevent closing while deleting
+    if (isDeleting) return;
     setIsDeleteModalOpen(false);
-    setModelToDelete(null);
+    setProductVariationToDelete(null);
   };
 
-  // Handle edit model
-  const handleEditModel = (model: Model) => {
-    console.log('Edit model:', model);
-    setSelectedModel(model);
+  // Handle edit product variation
+  const handleEditProductVariation = (productVariation: ProductVariation) => {
+    console.log('Edit product variation:', productVariation);
+    setSelectedProductVariation(productVariation);
     setIsUpdateFormOpen(true);
   };
 
-  // Handle create model form submission
-  const handleCreateModel = async (formData: Record<string, any>) => {
+  // Handle create product variation form submission
+  const handleCreateProductVariation = async (formData: Record<string, any>) => {
     try {
       setIsSubmitting(true);
       
-      console.log('Creating model with data:', formData);
+      console.log('Creating product variation with data:', formData);
       
-      const modelData = {
-        ModelName: formData.modelName,
-        Description: formData.description,
-        BrandID: parseInt(formData.brandId),
-        IsActive: formData.isActive !== undefined ? formData.isActive : true
+      const productVariationData = {
+        versionId: parseInt(formData.versionId),
+        variationName: formData.variationName,
+        color: formData.color || '',
+        size: formData.size || '',
+        capacity: formData.capacity || '',
+        barcode: formData.barcode || '',
+        price: parseFloat(formData.price) || 0,
+        quantity: parseInt(formData.quantity) || 0,
+        minStockLevel: parseInt(formData.minStockLevel) || 0,
+        maxStockLevel: parseInt(formData.maxStockLevel) || 0,
+        isActive: formData.isActive !== undefined ? formData.isActive : true,
+        createdBy: currentUser?.EmployeeID || 1
       };
       
-      const newModel = await createModel(modelData);
-      setModels(prev => [...prev, newModel]);
+      const newProductVariation = await createProductVariation(productVariationData);
+      setProductVariations(prev => [...prev, newProductVariation]);
       
       setIsCreateFormOpen(false);
-      alert('Model created successfully!');
+      alert('Product variation created successfully!');
       
     } catch (err) {
-      console.error('Error creating model:', err);
-      alert('Failed to create model. Please try again.');
+      console.error('Error creating product variation:', err);
+      alert('Failed to create product variation. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Handle update model form submission
-  const handleUpdateModel = async (formData: Record<string, any>) => {
-    if (!selectedModel) return;
+  // Handle update product variation form submission
+  const handleUpdateProductVariation = async (formData: Record<string, any>) => {
+    if (!selectedProductVariation) return;
     
     try {
       setIsSubmitting(true);
       
-      console.log('Updating model with data:', formData);
+      console.log('Updating product variation with data:', formData);
       
       const updateData = {
-        ModelName: formData.modelName,
-        Description: formData.description,
-        BrandID: parseInt(formData.brandId),
-        IsActive: formData.isActive !== undefined ? formData.isActive : true
+        versionId: parseInt(formData.versionId),
+        variationName: formData.variationName,
+        color: formData.color || '',
+        size: formData.size || '',
+        capacity: formData.capacity || '',
+        barcode: formData.barcode || '',
+        price: parseFloat(formData.price) || 0,
+        quantity: parseInt(formData.quantity) || 0,
+        minStockLevel: parseInt(formData.minStockLevel) || 0,
+        maxStockLevel: parseInt(formData.maxStockLevel) || 0,
+        isActive: formData.isActive !== undefined ? formData.isActive : true
       };
       
-      const updatedModel = await updateModel(selectedModel.ModelID, updateData);
-      setModels(prev => prev.map(model => 
-        model.ModelID === selectedModel.ModelID ? updatedModel : model
+      const updatedProductVariation = await updateProductVariation(selectedProductVariation.variationId, updateData);
+      setProductVariations(prev => prev.map(variation => 
+        variation.variationId === selectedProductVariation.variationId ? updatedProductVariation : variation
       ));
       
       setIsUpdateFormOpen(false);
-      setSelectedModel(null);
-      alert('Model updated successfully!');
+      setSelectedProductVariation(null);
+      alert('Product variation updated successfully!');
       
     } catch (err) {
-      console.error('Error updating model:', err);
-      alert('Failed to update model. Please try again.');
+      console.error('Error updating product variation:', err);
+      alert('Failed to update product variation. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Define form fields for model creation/editing
+  // Define form fields for product variation creation/editing
   const getFormFields = (isEdit = false): FormField[] => [
     {
-      name: 'modelName',
-      label: 'Model Name',
-      type: 'text',
-      placeholder: 'Enter model name',
+      name: 'versionId',
+      label: 'Version ID',
+      type: 'number',
+      placeholder: 'Enter version ID',
       required: true,
       validation: (value: string) => {
-        if (value && value.length < 2) {
-          return 'Model name must be at least 2 characters long';
+        if (value && parseInt(value) <= 0) {
+          return 'Version ID must be greater than 0';
         }
         return null;
       }
     },
     {
-      name: 'description',
-      label: 'Description',
-      type: 'textarea',
-      placeholder: 'Enter model description',
+      name: 'variationName',
+      label: 'Variation Name',
+      type: 'text',
+      placeholder: 'Enter variation name',
       required: true,
-      rows: 3
+      validation: (value: string) => {
+        if (value && value.length < 2) {
+          return 'Variation name must be at least 2 characters long';
+        }
+        return null;
+      }
     },
     {
-      name: 'brandId',
-      label: 'Brand',
-      type: 'select',
-      placeholder: 'Select a brand',
-      required: true,
-      options: brands
-        .filter(brand => brand.IsActive)
-        .map(brand => ({
-          label: brand.BrandName,
-          value: brand.BrandID
-        }))
+      name: 'color',
+      label: 'Color',
+      type: 'text',
+      placeholder: 'Enter color',
+      required: false
+    },
+    {
+      name: 'size',
+      label: 'Size',
+      type: 'text',
+      placeholder: 'Enter size',
+      required: false
+    },
+    {
+      name: 'capacity',
+      label: 'Capacity',
+      type: 'text',
+      placeholder: 'Enter capacity',
+      required: false
+    },
+    {
+      name: 'barcode',
+      label: 'Barcode',
+      type: 'text',
+      placeholder: 'Enter barcode',
+      required: false
+    },
+    {
+      name: 'price',
+      label: 'Price',
+      type: 'number',
+      placeholder: 'Enter price',
+      required: false,
+      validation: (value: string) => {
+        if (value && parseFloat(value) < 0) {
+          return 'Price must be greater than or equal to 0';
+        }
+        return null;
+      }
+    },
+    {
+      name: 'quantity',
+      label: 'Quantity',
+      type: 'number',
+      placeholder: 'Enter quantity',
+      required: false,
+      validation: (value: string) => {
+        if (value && parseInt(value) < 0) {
+          return 'Quantity must be greater than or equal to 0';
+        }
+        return null;
+      }
+    },
+    {
+      name: 'minStockLevel',
+      label: 'Min Stock Level',
+      type: 'number',
+      placeholder: 'Enter minimum stock level',
+      required: false,
+      validation: (value: string) => {
+        if (value && parseInt(value) < 0) {
+          return 'Minimum stock level must be greater than or equal to 0';
+        }
+        return null;
+      }
+    },
+    {
+      name: 'maxStockLevel',
+      label: 'Max Stock Level',
+      type: 'number',
+      placeholder: 'Enter maximum stock level',
+      required: false,
+      validation: (value: string) => {
+        if (value && parseInt(value) < 0) {
+          return 'Maximum stock level must be greater than or equal to 0';
+        }
+        return null;
+      }
     },
     {
       name: 'isActive',
@@ -293,18 +361,27 @@ const ModelPage: React.FC = () => {
   // Define table columns
   const columns: TableColumn[] = [
     {
-      key: 'ModelID',
-      label: 'ID',
+      key: 'variationId',
+      label: 'Variation ID',
       sortable: true,
       render: (value: number) => (
         <span className="font-medium text-gray-900">
-          {String(value).padStart(3, '0')}
+          {String(value).padStart(4, '0')}
         </span>
       )
     },
     {
-      key: 'ModelName',
-      label: 'Model',
+      key: 'versionId',
+      label: 'Version ID',
+      sortable: true,
+      filterable: true,
+      render: (value: number) => (
+        <span className="font-medium text-gray-900">{value}</span>
+      )
+    },
+    {
+      key: 'variationName',
+      label: 'Variation Name',
       sortable: true,
       filterable: true,
       render: (value: string) => (
@@ -312,30 +389,69 @@ const ModelPage: React.FC = () => {
       )
     },
     {
-      key: 'Description',
-      label: 'Description',
-      sortable: true,
-      filterable: false,
-      render: (value: string) => (
-        <span className="text-gray-600">
-          {value.length > 50 ? `${value.substring(0, 50)}...` : value}
-        </span>
-      )
-    },
-    {
-      key: 'BrandID',
-      label: 'Brand',
+      key: 'color',
+      label: 'Color',
       sortable: true,
       filterable: true,
+      render: (value: string) => (
+        <span className="font-medium text-gray-900">{value || '-'}</span>
+      )
+    },
+    {
+      key: 'size',
+      label: 'Size',
+      sortable: true,
+      filterable: true,
+      render: (value: string) => (
+        <span className="font-medium text-gray-900">{value || '-'}</span>
+      )
+    },
+    {
+      key: 'capacity',
+      label: 'Capacity',
+      sortable: true,
+      filterable: true,
+      render: (value: string) => (
+        <span className="font-medium text-gray-900">{value || '-'}</span>
+      )
+    },
+    {
+      key: 'price',
+      label: 'Price',
+      sortable: true,
       render: (value: number) => (
-        <span className="text-gray-600">
-          {getBrandName(value)}
+        <span className="font-medium text-gray-900">
+          {value ? `$${value.toLocaleString()}` : '$0'}
         </span>
       )
     },
     {
-      key: 'IsActive',
-      label: 'Status',
+      key: 'quantity',
+      label: 'Quantity',
+      sortable: true,
+      render: (value: number) => (
+        <span className="font-medium text-gray-900">{value}</span>
+      )
+    },
+    {
+      key: 'minStockLevel',
+      label: 'MinStockLevel',
+      sortable: true,
+      render: (value: number) => (
+        <span className="font-medium text-gray-900">{value}</span>
+      )
+    },
+    {
+      key: 'maxStockLevel',
+      label: 'MaxStockLevel',
+      sortable: true,
+      render: (value: number) => (
+        <span className="font-medium text-gray-900">{value}</span>
+      )
+    },
+    {
+      key: 'isActive',
+      label: 'Is Active',
       sortable: true,
       filterable: true,
       render: (value: boolean) => (
@@ -344,21 +460,7 @@ const ModelPage: React.FC = () => {
             ? 'bg-green-100 text-green-800' 
             : 'bg-red-100 text-red-800'
         }`}>
-          {value ? 'Active' : 'Inactive'}
-        </span>
-      )
-    },
-    {
-      key: 'CreatedAt',
-      label: 'Created Date',
-      sortable: true,
-      render: (value: string) => (
-        <span className="text-gray-600">
-          {value ? new Date(value).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-          }) : 'N/A'}
+          {value ? 'Yes' : 'No'}
         </span>
       )
     }
@@ -367,25 +469,32 @@ const ModelPage: React.FC = () => {
   // Define action buttons for stockkeepers only
   const getActions = (): ActionButton[] => {
     if (!isStockKeeper(currentUser?.RoleID || 0)) {
-      return []; // No actions for non-stockkeepers
+      return [];
     }
     
     return [
       {
-        label: 'Edit',
-        onClick: (model: Model) => {
-          handleEditModel(model);
+        label: 'Add Spec',
+        onClick: (productVariation: ProductVariation) => {
+          // Navigate to product variation specs page
+          router.push(`/productvariation/${productVariation.variationId}/specs`);
+        },
+        variant: 'secondary'
+      },
+      {
+        label: 'Update',
+        onClick: (productVariation: ProductVariation) => {
+          handleEditProductVariation(productVariation);
         },
         variant: 'primary'
       },
       {
         label: 'Delete',
-        onClick: (model: Model) => {
-          // Check if currently being deleted
-          if (isDeleting === model.ModelID) {
-            return; // Prevent multiple delete attempts
+        onClick: (productVariation: ProductVariation) => {
+          if (isDeleting === productVariation.variationId) {
+            return;
           }
-          handleDeleteModel(model);
+          handleDeleteProductVariation(productVariation);
         },
         variant: 'danger'
       }
@@ -396,7 +505,7 @@ const ModelPage: React.FC = () => {
 
   // Form handlers
   const handleCreateClick = () => {
-    console.log('Create model clicked');
+    console.log('Create product variation clicked');
     setIsCreateFormOpen(true);
   };
 
@@ -406,19 +515,26 @@ const ModelPage: React.FC = () => {
 
   const handleCloseUpdateForm = () => {
     setIsUpdateFormOpen(false);
-    setSelectedModel(null);
+    setSelectedProductVariation(null);
+  };
+
+  // Handle Back button
+  const handleBackClick = () => {
+    router.back();
+  };
+
+  // Handle Add New Spec button
+  const handleAddNewSpecClick = () => {
+    // Navigate to create new spec page
+    router.push('/productvariation/new-spec');
   };
 
   // Refresh data
   const refreshData = async () => {
     try {
       setLoading(true);
-      const [modelsData, brandsData] = await Promise.all([
-        fetchModels(),
-        fetchBrands()
-      ]);
-      setModels(modelsData);
-      setBrands(brandsData);
+      const productVariationsData = await fetchProductVariations();
+      setProductVariations(productVariationsData);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to refresh data');
@@ -452,7 +568,7 @@ const ModelPage: React.FC = () => {
           <div className="text-red-500 text-4xl mb-4">🚫</div>
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
           <p className="text-gray-600 mb-6">
-            Only stockkeepers can access model management.
+            Only stockkeepers can access product variation management.
           </p>
           <button
             onClick={() => router.push('/home')}
@@ -504,10 +620,8 @@ const ModelPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Navbar */}
       <Navbar currentUser={currentUser} onMenuClick={toggleSidebar} />
 
-      {/* Role-based Sidebar */}
       <SidebarWrapper
         currentUser={currentUser}
         onLogout={handleLogout} 
@@ -516,35 +630,46 @@ const ModelPage: React.FC = () => {
         onExpandedChange={handleSidebarExpandChange}
       />
 
-      {/* Main Content */}
       <div className={`pt-[70px] transition-all duration-300 ease-in-out ${isSidebarExpanded ? 'lg:ml-[300px]' : 'lg:ml-16'}`}>
         <main className="overflow-y-auto bg-gray-50 p-6" style={{ minHeight: 'calc(100vh - 70px)' }}>
           <div className="max-w-full">
             <div className="mb-8">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Model Management</h1>
+                  <h1 className="text-3xl font-bold text-gray-900">Product Variation Management</h1>
                   <p className="mt-2 text-gray-600">
-                    Manage product models and their brand associations
+                    Manage product variations, specifications, and inventory details
                   </p>
-                  
                 </div>
-                
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleBackClick}
+                    className="px-6 py-2.5 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={handleAddNewSpecClick}
+                    className="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
+                  >
+                    Add New Spec
+                  </button>
+                </div>
               </div>
             </div>
 
             <div className="bg-white rounded-lg shadow">
               <Table
-                data={models}
+                data={productVariations}
                 columns={columns}
                 actions={actions}
                 itemsPerPage={10}
                 searchable={true}
                 filterable={true}
                 loading={loading}
-                emptyMessage="No models found. Create your first model to get started."
+                emptyMessage="No product variations found. Create your first product variation to get started."
                 onCreateClick={isStockKeeper(currentUser?.RoleID || 0) ? handleCreateClick : undefined}
-                createButtonLabel="Create Model"
+                createButtonLabel="Create"
                 className="border border-gray-200"
               />
             </div>
@@ -552,17 +677,14 @@ const ModelPage: React.FC = () => {
         </main>
       </div>
 
-      {/* Create Model Form Popup */}
+      {/* Create Product Variation Form Popup */}
       {isCreateFormOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          {/* Backdrop */}
           <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={handleCloseCreateForm}></div>
           
-          {/* Modal */}
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="relative w-full max-w-2xl">
               <div className="relative bg-white rounded-lg shadow-xl">
-                {/* Close button */}
                 <button
                   onClick={handleCloseCreateForm}
                   className="absolute right-4 top-4 z-10 text-gray-400 hover:text-gray-600 transition-colors"
@@ -572,13 +694,12 @@ const ModelPage: React.FC = () => {
                   </svg>
                 </button>
 
-                {/* Form */}
                 <Form
                   fields={getFormFields(false)}
-                  onSubmit={handleCreateModel}
+                  onSubmit={handleCreateProductVariation}
                   onClear={() => {}}
-                  title="Create New Model"
-                  submitButtonLabel="Create Model"
+                  title="Create New Product Variation"
+                  submitButtonLabel="Create Product Variation"
                   clearButtonLabel="Clear"
                   loading={isSubmitting}
                   className="border-0 shadow-none"
@@ -589,17 +710,14 @@ const ModelPage: React.FC = () => {
         </div>
       )}
 
-      {/* Update Model Form Popup */}
-      {isUpdateFormOpen && selectedModel && (
+      {/* Update Product Variation Form Popup */}
+      {isUpdateFormOpen && selectedProductVariation && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          {/* Backdrop */}
           <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={handleCloseUpdateForm}></div>
           
-          {/* Modal */}
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="relative w-full max-w-2xl">
               <div className="relative bg-white rounded-lg shadow-xl">
-                {/* Close button */}
                 <button
                   onClick={handleCloseUpdateForm}
                   className="absolute right-4 top-4 z-10 text-gray-400 hover:text-gray-600 transition-colors"
@@ -609,18 +727,24 @@ const ModelPage: React.FC = () => {
                   </svg>
                 </button>
 
-                {/* Update Form */}
                 <UpdateForm
                   fields={getFormFields(true)}
-                  onSubmit={handleUpdateModel}
-                  title="Update Model"
-                  //updateButtonLabel="Update Model"
+                  onSubmit={handleUpdateProductVariation}
+                  title="Update Product Variation"
+                  
                   loading={isSubmitting}
                   initialData={{
-                    modelName: selectedModel.ModelName,
-                    description: selectedModel.Description,
-                    brandId: selectedModel.BrandID,
-                    isActive: selectedModel.IsActive
+                    versionId: selectedProductVariation.versionId.toString(),
+                    variationName: selectedProductVariation.variationName,
+                    color: selectedProductVariation.color,
+                    size: selectedProductVariation.size,
+                    capacity: selectedProductVariation.capacity,
+                    barcode: selectedProductVariation.barcode,
+                    price: selectedProductVariation.price.toString(),
+                    quantity: selectedProductVariation.quantity.toString(),
+                    minStockLevel: selectedProductVariation.minStockLevel.toString(),
+                    maxStockLevel: selectedProductVariation.maxStockLevel.toString(),
+                    isActive: selectedProductVariation.isActive
                   }}
                   className="border-0 shadow-none"
                 />
@@ -635,16 +759,16 @@ const ModelPage: React.FC = () => {
         isOpen={isDeleteModalOpen}
         onClose={handleCloseDeleteModal}
         onConfirm={handleConfirmDelete}
-        title="Delete a Model"
-        message="Are you sure you want to delete that Model ?"
-        warningMessage="By Deleting this, automatically cancel the related fields."
+        title="Delete a Product Variation"
+        message="Are you sure you want to delete this product variation?"
+        warningMessage="By deleting this, automatically cancel the related fields."
         confirmButtonText="Yes, Delete"
         cancelButtonText="No, Cancel"
-        loading={isDeleting === modelToDelete?.ModelID}
-        itemName={modelToDelete?.ModelName}
+        loading={isDeleting === productVariationToDelete?.variationId}
+        itemName={productVariationToDelete?.variationName}
       />
     </div>
   );
 };
 
-export default ModelPage;
+export default ProductVariationPage;

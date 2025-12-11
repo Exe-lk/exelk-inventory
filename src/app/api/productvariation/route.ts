@@ -17,7 +17,9 @@
 
 
 
-// // GET - Retrieve models with pagination, sorting, search, and filtering
+
+
+// // GET - Retrieve product variations with pagination, sorting, search, and filtering
 // export async function GET(request: NextRequest) {
 //   try {
 //     // Verify authentication
@@ -54,23 +56,33 @@
 //     // Parse query parameters
 //     const page = parseInt(searchParams.get('page') || '1')
 //     const limit = parseInt(searchParams.get('limit') || '100')
-//     const sortBy = searchParams.get('sortBy') || 'modelName'
+//     const sortBy = searchParams.get('sortBy') || 'variationName'
 //     const sortOrder = searchParams.get('sortOrder') || 'asc'
 //     const search = searchParams.get('search') || ''
-//     const brandId = searchParams.get('brandId')
+//     const versionId = searchParams.get('versionId')
+//     const color = searchParams.get('color')
+//     const size = searchParams.get('size')
+//     const capacity = searchParams.get('capacity')
 //     const isActive = searchParams.get('isActive')
 
 //     // Calculate offset for pagination
 //     const offset = (page - 1) * limit
 
-//     // Build query with camelCase column names
+//     // Build query
 //     let query = supabase
-//       .from('model')
+//       .from('productvariation')
 //       .select(`
-//         modelId,
-//         modelName,
-//         description,
-//         brandId,
+//         variationId,
+//         versionId,
+//         variationName,
+//         color,
+//         size,
+//         capacity,
+//         barcode,
+//         price,
+//         quantity,
+//         minStockLevel,
+//         maxStockLevel,
 //         isActive,
 //         createdAt,
 //         createdBy,
@@ -80,71 +92,95 @@
 //         deletedBy
 //       `, { count: 'exact' })
 
-//     // Apply search filter with camelCase column names
+//     // Apply search filter
 //     if (search) {
-//       query = query.or(`modelName.ilike.%${search}%,description.ilike.%${search}%`)
+//       query = query.or(`variationName.ilike.%${search}%,barcode.ilike.%${search}%,color.ilike.%${search}%,size.ilike.%${search}%`)
 //     }
 
-//     // Apply filters with camelCase column names
-//     if (brandId) {
-//       query = query.eq('brandId', parseInt(brandId))
+//     // Apply filters
+//     if (versionId) {
+//       query = query.eq('versionId', parseInt(versionId))
+//     }
+
+//     if (color) {
+//       query = query.eq('color', color)
+//     }
+
+//     if (size) {
+//       query = query.eq('size', size)
+//     }
+
+//     if (capacity) {
+//       query = query.eq('capacity', capacity)
 //     }
 
 //     if (isActive !== null && isActive !== undefined && isActive !== '') {
 //       query = query.eq('isActive', isActive === 'true')
 //     }
 
-//     // Apply sorting with camelCase column names
-//     const validSortColumns = ['modelName', 'description', 'brandId', 'isActive', 'createdAt']
-//     const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'modelName'
-//     query = query.order(sortColumn, { ascending: sortOrder === 'asc' })
+//     // Apply sorting
+//     const dbSortBy = sortBy === 'variationName' ? 'variationName' : 
+//                      sortBy === 'variationId' ? 'variationId' :
+//                      sortBy === 'versionId' ? 'versionId' :
+//                      sortBy === 'color' ? 'color' :
+//                      sortBy === 'size' ? 'size' :
+//                      sortBy === 'capacity' ? 'capacity' :
+//                      sortBy === 'price' ? 'price' :
+//                      sortBy === 'quantity' ? 'quantity' :
+//                      sortBy === 'isActive' ? 'isActive' :
+//                      sortBy === 'createdAt' ? 'createdAt' : 'variationName'
+
+//     query = query.order(dbSortBy, { ascending: sortOrder === 'asc' })
 
 //     // Apply pagination
 //     query = query.range(offset, offset + limit - 1)
 
-//     console.log('Executing model query...')
-//     const { data: models, error, count } = await query
+//     const { data: variations, error, count } = await query
 
 //     if (error) {
-//       console.error('Database error:', error)
+//       console.error('Error fetching product variations:', error)
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 500,
-//           message: 'Failed to retrieve models from database',
-//           error: error.message,
-//           timestamp: new Date().toISOString()
+//           message: 'Failed to retrieve product variations',
+//           timestamp: new Date().toISOString(),
+//           details: error.message
 //         },
 //         { status: 500 }
 //       )
 //     }
 
-//     console.log('Models fetched:', models?.length)
-//     console.log('Sample model:', models?.[0])
-
-//     // Transform data to match frontend expectations
-//     const transformedModels = models?.map(model => ({
-//       modelID: model.modelId,
-//       modelName: model.modelName,
-//       description: model.description || '',
-//       brandID: model.brandId,
-//       isActive: model.isActive,
-//       createdAt: model.createdAt,
-//       createdBy: model.createdBy || 1,
-//       updatedAt: model.updatedAt || model.createdAt,
-//       updatedBy: model.updatedBy || 1,
-//       deletedAt: model.deletedAt,
-//       deletedBy: model.deletedBy
+//     // Transform data to match response format
+//     const transformedVariations = variations?.map(variation => ({
+//       variationId: variation.variationId,
+//       versionId: variation.versionId,
+//       variationName: variation.variationName,
+//       color: variation.color,
+//       size: variation.size,
+//       capacity: variation.capacity,
+//       barcode: variation.barcode,
+//       price: variation.price,
+//       quantity: variation.quantity,
+//       minStockLevel: variation.minStockLevel,
+//       maxStockLevel: variation.maxStockLevel,
+//       isActive: variation.isActive,
+//       createdAt: variation.createdAt,
+//       createdBy: variation.createdBy || 1,
+//       updatedAt: variation.updatedAt,
+//       updatedBy: variation.updatedBy || 1,
+//       deletedAt: variation.deletedAt,
+//       deletedBy: variation.deletedBy
 //     })) || []
 
 //     return NextResponse.json(
 //       {
 //         status: 'success',
 //         code: 200,
-//         message: 'Models retrieved successfully',
+//         message: 'Product variations retrieved successfully',
 //         timestamp: new Date().toISOString(),
 //         data: {
-//           items: transformedModels,
+//           items: transformedVariations,
 //           pagination: {
 //             totalItems: count || 0,
 //             page,
@@ -157,13 +193,12 @@
 //     )
 
 //   } catch (error) {
-//     console.error('Models GET error:', error)
+//     console.error('Product variations GET error:', error)
 //     return NextResponse.json(
 //       { 
 //         status: 'error',
 //         code: 500,
 //         message: 'Internal server error',
-//         error: error instanceof Error ? error.message : 'Unknown error',
 //         timestamp: new Date().toISOString()
 //       },
 //       { status: 500 }
@@ -173,7 +208,8 @@
 
 
 
-// // POST - Create new model
+
+// // POST - Create new product variation
 // export async function POST(request: NextRequest) {
 //   try {
 //     // Verify authentication
@@ -190,11 +226,11 @@
 //       )
 //     }
 
-//     // Extract employee ID from token
-//     const employeeId = getEmployeeIdFromToken(accessToken)
-
+//     let employeeId: number;
 //     try {
 //       verifyAccessToken(accessToken)
+//       // Extract employee ID from token
+//       employeeId = getEmployeeIdFromToken(accessToken)
 //     } catch (error) {
 //       return NextResponse.json(
 //         { 
@@ -207,87 +243,41 @@
 //       )
 //     }
 
-//     const body = await request.json()
-//     const { modelName, description, brandID, isActive = true } = body
-
-//     console.log('Received model data:', { modelName, description, brandID, isActive })
-//     console.log('Employee ID from token:', employeeId)
-
-//     // Validate required fields
-//     if (!modelName) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 400,
-//           message: 'Model name is required',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 400 }
-//       )
-//     }
-
-//     if (!brandID) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 400,
-//           message: 'Brand ID is required',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 400 }
-//       )
-//     }
-
 //     const supabase = createServerClient()
-
-//     // Check if brand exists
-//     const { data: brand, error: brandError } = await supabase
-//       .from('brand')
-//       .select('brandId')
-//       .eq('brandId', brandID)
-//       .maybeSingle()
-
-//     if (brandError) {
-//       console.error('Error checking brand:', brandError)
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 500,
-//           message: 'Failed to validate brand',
-//           error: brandError.message,
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 500 }
-//       )
-//     }
-
-//     if (!brand) {
+//     const body = await request.json()
+    
+//     // Validate required fields
+//     const { versionId, variationName, color, size, capacity, barcode, price, quantity, minStockLevel, maxStockLevel, isActive } = body
+//     if (!versionId || !variationName) {
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 400,
-//           message: 'Invalid Brand ID',
+//           message: 'Version ID and variation name are required',
 //           timestamp: new Date().toISOString()
 //         },
 //         { status: 400 }
 //       )
 //     }
 
-//     // Check if model name already exists for the same brand
-//     const { data: existingModel, error: checkError } = await supabase
-//       .from('model')
-//       .select('modelId')
-//       .eq('modelName', modelName)
-//       .eq('brandId', brandID)
+//     // Check if variation already exists for this version with same attributes
+//     const { data: existingVariation, error: checkError } = await supabase
+//       .from('productvariation')
+//       .select('variationId')
+//       .eq('versionId', versionId)
+//       .eq('variationName', variationName)
+//       .eq('color', color || '')
+//       .eq('size', size || '')
+//       .eq('capacity', capacity || '')
 //       .maybeSingle()
 
 //     if (checkError) {
-//       console.error('Error checking existing model:', checkError)
+//       console.error('Error checking existing variation:', checkError);
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 500,
-//           message: 'Failed to check existing model',
+//           message: 'Failed to check existing variation',
 //           error: checkError.message,
 //           timestamp: new Date().toISOString()
 //         },
@@ -295,98 +285,116 @@
 //       )
 //     }
 
-//     if (existingModel) {
+//     if (existingVariation) {
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 409,
-//           message: 'Model name already exists for this brand',
+//           message: 'Product variation already exists',
 //           timestamp: new Date().toISOString()
 //         },
 //         { status: 409 }
 //       )
 //     }
 
-//     // Prepare insert data with employee ID from auth token
-//     const currentTimestamp = new Date().toISOString()
-//     const insertData = {
-//       modelName: modelName,
-//       description: description || '',
-//       brandId: brandID,
-//       isActive: isActive,
-//       createdAt: currentTimestamp,
-//       createdBy: employeeId, // Use employee ID from auth token
-//       updatedAt: currentTimestamp,
-//       updatedBy: employeeId  // Use employee ID from auth token
+//     // Check if barcode already exists (if provided)
+//     if (barcode) {
+//       const { data: existingBarcode } = await supabase
+//         .from('productvariation')
+//         .select('variationId')
+//         .eq('barcode', barcode)
+//         .maybeSingle()
+
+//       if (existingBarcode) {
+//         return NextResponse.json(
+//           { 
+//             status: 'error',
+//             code: 409,
+//             message: 'Barcode already exists',
+//             timestamp: new Date().toISOString()
+//           },
+//           { status: 409 }
+//         )
+//       }
 //     }
 
-//     console.log('Insert model data:', insertData)
-
-//     // Create new model
-//     const { data: newModel, error } = await supabase
-//       .from('model')
-//       .insert([insertData])
+//     // Prepare variation data
+//     const currentTimestamp = new Date().toISOString();
+//     const variationData = {
+//       versionId,
+//       variationName,
+//       color: color || '',
+//       size: size || '',
+//       capacity: capacity || '',
+//       barcode: barcode || '',
+//       price: price || 0,
+//       quantity: quantity || 0,
+//       minStockLevel: minStockLevel || 0,
+//       maxStockLevel: maxStockLevel || 0,
+//       isActive: isActive !== undefined ? isActive : true,
+//       createdAt: currentTimestamp,
+//       createdBy: employeeId,
+//       updatedAt: currentTimestamp,
+//       updatedBy: employeeId
+//     }
+    
+//     const { data: variation, error } = await supabase
+//       .from('productvariation')
+//       .insert([variationData])
 //       .select(`
-//         modelId,
-//         modelName,
-//         description,
-//         brandId,
+//         variationId,
+//         versionId,
+//         variationName,
+//         color,
+//         size,
+//         capacity,
+//         barcode,
+//         price,
+//         quantity,
+//         minStockLevel,
+//         maxStockLevel,
 //         isActive,
 //         createdAt,
 //         createdBy,
 //         updatedAt,
-//         updatedBy
+//         updatedBy,
+//         deletedAt,
+//         deletedBy
 //       `)
 //       .single()
 
 //     if (error) {
-//       console.error('Database error:', error)
+//       console.error('Error creating product variation:', error)
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 500,
-//           message: 'Failed to create model',
-//           error: error.message,
-//           timestamp: new Date().toISOString()
+//           message: 'Failed to create product variation',
+//           timestamp: new Date().toISOString(),
+//           details: error.message
 //         },
 //         { status: 500 }
 //       )
-//     }
-
-//     console.log('Created model:', newModel)
-
-//     // Transform response
-//     const transformedModel = {
-//       modelID: newModel.modelId,
-//       modelName: newModel.modelName,
-//       description: newModel.description,
-//       brandID: newModel.brandId,
-//       isActive: newModel.isActive,
-//       createdAt: newModel.createdAt,
-//       createdBy: newModel.createdBy,
-//       updatedAt: newModel.updatedAt,
-//       updatedBy: newModel.updatedBy
 //     }
 
 //     return NextResponse.json(
 //       {
 //         status: 'success',
 //         code: 201,
-//         message: 'Model created successfully',
+//         message: 'Product variation created successfully',
 //         timestamp: new Date().toISOString(),
-//         data: transformedModel
+//         data: variation
 //       },
 //       { status: 201 }
 //     )
 
 //   } catch (error) {
-//     console.error('Models POST error:', error)
+//     console.error('Product variations POST error:', error)
 //     return NextResponse.json(
 //       { 
 //         status: 'error',
 //         code: 500,
 //         message: 'Internal server error',
-//         error: error instanceof Error ? error.message : 'Unknown error',
 //         timestamp: new Date().toISOString()
 //       },
 //       { status: 500 }
@@ -394,7 +402,8 @@
 //   }
 // }
 
-// // PUT - Update model
+
+// // PUT - Update product variation
 // export async function PUT(request: NextRequest) {
 //   try {
 //     // Verify authentication
@@ -411,11 +420,11 @@
 //       )
 //     }
 
-//     // Extract employee ID from token
-//     const employeeId = getEmployeeIdFromToken(accessToken)
-
+//     let employeeId: number;
 //     try {
 //       verifyAccessToken(accessToken)
+//       // Extract employee ID from token
+//       employeeId = getEmployeeIdFromToken(accessToken)
 //     } catch (error) {
 //       return NextResponse.json(
 //         { 
@@ -428,176 +437,154 @@
 //       )
 //     }
 
+//     const supabase = createServerClient()
 //     const body = await request.json()
-//     const { modelID, modelName, description, brandID, isActive } = body
-
-//     console.log('Employee ID from token for update:', employeeId)
-
-//     // Validate required fields
-//     if (!modelID) {
+//     const { variationId, ...updateData } = body
+    
+//     if (!variationId) {
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 400,
-//           message: 'Model ID is required',
+//           message: 'Variation ID is required',
 //           timestamp: new Date().toISOString()
 //         },
 //         { status: 400 }
 //       )
 //     }
 
-//     const supabase = createServerClient()
+//     // Check if variation exists first
+//     const { data: existingVariationCheck, error: existsError } = await supabase
+//       .from('productvariation')
+//       .select('variationId')
+//       .eq('variationId', variationId)
+//       .maybeSingle()
 
-//     // Check if model exists
-//     const { data: existingModel } = await supabase
-//       .from('model')
-//       .select('modelId')
-//       .eq('modelId', modelID)
-//       .single()
-
-//     if (!existingModel) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 404,
-//           message: 'Model not found',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 404 }
-//       )
-//     }
-
-//     // If brandID is being updated, check if it exists
-//     if (brandID) {
-//       const { data: brand, error: brandError } = await supabase
-//         .from('brand')
-//         .select('brandId')
-//         .eq('brandId', brandID)
-//         .maybeSingle()
-
-//       if (brandError || !brand) {
-//         return NextResponse.json(
-//           { 
-//             status: 'error',
-//             code: 400,
-//             message: 'Invalid Brand ID',
-//             timestamp: new Date().toISOString()
-//           },
-//           { status: 400 }
-//         )
-//       }
-//     }
-
-//     // Check if model name already exists for the same brand (excluding current model)
-//     if (modelName || brandID) {
-//       const { data: currentModel } = await supabase
-//         .from('model')
-//         .select('modelName, brandId')
-//         .eq('modelId', modelID)
-//         .single()
-
-//       if (currentModel) {
-//         const modelNameToCheck = modelName || currentModel.modelName
-//         const brandIDToCheck = brandID || currentModel.brandId
-
-//         const { data: duplicateModel } = await supabase
-//           .from('model')
-//           .select('modelId')
-//           .eq('modelName', modelNameToCheck)
-//           .eq('brandId', brandIDToCheck)
-//           .neq('modelId', modelID)
-//           .maybeSingle()
-
-//         if (duplicateModel) {
-//           return NextResponse.json(
-//             { 
-//               status: 'error',
-//               code: 409,
-//               message: 'Model name already exists for this brand',
-//               timestamp: new Date().toISOString()
-//             },
-//             { status: 409 }
-//           )
-//         }
-//       }
-//     }
-
-//     // Prepare update data with employee ID from auth token
-//     const updateData: any = {
-//       updatedAt: new Date().toISOString(),
-//       updatedBy: employeeId // Use employee ID from auth token
-//     }
-//     if (modelName !== undefined) updateData.modelName = modelName
-//     if (description !== undefined) updateData.description = description
-//     if (brandID !== undefined) updateData.brandId = brandID
-//     if (isActive !== undefined) updateData.isActive = isActive
-
-//     console.log('Update data with employee ID:', updateData)
-
-//     // Update model
-//     const { data: updatedModel, error } = await supabase
-//       .from('model')
-//       .update(updateData)
-//       .eq('modelId', modelID)
-//       .select(`
-//         modelId,
-//         modelName,
-//         description,
-//         brandId,
-//         isActive,
-//         createdAt,
-//         createdBy,
-//         updatedAt,
-//         updatedBy
-//       `)
-//       .single()
-
-//     if (error) {
-//       console.error('Database error:', error)
+//     if (existsError) {
+//       console.error('Error checking variation existence:', existsError);
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 500,
-//           message: 'Failed to update model',
-//           error: error.message,
+//           message: 'Failed to check variation existence',
+//           error: existsError.message,
 //           timestamp: new Date().toISOString()
 //         },
 //         { status: 500 }
 //       )
 //     }
 
-//     // Transform response
-//     const transformedModel = {
-//       modelID: updatedModel.modelId,
-//       modelName: updatedModel.modelName,
-//       description: updatedModel.description,
-//       brandID: updatedModel.brandId,
-//       isActive: updatedModel.isActive,
-//       createdAt: updatedModel.createdAt,
-//       createdBy: updatedModel.createdBy,
-//       updatedAt: updatedModel.updatedAt,
-//       updatedBy: updatedModel.updatedBy
+//     if (!existingVariationCheck) {
+//       return NextResponse.json(
+//         { 
+//           status: 'error',
+//           code: 404,
+//           message: 'Product variation not found',
+//           timestamp: new Date().toISOString()
+//         },
+//         { status: 404 }
+//       )
+//     }
+
+//     // Check if barcode already exists (excluding current variation)
+//     if (updateData.barcode) {
+//       const { data: duplicateBarcode } = await supabase
+//         .from('productvariation')
+//         .select('variationId')
+//         .eq('barcode', updateData.barcode)
+//         .neq('variationId', variationId)
+//         .maybeSingle()
+
+//       if (duplicateBarcode) {
+//         return NextResponse.json(
+//           { 
+//             status: 'error',
+//             code: 409,
+//             message: 'Barcode already exists',
+//             timestamp: new Date().toISOString()
+//           },
+//           { status: 409 }
+//         )
+//       }
+//     }
+
+//     // Add update timestamp and logged-in employee ID
+//     const updateDataWithTimestamp = {
+//       ...updateData,
+//       updatedAt: new Date().toISOString(),
+//       updatedBy: employeeId
+//     }
+    
+//     const { data: variation, error } = await supabase
+//       .from('productvariation')
+//       .update(updateDataWithTimestamp)
+//       .eq('variationId', variationId)
+//       .select(`
+//         variationId,
+//         versionId,
+//         variationName,
+//         color,
+//         size,
+//         capacity,
+//         barcode,
+//         price,
+//         quantity,
+//         minStockLevel,
+//         maxStockLevel,
+//         isActive,
+//         createdAt,
+//         createdBy,
+//         updatedAt,
+//         updatedBy,
+//         deletedAt,
+//         deletedBy
+//       `)
+//       .single()
+
+//     if (error) {
+//       console.error('Error updating product variation:', error)
+//       return NextResponse.json(
+//         { 
+//           status: 'error',
+//           code: 500,
+//           message: 'Failed to update product variation',
+//           timestamp: new Date().toISOString(),
+//           details: error.message
+//         },
+//         { status: 500 }
+//       )
+//     }
+
+//     if (!variation) {
+//       return NextResponse.json(
+//         { 
+//           status: 'error',
+//           code: 404,
+//           message: 'Product variation not found after update',
+//           timestamp: new Date().toISOString()
+//         },
+//         { status: 404 }
+//       )
 //     }
 
 //     return NextResponse.json(
 //       {
 //         status: 'success',
 //         code: 200,
-//         message: 'Model updated successfully',
+//         message: 'Product variation updated successfully',
 //         timestamp: new Date().toISOString(),
-//         data: transformedModel
+//         data: variation
 //       },
 //       { status: 200 }
 //     )
 
 //   } catch (error) {
-//     console.error('Models PUT error:', error)
+//     console.error('Product variations PUT error:', error)
 //     return NextResponse.json(
 //       { 
 //         status: 'error',
 //         code: 500,
 //         message: 'Internal server error',
-//         error: error instanceof Error ? error.message : 'Unknown error',
 //         timestamp: new Date().toISOString()
 //       },
 //       { status: 500 }
@@ -606,8 +593,7 @@
 // }
 
 
-
-// // DELETE - Delete model
+// // DELETE - Delete product variation
 // export async function DELETE(request: NextRequest) {
 //   try {
 //     // Verify authentication
@@ -624,8 +610,11 @@
 //       )
 //     }
 
+//     let employeeId: number;
 //     try {
 //       verifyAccessToken(accessToken)
+//       // Extract employee ID from token for potential soft delete tracking
+//       employeeId = getEmployeeIdFromToken(accessToken)
 //     } catch (error) {
 //       return NextResponse.json(
 //         { 
@@ -639,14 +628,14 @@
 //     }
 
 //     const { searchParams } = new URL(request.url)
-//     const modelID = searchParams.get('modelID') || searchParams.get('id')
+//     const variationId = searchParams.get('variationId') || searchParams.get('id')
 
-//     if (!modelID) {
+//     if (!variationId) {
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 400,
-//           message: 'Model ID is required',
+//           message: 'Variation ID is required',
 //           timestamp: new Date().toISOString()
 //         },
 //         { status: 400 }
@@ -655,59 +644,54 @@
 
 //     const supabase = createServerClient()
 
-//     // Check if model exists
-//     const { data: existingModel } = await supabase
-//       .from('model')
-//       .select('modelId')
-//       .eq('modelId', parseInt(modelID))
-//       .single()
+//     // Check if variation exists
+//     const { data: existingVariation, error: fetchError } = await supabase
+//       .from('productvariation')
+//       .select('variationId')
+//       .eq('variationId', variationId)
+//       .maybeSingle()
 
-//     if (!existingModel) {
+//     if (fetchError) {
+//       console.error('Error checking existing variation:', fetchError);
+//       return NextResponse.json(
+//         { 
+//           status: 'error',
+//           code: 500,
+//           message: 'Failed to check variation existence',
+//           error: fetchError.message,
+//           timestamp: new Date().toISOString()
+//         },
+//         { status: 500 }
+//       )
+//     }
+
+//     if (!existingVariation) {
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 404,
-//           message: 'Model not found',
+//           message: 'Product variation not found',
 //           timestamp: new Date().toISOString()
 //         },
 //         { status: 404 }
 //       )
 //     }
 
-//     // Optional: Check if model is being used by any products
-//     const { data: productsUsingModel } = await supabase
-//       .from('product')
-//       .select('productId')
-//       .eq('modelId', parseInt(modelID))
-//       .limit(1)
-
-//     if (productsUsingModel && productsUsingModel.length > 0) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 400,
-//           message: 'Cannot delete model that is being used by products',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 400 }
-//       )
-//     }
-
-//     // Delete model
+//     // Hard delete (you can implement soft delete by updating deletedAt and deletedBy fields)
 //     const { error } = await supabase
-//       .from('model')
+//       .from('productvariation')
 //       .delete()
-//       .eq('modelId', parseInt(modelID))
+//       .eq('variationId', variationId)
 
 //     if (error) {
-//       console.error('Database error:', error)
+//       console.error('Error deleting product variation:', error)
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 500,
-//           message: 'Failed to delete model',
-//           error: error.message,
-//           timestamp: new Date().toISOString()
+//           message: 'Failed to delete product variation',
+//           timestamp: new Date().toISOString(),
+//           details: error.message
 //         },
 //         { status: 500 }
 //       )
@@ -717,20 +701,19 @@
 //       {
 //         status: 'success',
 //         code: 200,
-//         message: 'Model deleted successfully',
+//         message: 'Product variation deleted successfully',
 //         timestamp: new Date().toISOString()
 //       },
 //       { status: 200 }
 //     )
 
 //   } catch (error) {
-//     console.error('Models DELETE error:', error)
+//     console.error('Product variations DELETE error:', error)
 //     return NextResponse.json(
 //       { 
 //         status: 'error',
 //         code: 500,
 //         message: 'Internal server error',
-//         error: error instanceof Error ? error.message : 'Unknown error',
 //         timestamp: new Date().toISOString()
 //       },
 //       { status: 500 }
@@ -740,16 +723,26 @@
 
 
 
+
+
+
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { verifyAccessToken } from '@/lib/jwt'
 import { getAuthTokenFromCookies } from '@/lib/cookies'
 
-interface Model {
-  modelId: number
-  modelName: string
-  description: string | null
-  brandId: number
+interface ProductVariation {
+  variationId: number
+  versionId: number
+  variationName: string
+  color: string | null
+  size: string | null
+  capacity: string | null
+  barcode: string | null
+  price: number
+  quantity: number
+  minStockLevel: number
+  maxStockLevel: number
   isActive: boolean
   createdAt: Date
   createdBy: number
@@ -770,9 +763,9 @@ function getEmployeeIdFromToken(accessToken: string): number {
   }
 }
 
-// GET - Retrieve models with pagination, sorting, search, and filtering
+// GET - Retrieve product variations with pagination, sorting, search, and filtering
 export async function GET(request: NextRequest) {
-  console.log(' Model GET request started');
+  console.log(' Product Variation GET request started');
   
   try {
     // Verify authentication
@@ -811,33 +804,50 @@ export async function GET(request: NextRequest) {
     // Parse query parameters
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '100')
-    const sortBy = searchParams.get('sortBy') || 'modelId'
+    const sortBy = searchParams.get('sortBy') || 'variationName'
     const sortOrder = searchParams.get('sortOrder') || 'asc'
     const search = searchParams.get('search') || ''
-    const brandId = searchParams.get('brandId')
+    const versionId = searchParams.get('versionId')
+    const color = searchParams.get('color')
+    const size = searchParams.get('size')
+    const capacity = searchParams.get('capacity')
     const isActive = searchParams.get('isActive')
 
-    console.log(' Query parameters:', { page, limit, sortBy, sortOrder, search, brandId, isActive });
+    console.log(' Query parameters:', { page, limit, sortBy, sortOrder, search, versionId, color, size, capacity, isActive });
 
     // Calculate offset for pagination
     const offset = (page - 1) * limit
 
     // Build where clause
     const where: any = {
-      deletedAt: null // Only get non-deleted models
+      deletedAt: null // Only get non-deleted product variations
     }
 
     // Apply search filter
     if (search) {
       where.OR = [
-        { modelName: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } }
+        { variationName: { contains: search, mode: 'insensitive' } },
+        { barcode: { contains: search, mode: 'insensitive' } },
+        { color: { contains: search, mode: 'insensitive' } },
+        { size: { contains: search, mode: 'insensitive' } }
       ]
     }
 
     // Apply filters
-    if (brandId) {
-      where.brandId = parseInt(brandId)
+    if (versionId) {
+      where.versionId = parseInt(versionId)
+    }
+
+    if (color) {
+      where.color = color
+    }
+
+    if (size) {
+      where.size = size
+    }
+
+    if (capacity) {
+      where.capacity = capacity
     }
 
     if (isActive !== null && isActive !== undefined && isActive !== '') {
@@ -846,35 +856,42 @@ export async function GET(request: NextRequest) {
 
     // Build orderBy
     const orderBy: any = {}
-    const validSortColumns = ['modelName', 'modelId', 'description', 'brandId', 'isActive', 'createdAt']
-    const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'modelName'
+    const validSortColumns = ['variationName', 'variationId', 'versionId', 'color', 'size', 'capacity', 'price', 'quantity', 'isActive', 'createdAt']
+    const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'variationName'
     orderBy[sortColumn] = sortOrder === 'asc' ? 'asc' : 'desc'
 
-    console.log('🔍 Where clause:', JSON.stringify(where, null, 2));
-    console.log('📈 Order by:', orderBy);
+    console.log(' Where clause:', JSON.stringify(where, null, 2));
+    console.log(' Order by:', orderBy);
 
     try {
-      console.log('🔌 Testing database connection...');
+      console.log(' Testing database connection...');
       await prisma.$connect();
       console.log(' Database connected successfully');
 
       // Get total count for pagination
       console.log(' Getting total count...');
-      const totalCount = await prisma.model.count({ where });
+      const totalCount = await prisma.productvariation.count({ where });
       console.log(` Total count: ${totalCount}`);
 
-      // Get models with pagination
-      console.log(' Fetching models...');
-      const models: Model[] = await prisma.model.findMany({
+      // Get product variations with pagination
+      console.log(' Fetching product variations...');
+      const productVariationsRaw = await prisma.productvariation.findMany({
         where,
         orderBy,
         skip: offset,
         take: limit,
         select: {
-          modelId: true,
-          modelName: true,
-          description: true,
-          brandId: true,
+          variationId: true,
+          versionId: true,
+          variationName: true,
+          color: true,
+          size: true,
+          capacity: true,
+          barcode: true,
+          price: true,
+          quantity: true,
+          minStockLevel: true,
+          maxStockLevel: true,
           isActive: true,
           createdAt: true,
           createdBy: true,
@@ -883,35 +900,42 @@ export async function GET(request: NextRequest) {
           deletedAt: true,
           deletedBy: true,
         }
-      }) as Model[];
+      }) ;
 
-      console.log(` Found ${models.length} models`);
+      console.log(` Found ${productVariationsRaw.length} product variations`);
 
       // Transform data to match response format
-      const transformedModels = models.map((model: any) => ({
-        modelID: model.modelId,
-        modelName: model.modelName,
-        description: model.description,
-        brandID: model.brandId,
-        isActive: model.isActive,
-        createdAt: model.createdAt,
-        createdBy: model.createdBy || 1,
-        updatedAt: model.updatedAt,
-        updatedBy: model.updatedBy,
-        deletedAt: model.deletedAt,
-        deletedBy: model.deletedBy
+      const transformedProductVariations = productVariationsRaw.map((variation: any) => ({
+        variationId: variation.variationId,
+        versionId: variation.versionId,
+        variationName: variation.variationName,
+        color: variation.color,
+        size: variation.size,
+        capacity: variation.capacity,
+        barcode: variation.barcode,
+        price: variation.price,
+        quantity: variation.quantity,
+        minStockLevel: variation.minStockLevel,
+        maxStockLevel: variation.maxStockLevel,
+        isActive: variation.isActive,
+        createdAt: variation.createdAt,
+        createdBy: variation.createdBy || 1,
+        updatedAt: variation.updatedAt,
+        updatedBy: variation.updatedBy,
+        deletedAt: variation.deletedAt,
+        deletedBy: variation.deletedBy
       }));
 
-      console.log(' Models transformed successfully');
+      console.log(' Product variations transformed successfully');
 
       return NextResponse.json(
         {
           status: 'success',
           code: 200,
-          message: 'Models retrieved successfully',
+          message: 'Product variations retrieved successfully',
           timestamp: new Date().toISOString(),
           data: {
-            items: transformedModels,
+            items: transformedProductVariations,
             pagination: {
               totalItems: totalCount,
               page,
@@ -935,7 +959,7 @@ export async function GET(request: NextRequest) {
         { 
           status: 'error',
           code: 500,
-          message: 'Failed to retrieve models - Database error',
+          message: 'Failed to retrieve product variations - Database error',
           timestamp: new Date().toISOString(),
           details: dbError instanceof Error ? dbError.message : 'Unknown database error'
         },
@@ -944,7 +968,7 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error(' Models GET error:', error);
+    console.error(' Product variations GET error:', error);
     return NextResponse.json(
       { 
         status: 'error',
@@ -959,7 +983,9 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create new model
+
+
+// POST - Create new product variation
 export async function POST(request: NextRequest) {
   try {
     // Verify authentication
@@ -995,26 +1021,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     
     // Validate required fields
-    const { modelName, description, brandID, isActive } = body
+    const { versionId, variationName, color, size, capacity, barcode, price, quantity, minStockLevel, maxStockLevel, isActive } = body
     
-    if (!modelName) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 400,
-          message: 'Model name is required',
-          timestamp: new Date().toISOString()
-        },
-        { status: 400 }
-      )
-    }
+    console.log(' Received data:', { versionId, variationName, color, size, capacity, barcode, price, quantity, minStockLevel, maxStockLevel, isActive });
+    console.log(' Employee ID from token:', employeeId);
 
-    if (!brandID) {
+    if (!versionId || !variationName) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 400,
-          message: 'Brand ID is required',
+          message: 'Version ID and variation name are required',
           timestamp: new Date().toISOString()
         },
         { status: 400 }
@@ -1022,62 +1039,101 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      // Check if brand exists
-      const existingBrand = await prisma.brand.findFirst({
+      // Check if variation already exists for this version with same attributes (only non-deleted)
+      const existingVariation = await prisma.productvariation.findFirst({
         where: {
-          brandId: parseInt(brandID),
+          versionId: parseInt(versionId),
+          variationName,
+          color: color || '',
+          size: size || '',
+          capacity: capacity || '',
           deletedAt: null
         }
       })
 
-      if (!existingBrand) {
-        return NextResponse.json(
-          { 
-            status: 'error',
-            code: 400,
-            message: 'Invalid Brand ID',
-            timestamp: new Date().toISOString()
-          },
-          { status: 400 }
-        )
-      }
-
-      // Check if model name already exists for the same brand
-      const existingModel = await prisma.model.findFirst({
-        where: {
-          modelName,
-          brandId: parseInt(brandID),
-          deletedAt: null
-        }
-      })
-
-      if (existingModel) {
+      if (existingVariation) {
         return NextResponse.json(
           { 
             status: 'error',
             code: 409,
-            message: 'Model name already exists for this brand',
+            message: 'Product variation already exists',
             timestamp: new Date().toISOString()
           },
           { status: 409 }
         )
       }
 
-      // Create new model
-      const model = await prisma.model.create({
+      // Check if barcode already exists (if provided) (only non-deleted)
+      if (barcode) {
+        const existingBarcode = await prisma.productvariation.findFirst({
+          where: {
+            barcode,
+            deletedAt: null
+          }
+        })
+
+        if (existingBarcode) {
+          return NextResponse.json(
+            { 
+              status: 'error',
+              code: 409,
+              message: 'Barcode already exists',
+              timestamp: new Date().toISOString()
+            },
+            { status: 409 }
+          )
+        }
+      }
+
+      // Check if version exists
+      const existingVersion = await prisma.productversion.findFirst({
+        where: {
+          versionId: parseInt(versionId),
+          deletedAt: null
+        }
+      })
+
+      if (!existingVersion) {
+        return NextResponse.json(
+          { 
+            status: 'error',
+            code: 400,
+            message: 'Invalid version ID',
+            timestamp: new Date().toISOString()
+          },
+          { status: 400 }
+        )
+      }
+
+      // Create new product variation
+      const variation = await prisma.productvariation.create({
         data: {
-          modelName,
-          description: description || '',
-          brandId: parseInt(brandID),
+          versionId: parseInt(versionId),
+          variationName,
+          color: color || '',
+          size: size || '',
+          capacity: capacity || '',
+          barcode: barcode || '',
+          price: parseFloat(price?.toString() || '0') || 0,
+          quantity: parseInt(quantity?.toString() || '0') || 0,
+          minStockLevel: parseInt(minStockLevel?.toString() || '0') || 0,
+          maxStockLevel: parseInt(maxStockLevel?.toString() || '0') || 0,
           isActive: isActive !== undefined ? isActive : true,
           createdBy: employeeId,
           updatedBy: employeeId
         },
         select: {
-          modelId: true,
-          modelName: true,
-          description: true,
-          brandId: true,
+          variationId: true,
+          versionId: true,
+          variationName: true,
+          color: true,
+          size: true,
+          capacity: true,
+          barcode: true,
+          price: true,
+          quantity: true,
+          minStockLevel: true,
+          maxStockLevel: true,
           isActive: true,
           createdAt: true,
           createdBy: true,
@@ -1088,39 +1144,26 @@ export async function POST(request: NextRequest) {
         }
       })
 
-      // Transform response
-      const transformedModel = {
-        modelID: model.modelId,
-        modelName: model.modelName,
-        description: model.description,
-        brandID: model.brandId,
-        isActive: model.isActive,
-        createdAt: model.createdAt,
-        createdBy: model.createdBy,
-        updatedAt: model.updatedAt,
-        updatedBy: model.updatedBy,
-        deletedAt: model.deletedAt,
-        deletedBy: model.deletedBy
-      }
+      console.log(' Product variation created:', variation);
 
       return NextResponse.json(
         {
           status: 'success',
           code: 201,
-          message: 'Model created successfully',
+          message: 'Product variation created successfully',
           timestamp: new Date().toISOString(),
-          data: transformedModel
+          data: variation
         },
         { status: 201 }
       )
 
     } catch (dbError) {
-      console.error('Database error:', dbError)
+      console.error(' Database error:', dbError)
       return NextResponse.json(
         { 
           status: 'error',
           code: 500,
-          message: 'Failed to create model',
+          message: 'Failed to create product variation',
           timestamp: new Date().toISOString(),
           details: dbError instanceof Error ? dbError.message : 'Unknown database error'
         },
@@ -1129,7 +1172,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Models POST error:', error)
+    console.error(' Product variations POST error:', error)
     return NextResponse.json(
       { 
         status: 'error',
@@ -1142,7 +1185,8 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT - Update model
+
+// PUT - Update product variation
 export async function PUT(request: NextRequest) {
   try {
     // Verify authentication
@@ -1176,14 +1220,16 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { modelID, ...updateData } = body
+    const { variationId, ...updateData } = body
+
+    console.log(' Update - Employee ID from token:', employeeId);
     
-    if (!modelID) {
+    if (!variationId) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 400,
-          message: 'Model ID is required',
+          message: 'Variation ID is required',
           timestamp: new Date().toISOString()
         },
         { status: 400 }
@@ -1191,71 +1237,67 @@ export async function PUT(request: NextRequest) {
     }
 
     try {
-      // Check if model exists
-      const existingModel = await prisma.model.findFirst({
+      // Check if variation exists and is not deleted
+      const existingVariation = await prisma.productvariation.findFirst({
         where: {
-          modelId: parseInt(modelID),
+          variationId: parseInt(variationId),
           deletedAt: null
         }
       })
 
-      if (!existingModel) {
+      if (!existingVariation) {
         return NextResponse.json(
           { 
             status: 'error',
             code: 404,
-            message: 'Model not found',
+            message: 'Product variation not found',
             timestamp: new Date().toISOString()
           },
           { status: 404 }
         )
       }
 
-      // If brandID is being updated, check if it exists
-      if (updateData.brandID) {
-        const existingBrand = await prisma.brand.findFirst({
+      // Check if barcode already exists (excluding current variation and deleted ones)
+      if (updateData.barcode) {
+        const duplicateBarcode = await prisma.productvariation.findFirst({
           where: {
-            brandId: parseInt(updateData.brandID),
+            barcode: updateData.barcode,
+            variationId: { not: parseInt(variationId) },
             deletedAt: null
           }
         })
 
-        if (!existingBrand) {
-          return NextResponse.json(
-            { 
-              status: 'error',
-              code: 400,
-              message: 'Invalid Brand ID',
-              timestamp: new Date().toISOString()
-            },
-            { status: 400 }
-          )
-        }
-      }
-
-      // Check if model name already exists for the brand (excluding current model)
-      if (updateData.modelName || updateData.brandID) {
-        const modelNameToCheck = updateData.modelName || existingModel.modelName
-        const brandIdToCheck = updateData.brandID ? parseInt(updateData.brandID) : existingModel.brandId
-
-        const duplicateModel = await prisma.model.findFirst({
-          where: {
-            modelName: modelNameToCheck,
-            brandId: brandIdToCheck,
-            modelId: { not: parseInt(modelID) },
-            deletedAt: null
-          }
-        })
-
-        if (duplicateModel) {
+        if (duplicateBarcode) {
           return NextResponse.json(
             { 
               status: 'error',
               code: 409,
-              message: 'Model name already exists for this brand',
+              message: 'Barcode already exists',
               timestamp: new Date().toISOString()
             },
             { status: 409 }
+          )
+        }
+      }
+
+      // If versionId is being updated, check if it exists
+      if (updateData.versionId) {
+        const existingVersion = await prisma.productversion.findFirst({
+          where: {
+            versionId: parseInt(updateData.versionId),
+            deletedAt: null
+          }
+        })
+
+        if (!existingVersion) {
+          return NextResponse.json(
+            { 
+              status: 'error',
+              code: 400,
+              message: 'Invalid version ID',
+              timestamp: new Date().toISOString()
+            },
+            { status: 400 }
           )
         }
       }
@@ -1265,22 +1307,38 @@ export async function PUT(request: NextRequest) {
         updatedBy: employeeId
       }
 
-      if (updateData.modelName !== undefined) prismaUpdateData.modelName = updateData.modelName
-      if (updateData.description !== undefined) prismaUpdateData.description = updateData.description
-      if (updateData.brandID !== undefined) prismaUpdateData.brandId = parseInt(updateData.brandID)
+      if (updateData.versionId !== undefined) prismaUpdateData.versionId = parseInt(updateData.versionId)
+      if (updateData.variationName !== undefined) prismaUpdateData.variationName = updateData.variationName
+      if (updateData.color !== undefined) prismaUpdateData.color = updateData.color
+      if (updateData.size !== undefined) prismaUpdateData.size = updateData.size
+      if (updateData.capacity !== undefined) prismaUpdateData.capacity = updateData.capacity
+      if (updateData.barcode !== undefined) prismaUpdateData.barcode = updateData.barcode
+      if (updateData.price !== undefined) prismaUpdateData.price = parseFloat(updateData.price?.toString() || '0')
+      if (updateData.quantity !== undefined) prismaUpdateData.quantity = parseInt(updateData.quantity?.toString() || '0')
+      if (updateData.minStockLevel !== undefined) prismaUpdateData.minStockLevel = parseInt(updateData.minStockLevel?.toString() || '0')
+      if (updateData.maxStockLevel !== undefined) prismaUpdateData.maxStockLevel = parseInt(updateData.maxStockLevel?.toString() || '0')
       if (updateData.isActive !== undefined) prismaUpdateData.isActive = updateData.isActive
 
-      // Update model
-      const model = await prisma.model.update({
+      console.log(' Update data:', prismaUpdateData);
+
+      // Update product variation
+      const variation = await prisma.productvariation.update({
         where: {
-          modelId: parseInt(modelID)
+          variationId: parseInt(variationId)
         },
         data: prismaUpdateData,
         select: {
-          modelId: true,
-          modelName: true,
-          description: true,
-          brandId: true,
+          variationId: true,
+          versionId: true,
+          variationName: true,
+          color: true,
+          size: true,
+          capacity: true,
+          barcode: true,
+          price: true,
+          quantity: true,
+          minStockLevel: true,
+          maxStockLevel: true,
           isActive: true,
           createdAt: true,
           createdBy: true,
@@ -1291,39 +1349,24 @@ export async function PUT(request: NextRequest) {
         }
       })
 
-      // Transform response
-      const transformedModel = {
-        modelID: model.modelId,
-        modelName: model.modelName,
-        description: model.description,
-        brandID: model.brandId,
-        isActive: model.isActive,
-        createdAt: model.createdAt,
-        createdBy: model.createdBy,
-        updatedAt: model.updatedAt,
-        updatedBy: model.updatedBy,
-        deletedAt: model.deletedAt,
-        deletedBy: model.deletedBy
-      }
-
       return NextResponse.json(
         {
           status: 'success',
           code: 200,
-          message: 'Model updated successfully',
+          message: 'Product variation updated successfully',
           timestamp: new Date().toISOString(),
-          data: transformedModel
+          data: variation
         },
         { status: 200 }
       )
 
     } catch (dbError) {
-      console.error('Database error:', dbError)
+      console.error(' Database error:', dbError)
       return NextResponse.json(
         { 
           status: 'error',
           code: 500,
-          message: 'Failed to update model',
+          message: 'Failed to update product variation',
           timestamp: new Date().toISOString(),
           details: dbError instanceof Error ? dbError.message : 'Unknown database error'
         },
@@ -1332,7 +1375,7 @@ export async function PUT(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Models PUT error:', error)
+    console.error(' Product variations PUT error:', error)
     return NextResponse.json(
       { 
         status: 'error',
@@ -1345,7 +1388,8 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE - Delete model (soft delete)
+
+// DELETE - Delete product variation (soft delete)
 export async function DELETE(request: NextRequest) {
   try {
     // Verify authentication
@@ -1379,14 +1423,14 @@ export async function DELETE(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const modelID = searchParams.get('modelID') || searchParams.get('id')
+    const variationId = searchParams.get('variationId') || searchParams.get('id')
 
-    if (!modelID) {
+    if (!variationId) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 400,
-          message: 'Model ID is required',
+          message: 'Variation ID is required',
           timestamp: new Date().toISOString()
         },
         { status: 400 }
@@ -1394,50 +1438,50 @@ export async function DELETE(request: NextRequest) {
     }
 
     try {
-      // Check if model exists
-      const existingModel = await prisma.model.findFirst({
+      // Check if variation exists and is not already deleted
+      const existingVariation = await prisma.productvariation.findFirst({
         where: {
-          modelId: parseInt(modelID),
+          variationId: parseInt(variationId),
           deletedAt: null
         }
       })
 
-      if (!existingModel) {
+      if (!existingVariation) {
         return NextResponse.json(
           { 
             status: 'error',
             code: 404,
-            message: 'Model not found',
+            message: 'Product variation not found',
             timestamp: new Date().toISOString()
           },
           { status: 404 }
         )
       }
 
-      // Check if model is being used by any products
-      const productsUsingModel = await prisma.product.findFirst({
+      // Check if variation is being used by any spec details
+      const specDetailsUsingVariation = await prisma.specdetails.findFirst({
         where: {
-          modelId: parseInt(modelID),
+          variationId: parseInt(variationId),
           deletedAt: null
         }
       })
 
-      if (productsUsingModel) {
+      if (specDetailsUsingVariation) {
         return NextResponse.json(
           { 
             status: 'error',
             code: 400,
-            message: 'Cannot delete model that is being used by products',
+            message: 'Cannot delete product variation that is being used by spec details',
             timestamp: new Date().toISOString()
           },
           { status: 400 }
         )
       }
 
-      // Soft delete the model
-      await prisma.model.update({
+      // Soft delete the product variation
+      await prisma.productvariation.update({
         where: {
-          modelId: parseInt(modelID)
+          variationId: parseInt(variationId)
         },
         data: {
           deletedAt: new Date(),
@@ -1450,19 +1494,19 @@ export async function DELETE(request: NextRequest) {
         {
           status: 'success',
           code: 200,
-          message: 'Model deleted successfully',
+          message: 'Product variation deleted successfully',
           timestamp: new Date().toISOString()
         },
         { status: 200 }
       )
 
     } catch (dbError) {
-      console.error('Database error:', dbError)
+      console.error(' Database error:', dbError)
       return NextResponse.json(
         { 
           status: 'error',
           code: 500,
-          message: 'Failed to delete model',
+          message: 'Failed to delete product variation',
           timestamp: new Date().toISOString(),
           details: dbError instanceof Error ? dbError.message : 'Unknown database error'
         },
@@ -1471,7 +1515,7 @@ export async function DELETE(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Models DELETE error:', error)
+    console.error(' Product variations DELETE error:', error)
     return NextResponse.json(
       { 
         status: 'error',
@@ -1484,14 +1528,19 @@ export async function DELETE(request: NextRequest) {
   }
 }
 
+
+
+
+
+
 /**
  * @swagger
- * /api/model:
+ * /api/productvariation:
  *   get:
  *     tags:
- *       - Models
- *     summary: Get all models
- *     description: Retrieve all models with pagination, sorting, search, and filtering
+ *       - Product Variations
+ *     summary: Get all product variations
+ *     description: Retrieve all product variations with pagination, sorting, search, and filtering
  *     security:
  *       - cookieAuth: []
  *     parameters:
@@ -1511,8 +1560,8 @@ export async function DELETE(request: NextRequest) {
  *         name: sortBy
  *         schema:
  *           type: string
- *           default: modelName
- *           enum: [modelName, description, brandId, isActive, createdAt]
+ *           default: variationName
+ *           enum: [variationName, variationId, versionId, color, size, capacity, price, quantity, isActive, createdAt]
  *         description: Sort by field
  *       - in: query
  *         name: sortOrder
@@ -1525,12 +1574,27 @@ export async function DELETE(request: NextRequest) {
  *         name: search
  *         schema:
  *           type: string
- *         description: Search term for model name or description
+ *         description: Search term for variation name, barcode, color, or size
  *       - in: query
- *         name: brandId
+ *         name: versionId
  *         schema:
  *           type: integer
- *         description: Filter by brand ID
+ *         description: Filter by version ID
+ *       - in: query
+ *         name: color
+ *         schema:
+ *           type: string
+ *         description: Filter by color
+ *       - in: query
+ *         name: size
+ *         schema:
+ *           type: string
+ *         description: Filter by size
+ *       - in: query
+ *         name: capacity
+ *         schema:
+ *           type: string
+ *         description: Filter by capacity
  *       - in: query
  *         name: isActive
  *         schema:
@@ -1538,7 +1602,7 @@ export async function DELETE(request: NextRequest) {
  *         description: Filter by active status
  *     responses:
  *       200:
- *         description: Models retrieved successfully
+ *         description: Product variations retrieved successfully
  *         content:
  *           application/json:
  *             schema:
@@ -1552,7 +1616,7 @@ export async function DELETE(request: NextRequest) {
  *                         items:
  *                           type: array
  *                           items:
- *                             $ref: '#/components/schemas/Model'
+ *                             $ref: '#/components/schemas/ProductVariation'
  *       401:
  *         description: Unauthorized
  *         content:
@@ -1567,14 +1631,17 @@ export async function DELETE(request: NextRequest) {
  *               $ref: '#/components/schemas/ApiResponse'
  */
 
+
+
+
 /**
  * @swagger
- * /api/model:
+ * /api/productvariation:
  *   post:
  *     tags:
- *       - Models
- *     summary: Create a new model
- *     description: Create a new model in the system
+ *       - Product Variations
+ *     summary: Create a new product variation
+ *     description: Create a new product variation in the system
  *     security:
  *       - cookieAuth: []
  *     requestBody:
@@ -1582,10 +1649,59 @@ export async function DELETE(request: NextRequest) {
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/CreateModelRequest'
+ *             type: object
+ *             required:
+ *               - versionId
+ *               - variationName
+ *             properties:
+ *               versionId:
+ *                 type: integer
+ *                 description: Product version ID
+ *                 example: 1
+ *               variationName:
+ *                 type: string
+ *                 description: Variation name
+ *                 example: "16GB RAM / 512GB SSD / Space Gray"
+ *               color:
+ *                 type: string
+ *                 description: Color
+ *                 example: "Space Gray"
+ *               size:
+ *                 type: string
+ *                 description: Size
+ *                 example: "16-inch"
+ *               capacity:
+ *                 type: string
+ *                 description: Storage capacity
+ *                 example: "512GB"
+ *               barcode:
+ *                 type: string
+ *                 description: Barcode (unique if provided)
+ *                 example: "1234567890123"
+ *               price:
+ *                 type: number
+ *                 format: float
+ *                 description: Price
+ *                 example: 2499.99
+ *               quantity:
+ *                 type: integer
+ *                 description: Initial quantity
+ *                 example: 10
+ *               minStockLevel:
+ *                 type: integer
+ *                 description: Minimum stock level
+ *                 example: 5
+ *               maxStockLevel:
+ *                 type: integer
+ *                 description: Maximum stock level
+ *                 example: 50
+ *               isActive:
+ *                 type: boolean
+ *                 description: Active status
+ *                 default: true
  *     responses:
  *       201:
- *         description: Model created successfully
+ *         description: Product variation created successfully
  *         content:
  *           application/json:
  *             schema:
@@ -1594,9 +1710,9 @@ export async function DELETE(request: NextRequest) {
  *                 - type: object
  *                   properties:
  *                     data:
- *                       $ref: '#/components/schemas/Model'
+ *                       $ref: '#/components/schemas/ProductVariation'
  *       400:
- *         description: Bad request - Missing required fields or invalid brand ID
+ *         description: Bad request - Missing required fields
  *         content:
  *           application/json:
  *             schema:
@@ -1608,7 +1724,7 @@ export async function DELETE(request: NextRequest) {
  *             schema:
  *               $ref: '#/components/schemas/ApiResponse'
  *       409:
- *         description: Model name already exists for this brand
+ *         description: Product variation or barcode already exists
  *         content:
  *           application/json:
  *             schema:
@@ -1621,14 +1737,16 @@ export async function DELETE(request: NextRequest) {
  *               $ref: '#/components/schemas/ApiResponse'
  */
 
+
+
 /**
  * @swagger
- * /api/model:
+ * /api/productvariation:
  *   put:
  *     tags:
- *       - Models
- *     summary: Update a model
- *     description: Update an existing model in the system
+ *       - Product Variations
+ *     summary: Update a product variation
+ *     description: Update an existing product variation in the system
  *     security:
  *       - cookieAuth: []
  *     requestBody:
@@ -1639,28 +1757,61 @@ export async function DELETE(request: NextRequest) {
  *             allOf:
  *               - type: object
  *                 required:
- *                   - modelID
+ *                   - variationId
  *                 properties:
- *                   modelID:
+ *                   variationId:
  *                     type: integer
- *                     description: Model ID to update
+ *                     description: Variation ID to update
+ *                     example: 1
  *               - type: object
  *                 properties:
- *                   modelName:
- *                     type: string
- *                     description: Model name
- *                   description:
- *                     type: string
- *                     description: Model description
- *                   brandID:
+ *                   versionId:
  *                     type: integer
- *                     description: Brand ID
+ *                     description: Product version ID
+ *                     example: 1
+ *                   variationName:
+ *                     type: string
+ *                     description: Variation name
+ *                     example: "32GB RAM / 1TB SSD / Space Gray"
+ *                   color:
+ *                     type: string
+ *                     description: Color
+ *                     example: "Space Gray"
+ *                   size:
+ *                     type: string
+ *                     description: Size
+ *                     example: "16-inch"
+ *                   capacity:
+ *                     type: string
+ *                     description: Storage capacity
+ *                     example: "1TB"
+ *                   barcode:
+ *                     type: string
+ *                     description: Barcode
+ *                     example: "1234567890124"
+ *                   price:
+ *                     type: number
+ *                     format: float
+ *                     description: Price
+ *                     example: 2999.99
+ *                   quantity:
+ *                     type: integer
+ *                     description: Quantity
+ *                     example: 15
+ *                   minStockLevel:
+ *                     type: integer
+ *                     description: Minimum stock level
+ *                     example: 5
+ *                   maxStockLevel:
+ *                     type: integer
+ *                     description: Maximum stock level
+ *                     example: 50
  *                   isActive:
  *                     type: boolean
  *                     description: Active status
  *     responses:
  *       200:
- *         description: Model updated successfully
+ *         description: Product variation updated successfully
  *         content:
  *           application/json:
  *             schema:
@@ -1669,9 +1820,9 @@ export async function DELETE(request: NextRequest) {
  *                 - type: object
  *                   properties:
  *                     data:
- *                       $ref: '#/components/schemas/Model'
+ *                       $ref: '#/components/schemas/ProductVariation'
  *       400:
- *         description: Bad request - Missing model ID or invalid brand ID
+ *         description: Bad request - Missing variation ID
  *         content:
  *           application/json:
  *             schema:
@@ -1683,13 +1834,13 @@ export async function DELETE(request: NextRequest) {
  *             schema:
  *               $ref: '#/components/schemas/ApiResponse'
  *       404:
- *         description: Model not found
+ *         description: Product variation not found
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ApiResponse'
  *       409:
- *         description: Model name already exists for this brand
+ *         description: Barcode already exists
  *         content:
  *           application/json:
  *             schema:
@@ -1702,38 +1853,42 @@ export async function DELETE(request: NextRequest) {
  *               $ref: '#/components/schemas/ApiResponse'
  */
 
+
+
 /**
  * @swagger
- * /api/model:
+ * /api/productvariation:
  *   delete:
  *     tags:
- *       - Models
- *     summary: Delete a model
- *     description: Delete a model from the system (soft delete)
+ *       - Product Variations
+ *     summary: Delete a product variation
+ *     description: Delete a product variation from the system
  *     security:
  *       - cookieAuth: []
  *     parameters:
  *       - in: query
- *         name: modelID
+ *         name: variationId
  *         required: false
  *         schema:
  *           type: integer
- *         description: Model ID to delete
+ *         description: Variation ID to delete
+ *         example: 1
  *       - in: query
  *         name: id
  *         required: false
  *         schema:
  *           type: integer
- *         description: Alternative model ID parameter
+ *         description: Alternative variation ID parameter
+ *         example: 1
  *     responses:
  *       200:
- *         description: Model deleted successfully
+ *         description: Product variation deleted successfully
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ApiResponse'
  *       400:
- *         description: Bad request - Missing model ID or model in use by products
+ *         description: Bad request - Missing variation ID
  *         content:
  *           application/json:
  *             schema:
@@ -1745,7 +1900,7 @@ export async function DELETE(request: NextRequest) {
  *             schema:
  *               $ref: '#/components/schemas/ApiResponse'
  *       404:
- *         description: Model not found
+ *         description: Product variation not found
  *         content:
  *           application/json:
  *             schema:

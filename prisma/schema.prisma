@@ -1,0 +1,260 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model brand {
+  brandId           Int        @id @default(autoincrement())
+  brandName         String?    @unique
+  description       String?
+  country           String?
+  isActive          Boolean?   @default(true)
+  createdAt         DateTime?  @default(now())
+  createdBy         Int
+  updatedAt         DateTime?  @default(now())
+  updatedBy         Int
+  deletedAt         DateTime?
+  deletedBy         Int?
+  createdByEmployee employees  @relation("brand_createdBy", fields: [createdBy], references: [EmployeeID])
+  deletedByEmployee employees? @relation("brand_deletedBy", fields: [deletedBy], references: [EmployeeID])
+  updatedByEmployee employees  @relation("brand_updatedBy", fields: [updatedBy], references: [EmployeeID])
+  model             model[]
+  product           product[]
+
+  @@map("brand")
+}
+
+model category {
+  categoryId        Int        @id @default(autoincrement())
+  categoryName      String?
+  description       String?
+  isActive          Boolean?   @default(true)
+  createdAt         DateTime?  @default(now())
+  createdBy         Int
+  updatedAt         DateTime?  @default(now())
+  updatedBy         Int
+  deletedAt         DateTime?
+  deletedBy         Int?
+  mainCategory      String?
+  createdByEmployee employees  @relation("category_createdBy", fields: [createdBy], references: [EmployeeID])
+  deletedByEmployee employees? @relation("category_deletedBy", fields: [deletedBy], references: [EmployeeID])
+  updatedByEmployee employees  @relation("category_updatedBy", fields: [updatedBy], references: [EmployeeID])
+  product           product[]
+
+  @@map("category")
+}
+
+model employees {
+  EmployeeID               Int              @id @default(autoincrement())
+  Email                    String           @unique
+  Phone                    String?
+  UserName                 String           @unique
+  Password                 String
+  RoleID                   Int
+  CreatedBy                Int?
+  CreatedDate              DateTime?        @default(now())
+  brand_createdBy          brand[]          @relation("brand_createdBy")
+  brand_deletedBy          brand[]          @relation("brand_deletedBy")
+  brand_updatedBy          brand[]          @relation("brand_updatedBy")
+  category_createdBy       category[]       @relation("category_createdBy")
+  category_deletedBy       category[]       @relation("category_deletedBy")
+  category_updatedBy       category[]       @relation("category_updatedBy")
+  model_createdBy          model[]          @relation("model_createdBy")
+  model_deletedBy          model[]          @relation("model_deletedBy")
+  model_updatedBy          model[]          @relation("model_updatedBy")
+  product_createdBy        product[]        @relation("product_createdBy")
+  product_deletedBy        product[]        @relation("product_deletedBy")
+  product_updatedBy        product[]        @relation("product_updatedBy")
+  productversion_createdBy productversion[] @relation("productVersion_createdBy")
+  productversion_deletedBy productversion[] @relation("productVersion_deletedBy")
+  productversion_updatedBy productversion[] @relation("productVersion_updatedBy")
+  supplier_createdBy       supplier[]       @relation("supplier_createdBy")
+  supplier_deletedBy       supplier[]       @relation("supplier_deletedBy")
+  supplier_updatedBy       supplier[]       @relation("supplier_updatedBy")
+
+  @@map("employees")
+}
+
+model model {
+  modelId           Int        @id @default(autoincrement())
+  modelName         String?
+  description       String?
+  brandId           Int
+  isActive          Boolean?   @default(true)
+  createdAt         DateTime?  @default(now())
+  createdBy         Int
+  updatedAt         DateTime?  @default(now())
+  updatedBy         Int
+  deletedAt         DateTime?
+  deletedBy         Int?
+  brand             brand      @relation(fields: [brandId], references: [brandId])
+  createdByEmployee employees  @relation("model_createdBy", fields: [createdBy], references: [EmployeeID])
+  deletedByEmployee employees? @relation("model_deletedBy", fields: [deletedBy], references: [EmployeeID])
+  updatedByEmployee employees  @relation("model_updatedBy", fields: [updatedBy], references: [EmployeeID])
+  product           product[]
+
+  @@map("model")
+}
+
+model product {
+  productId         Int               @id @default(autoincrement())
+  sku               String?           @unique
+  productName       String?
+  description       String?
+  categoryId        Int
+  brandId           Int
+  modelId           Int
+  createdBy         Int
+  supplierId        Int
+  isActive          Boolean?          @default(true)
+  createdAt         DateTime?         @default(now())
+  updatedAt         DateTime?         @updatedAt
+  updatedBy         Int?
+  deletedBy         Int?
+  deletedAt         DateTime?
+  brand             brand             @relation(fields: [brandId], references: [brandId])
+  category          category          @relation(fields: [categoryId], references: [categoryId])
+  createdByEmployee employees         @relation("product_createdBy", fields: [createdBy], references: [EmployeeID])
+  deletedByEmployee employees?        @relation("product_deletedBy", fields: [deletedBy], references: [EmployeeID])
+  model             model             @relation(fields: [modelId], references: [modelId])
+  supplier          supplier          @relation(fields: [supplierId], references: [supplierId])
+  updatedByEmployee employees?        @relation("product_updatedBy", fields: [updatedBy], references: [EmployeeID])
+  productSupplier   productsupplier[]
+  productVersion    productversion[]
+
+  @@map("product")
+}
+
+model productsupplier {
+  productSupplierId Int       @id
+  productId         Int
+  supplierId        Int
+  startDate         DateTime?
+  endDate           DateTime?
+  isPrimarySupplier Boolean?
+  status            String?
+  createdBy         Int?
+  createdAt         DateTime?
+  updatedBy         Int?
+  updatedAt         DateTime?
+  deletedBy         Int?
+  deletedAt         DateTime?
+  product           product   @relation(fields: [productId], references: [productId])
+  supplier          supplier  @relation(fields: [supplierId], references: [supplierId])
+
+  @@map("productsupplier")
+}
+
+model productvariation {
+  variationId   Int            @id @default(autoincrement())
+  versionId     Int
+  variationName String?
+  color         String?
+  size          String?
+  capacity      String?
+  barcode       String?
+  price         Decimal?
+  quantity      Int?
+  minStockLevel Int?
+  maxStockLevel Int?
+  isActive      Boolean?       @default(true)
+  createdBy     Int?
+  createdAt     DateTime?      @default(now())
+  updatedBy     Int?
+  updatedAt     DateTime?      @updatedAt
+  deletedBy     Int?
+  deletedAt     DateTime?
+  version       productversion @relation(fields: [versionId], references: [versionId])
+  specdetails   specdetails[]
+
+  @@map("productvariation")
+}
+
+model productversion {
+  versionId         Int                @id @default(autoincrement())
+  productId         Int
+  versionNumber     String?
+  releaseDate       DateTime?
+  isActive          Boolean?           @default(true)
+  createdBy         Int?
+  createdAt         DateTime?          @default(now())
+  updatedBy         Int?
+  updatedAt         DateTime?          @updatedAt
+  deletedBy         Int?
+  deletedAt         DateTime?
+  variations        productvariation[]
+  createdByEmployee employees?         @relation("productVersion_createdBy", fields: [createdBy], references: [EmployeeID])
+  deletedByEmployee employees?         @relation("productVersion_deletedBy", fields: [deletedBy], references: [EmployeeID])
+  product           product            @relation(fields: [productId], references: [productId])
+  updatedByEmployee employees?         @relation("productVersion_updatedBy", fields: [updatedBy], references: [EmployeeID])
+
+  @@map("productversion")
+}
+
+model roles {
+  RoleID      Int     @id @default(autoincrement())
+  RoleName    String
+  Description String?
+
+  @@map("roles")
+}
+
+model specs {
+  specId      Int           @id @default(autoincrement())
+  specName    String?
+  createdBy   Int?
+  createdAt   DateTime?
+  updatedBy   Int?
+  updatedAt   DateTime?
+  deletedBy   Int?
+  deletedAt   DateTime?
+  specdetails specdetails[]
+
+  @@map("specs")
+}
+
+model specdetails {
+  specDetailId Int              @id @default(autoincrement())
+  variationId  Int
+  specId       Int
+  specValue    String?
+  createdBy    Int?
+  createdAt    DateTime?        @default(now())
+  updatedBy    Int?
+  updatedAt    DateTime?        @updatedAt
+  deletedBy    Int?
+  deletedAt    DateTime?
+  spec         specs            @relation(fields: [specId], references: [specId])
+  variation    productvariation @relation(fields: [variationId], references: [variationId])
+
+  @@map("specdetails")
+}
+
+model supplier {
+  supplierId        Int               @id @default(autoincrement())
+  supplierName      String?
+  contactPerson     String?
+  email             String?
+  phone             String?
+  address           String?
+  city              String?
+  country           String?
+  isActive          Boolean?          @default(true)
+  createdAt         DateTime?         @default(now())
+  createdBy         Int
+  updatedAt         DateTime?         @default(now())
+  updatedBy         Int
+  deletedAt         DateTime?
+  deletedBy         Int?
+  product           product[]
+  productsupplier   productsupplier[]
+  createdByEmployee employees         @relation("supplier_createdBy", fields: [createdBy], references: [EmployeeID])
+  deletedByEmployee employees?        @relation("supplier_deletedBy", fields: [deletedBy], references: [EmployeeID])
+  updatedByEmployee employees         @relation("supplier_updatedBy", fields: [updatedBy], references: [EmployeeID])
+
+  @@map("supplier")
+}

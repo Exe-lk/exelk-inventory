@@ -102,6 +102,11 @@ const Sidebar: React.FC<SidebarProps> = ({
       icon: Users,
       label: 'Suppliers',
       href: '/supplier'
+    },
+    {
+      icon: FileText,
+      label: 'API Documentation',
+      href: '/swagger'
     }
   ];
 

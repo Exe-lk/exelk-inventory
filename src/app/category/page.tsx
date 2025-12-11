@@ -618,7 +618,7 @@ const CategoryPage: React.FC = () => {
                   fields={getFormFields(true)}
                   onSubmit={handleUpdateCategory}
                   title="Update Category"
-                  updateButtonLabel="Update Category"
+                  // updateButtonLabel="Update Category"
                   loading={isSubmitting}
                   initialData={{
                     categoryName: selectedCategory.CategoryName,

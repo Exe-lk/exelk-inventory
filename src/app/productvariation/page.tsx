@@ -421,8 +421,15 @@ const ProductVariationPage: React.FC = () => {
       sortable: true,
       render: (value: number) => (
         <span className="font-medium text-gray-900">
-          {value ? `$${value.toLocaleString()}` : '$0'}
+          {value ? `LKR:${value.toLocaleString()}` : '$0'}
         </span>
+
+        // <span className="font-medium ">
+        //   LKR:{value ? value.toLocaleString('en-US', {
+        //     minimumFractionDigits: 2,
+        //     maximumFractionDigits: 2
+        //   }) : '0.00'}
+        // </span>
       )
     },
     {

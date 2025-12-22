@@ -57,28 +57,42 @@ model employees {
   RoleID                   Int
   CreatedBy                Int?
   CreatedDate              DateTime?        @default(now())
-  bincard                  bincard[]
+  
+  // Brand relations
   brand_createdBy          brand[]          @relation("brand_createdBy")
   brand_deletedBy          brand[]          @relation("brand_deletedBy")
   brand_updatedBy          brand[]          @relation("brand_updatedBy")
+  
+  // Category relations
   category_createdBy       category[]       @relation("category_createdBy")
   category_deletedBy       category[]       @relation("category_deletedBy")
   category_updatedBy       category[]       @relation("category_updatedBy")
-  gin                      gin[]
-  grn                      grn[]
+  
+  // Model relations
   model_createdBy          model[]          @relation("model_createdBy")
   model_deletedBy          model[]          @relation("model_deletedBy")
   model_updatedBy          model[]          @relation("model_updatedBy")
+  
+  // Product relations
   product_createdBy        product[]        @relation("product_createdBy")
   product_deletedBy        product[]        @relation("product_deletedBy")
   product_updatedBy        product[]        @relation("product_updatedBy")
+  
+  // Product version relations
   productversion_createdBy productversion[] @relation("productVersion_createdBy")
   productversion_deletedBy productversion[] @relation("productVersion_deletedBy")
   productversion_updatedBy productversion[] @relation("productVersion_updatedBy")
+  
+  // Supplier relations
   supplier_createdBy       supplier[]       @relation("supplier_createdBy")
   supplier_deletedBy       supplier[]       @relation("supplier_deletedBy")
   supplier_updatedBy       supplier[]       @relation("supplier_updatedBy")
-  transactionlog           transactionlog[]
+  
+  // Other relations - FIXED RELATION NAMES
+  bincard                  bincard[]        @relation("employee_bincard")
+  transactionLog           transactionLog[] @relation("employee_transactionLog")
+  grn                      grn[]            @relation("employee_grn")
+  gin                      gin[]            @relation("employee_gin")
 
   @@map("employees")
 }
@@ -120,8 +134,6 @@ model product {
   updatedBy         Int?
   deletedBy         Int?
   deletedAt         DateTime?
-  gindetails        gindetails[]
-  grndetails        grndetails[]
   brand             brand             @relation(fields: [brandId], references: [brandId])
   category          category          @relation(fields: [categoryId], references: [categoryId])
   createdByEmployee employees         @relation("product_createdBy", fields: [createdBy], references: [EmployeeID])
@@ -131,7 +143,11 @@ model product {
   updatedByEmployee employees?        @relation("product_updatedBy", fields: [updatedBy], references: [EmployeeID])
   productSupplier   productsupplier[]
   productVersion    productversion[]
-  stock             stock[]
+  
+  // FIXED RELATION NAMES
+  grnDetails        grnDetails[]      @relation("product_grnDetails")
+  ginDetails        ginDetails[]      @relation("product_ginDetails")
+  stock             stock[]           @relation("product_stock")
 
   @@map("product")
 }
@@ -175,10 +191,12 @@ model productvariation {
   updatedAt     DateTime?      @updatedAt
   deletedBy     Int?
   deletedAt     DateTime?
-  bincard       bincard[]
   version       productversion @relation(fields: [versionId], references: [versionId])
   specdetails   specdetails[]
-  stock         stock[]
+  
+  // FIXED RELATION NAMES
+  bincard       bincard[]      @relation("variation_bincard")
+  stock         stock[]        @relation("variation_stock")
 
   @@map("productvariation")
 }
@@ -259,110 +277,142 @@ model supplier {
   updatedBy         Int
   deletedAt         DateTime?
   deletedBy         Int?
-  grn               grn[]
   product           product[]
   productsupplier   productsupplier[]
   createdByEmployee employees         @relation("supplier_createdBy", fields: [createdBy], references: [EmployeeID])
   deletedByEmployee employees?        @relation("supplier_deletedBy", fields: [deletedBy], references: [EmployeeID])
   updatedByEmployee employees         @relation("supplier_updatedBy", fields: [updatedBy], references: [EmployeeID])
+  
+  // FIXED RELATION NAME
+  grn               grn[]             @relation("supplier_grn")
 
   @@map("supplier")
 }
 
 model bincard {
-  bincardId        Int              @id @default(autoincrement())
-  variationId      Int
-  transactionDate  DateTime?        @db.Date
-  transactionType  String?          @db.VarChar
-  referenceId      Int?
-  quantityIn       Int?
-  quantityOut      Int?
-  balance          Int?
-  employeeId       Int
-  remarks          String?
-  employees        employees        @relation(fields: [employeeId], references: [EmployeeID], onDelete: NoAction, onUpdate: NoAction, map: "fk_bincard_employee")
-  productvariation productvariation @relation(fields: [variationId], references: [variationId], onDelete: NoAction, onUpdate: NoAction, map: "fk_bincard_variation")
+  binCardId       Int              @id @default(autoincrement()) @map("BinCardID")
+  variationId     Int              @map("VariationID")
+  transactionDate DateTime?        @map("TransactionDate")
+  transactionType String?          @map("TransactionType")
+  referenceId     Int?             @map("ReferenceID")
+  quantityIn      Int?             @map("QuantityIn")
+  quantityOut     Int?             @map("QuantityOut")
+  balance         Int?             @map("Balance")
+  employeeId      Int              @map("EmployeeID")
+  remarks         String?          @map("Remarks")
+
+  // Relations - FIXED WITH CORRECT RELATION NAMES
+  variation productvariation @relation("variation_bincard", fields: [variationId], references: [variationId])
+  employee  employees        @relation("employee_bincard", fields: [employeeId], references: [EmployeeID])
+
+  @@map("BinCard")
 }
 
-model gin {
-  ginId       Int          @id @default(autoincrement())
-  ginNumber   String?      @unique @db.VarChar
-  employeeId  Int
-  issuedTo    String?      @db.VarChar
-  issueReason String?      @db.VarChar
-  issueDate   DateTime?    @db.Date
-  remarks     String?
-  createdDate DateTime?    @db.Timestamp(6)
-  updatedDate DateTime?    @db.Timestamp(6)
-  stockId     Int?
-  employees   employees    @relation(fields: [employeeId], references: [EmployeeID], onDelete: NoAction, onUpdate: NoAction, map: "fk_gin_employee")
-  stock       stock?       @relation(fields: [stockId], references: [stockId], onDelete: NoAction, onUpdate: NoAction, map: "fk_gin_stock")
-  gindetails  gindetails[]
-}
+model transactionLog {
+  logId       Int       @id @default(autoincrement()) @map("LogID")
+  employeeId  Int       @map("EmployeeID")
+  actionType  String?   @map("ActionType")
+  entityName  String?   @map("EntityName")
+  referenceId Int?      @map("ReferenceID")
+  actionDate  DateTime? @map("ActionDate")
+  oldValue    String?   @map("OldValue")
+  newValue    String?   @map("NewValue")
 
-model gindetails {
-  ginDetailId    Int      @id @default(autoincrement())
-  ginId          Int
-  productId      Int
-  quantityIssued Int?
-  unitCost       Decimal? @db.Decimal
-  subTotal       Decimal? @db.Decimal
-  location       String?
-  gin            gin      @relation(fields: [ginId], references: [ginId], onDelete: NoAction, onUpdate: NoAction, map: "fk_gindetails_gin")
-  product        product  @relation(fields: [productId], references: [productId], onDelete: NoAction, onUpdate: NoAction, map: "fk_gindetails_product")
+  // Relations - FIXED WITH CORRECT RELATION NAME
+  employee employees @relation("employee_transactionLog", fields: [employeeId], references: [EmployeeID])
+
+  @@map("TransactionLog")
 }
 
 model grn {
-  grnId        Int          @id @default(autoincrement())
-  grnNumber    String?      @unique @db.VarChar
-  supplierId   Int
-  employeeId   Int
-  receivedDate DateTime?    @db.Date
-  totalAmount  Decimal?     @db.Decimal
-  remarks      String?
-  createdDate  DateTime?    @db.Timestamp(6)
-  updatedDate  DateTime?    @db.Timestamp(6)
-  stockId      Int?
-  employees    employees    @relation(fields: [employeeId], references: [EmployeeID], onDelete: NoAction, onUpdate: NoAction, map: "fk_grn_employee")
-  stock        stock?       @relation(fields: [stockId], references: [stockId], onDelete: NoAction, onUpdate: NoAction, map: "fk_grn_stock")
-  supplier     supplier     @relation(fields: [supplierId], references: [supplierId], onDelete: NoAction, onUpdate: NoAction, map: "fk_grn_supplier")
-  grndetails   grndetails[]
+  grnId        Int          @id @default(autoincrement()) @map("GRN_ID")
+  grnNumber    String?      @unique @map("GRN_Number")
+  supplierId   Int          @map("SupplierID")
+  employeeId   Int          @map("EmployeeID")
+  receivedDate DateTime?    @map("ReceivedDate")
+  totalAmount  Decimal?     @map("TotalAmount")
+  remarks      String?      @map("Remarks")
+  createdDate  DateTime?    @map("CreatedDate")
+  updatedDate  DateTime?    @map("UpdatedDate")
+  stockId      Int?         @map("StockID")
+
+  // Relations - FIXED WITH CORRECT RELATION NAMES
+  supplier supplier   @relation("supplier_grn", fields: [supplierId], references: [supplierId])
+  employee employees  @relation("employee_grn", fields: [employeeId], references: [EmployeeID])
+  stock    stock?     @relation("stock_grn", fields: [stockId], references: [stockId])
+
+  details grnDetails[]
+
+  @@map("GRN")
 }
 
-model grndetails {
-  grnDetailId      Int      @id @default(autoincrement())
-  grnId            Int
-  productId        Int
-  quantityReceived Int?
-  unitCost         Decimal? @db.Decimal
-  subTotal         Decimal? @db.Decimal
-  location         String?
-  grn              grn      @relation(fields: [grnId], references: [grnId], onDelete: NoAction, onUpdate: NoAction, map: "fk_grndetails_grn")
-  product          product  @relation(fields: [productId], references: [productId], onDelete: NoAction, onUpdate: NoAction, map: "fk_grndetails_product")
+model grnDetails {
+  grnDetailId      Int      @id @default(autoincrement()) @map("GRNDetailID")
+  grnId            Int      @map("GRN_ID")
+  productId        Int      @map("ProductID")
+  quantityReceived Int?     @map("QuantityReceived")
+  unitCost         Decimal? @map("UnitCost")
+  subTotal         Decimal? @map("SubTotal")
+  location         Int?     @map("Location")
+
+  // Relations - FIXED WITH CORRECT RELATION NAME
+  grn     grn     @relation(fields: [grnId], references: [grnId])
+  product product @relation("product_grnDetails", fields: [productId], references: [productId])
+
+  @@map("GRNDetails")
+}
+
+model gin {
+  ginId       Int          @id @default(autoincrement()) @map("GIN_ID")
+  ginNumber   String?      @unique @map("GIN_Number")
+  employeeId  Int          @map("EmployeeID")
+  issuedTo    String?      @map("IssuedTo")
+  issueReason String?      @map("IssueReason")
+  issueDate   DateTime?    @map("IssueDate")
+  remarks     String?      @map("Remarks")
+  createdDate DateTime?    @map("CreatedDate")
+  updatedDate DateTime?    @map("UpdatedDate")
+  stockId     Int?         @map("StockID")
+
+  // Relations - FIXED WITH CORRECT RELATION NAMES
+  employee employees @relation("employee_gin", fields: [employeeId], references: [EmployeeID])
+  stock    stock?    @relation("stock_gin", fields: [stockId], references: [stockId])
+
+  details ginDetails[]
+
+  @@map("GIN")
+}
+
+model ginDetails {
+  ginDetailId    Int      @id @default(autoincrement()) @map("GINDetailID")
+  ginId          Int      @map("GIN_ID")
+  productId      Int      @map("ProductID")
+  quantityIssued Int?     @map("QuantityIssued")
+  unitCost       Decimal? @map("UnitCost")
+  subTotal       Decimal? @map("SubTotal")
+  location       Int?     @map("Location")
+
+  // Relations - FIXED WITH CORRECT RELATION NAME
+  gin     gin     @relation(fields: [ginId], references: [ginId])
+  product product @relation("product_ginDetails", fields: [productId], references: [productId])
+
+  @@map("GINDetails")
 }
 
 model stock {
-  stockId           Int               @id @default(autoincrement())
-  productId         Int
-  quantityAvailable Int?
-  reorderLevel      Int?
-  lastUpdatedDate   DateTime?         @db.Timestamp(6)
-  variationId       Int?
-  location          String?           @db.VarChar
-  gin               gin[]
-  grn               grn[]
-  product           product           @relation(fields: [productId], references: [productId], onDelete: NoAction, onUpdate: NoAction, map: "fk_stock_product")
-  productvariation  productvariation? @relation(fields: [variationId], references: [variationId], onDelete: NoAction, onUpdate: NoAction, map: "fk_stock_variation")
-}
+  stockId           Int               @id @default(autoincrement()) @map("StockID")
+  productId         Int               @map("ProductID")
+  quantityAvailable Int?              @map("QuantityAvailable")
+  reorderLevel      Int?              @map("ReorderLevel")
+  lastUpdatedDate   DateTime?         @map("LastUpdatedDate")
+  variationId       Int?              @map("VariationID")
+  location          String?           @map("Location")
 
-model transactionlog {
-  logId       Int       @id @default(autoincrement())
-  employeeId  Int
-  actionType  String?   @db.VarChar
-  entityName  String?   @db.VarChar
-  referenceId Int?
-  actionDate  DateTime? @db.Timestamp(6)
-  oldValue    String?
-  newValue    String?
-  employees   employees @relation(fields: [employeeId], references: [EmployeeID], onDelete: NoAction, onUpdate: NoAction, map: "fk_transactionlog_employee")
+  // Relations - FIXED WITH CORRECT RELATION NAMES AND OPTIONAL VARIATION
+  product   product            @relation("product_stock", fields: [productId], references: [productId])
+  variation productvariation? @relation("variation_stock", fields: [variationId], references: [variationId])
+  grn       grn[]             @relation("stock_grn")
+  gin       gin[]             @relation("stock_gin")
+
+  @@map("Stock")
 }

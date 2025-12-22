@@ -71,12 +71,12 @@ const Sidebar: React.FC<SidebarProps> = ({
     {
       icon: CreditCard,
       label: 'Bin Card',
-      href: '/bin-card'
+      href: '/bincard'
     },
     {
       icon: FileText,
       label: 'Transaction Log',
-      href: '/transaction-log'
+      href: '/transactionlog'
     },
     {
       icon: ArrowRight,

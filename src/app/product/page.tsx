@@ -1105,6 +1105,7 @@ import { Brand } from '@/types/brand';
 import { Category } from '@/types/category';
 import { Model } from '@/types/model';
 import { Supplier } from '@/types/supplier';
+import { Pencil, Eye, Trash2 } from 'lucide-react';
 
 const ProductPage: React.FC = () => {
   const router = useRouter();
@@ -1871,14 +1872,24 @@ const ProductPage: React.FC = () => {
     
     return [
       {
-        label: 'Edit',
+        label: (
+                <span className="flex items-center gap-2">
+                  <Pencil size={16} />
+                  
+                </span>
+              ),
         onClick: (product: Product) => {
           handleEditProduct(product);
         },
         variant: 'primary'
       },
       {
-        label: 'Delete',
+        label: (
+                <span className="flex items-center gap-2">
+                  <Trash2 size={16} />
+                  
+                </span>
+              ),
         onClick: (product: Product) => {
           if (isDeleting === product.productId) {
             return;

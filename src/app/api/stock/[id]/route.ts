@@ -531,11 +531,12 @@ import { getAuthTokenFromCookies } from '@/lib/cookies'
 // GET - Get single stock by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   console.log(' Stock GET by ID request started');
   
   try {
+    const resolvedParams = await params;
     // Verify authentication
     const accessToken = getAuthTokenFromCookies(request)
     if (!accessToken) {
@@ -565,7 +566,7 @@ export async function GET(
       )
     }
 
-    const stockId = parseInt(params.id)
+    const stockId = parseInt(resolvedParams.id)
     if (isNaN(stockId)) {
       return NextResponse.json(
         { 
@@ -669,11 +670,12 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params:  Promise<{ id: string }> }
 ) {
   console.log(' Stock PUT request started');
   
   try {
+    const resolvedParams = await params;
     // Verify authentication
     const accessToken = getAuthTokenFromCookies(request)
     if (!accessToken) {
@@ -706,7 +708,7 @@ export async function PUT(
       )
     }
 
-    const stockId = parseInt(params.id)
+    const stockId = parseInt(resolvedParams.id)
     if (isNaN(stockId)) {
       return NextResponse.json(
         { 
@@ -861,11 +863,13 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   console.log(' Stock DELETE request started');
   
   try {
+    const resolvedParams = await params;
+
     // Verify authentication
     const accessToken = getAuthTokenFromCookies(request)
     if (!accessToken) {
@@ -898,7 +902,7 @@ export async function DELETE(
       )
     }
 
-    const stockId = parseInt(params.id)
+    const stockId = parseInt(resolvedParams.id)
     if (isNaN(stockId)) {
       return NextResponse.json(
         { 

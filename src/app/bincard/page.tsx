@@ -1050,6 +1050,7 @@ import DeleteConfirmation from '@/components/form-popup/delete';
 import { Employee, isStockKeeper } from '@/types/user';
 import { BinCardWithDetails, BinCardQueryParams, CreateBinCardRequest, BinCardFilters } from '@/types/bincard';
 import { getCurrentUser, logoutUser } from '@/lib/auth';
+import { Pencil, Eye, Trash2 } from 'lucide-react';
 
 // Service functions for bincard
 const fetchBinCards = async (params: BinCardQueryParams = {}) => {
@@ -1659,7 +1660,12 @@ const BinCardPage: React.FC = () => {
     
     return [
       {
-        label: 'View Details',
+        label:(
+        <span className="flex items-center gap-2">
+          <Eye size={16} />
+          
+        </span>
+      ),
         onClick: (binCard: BinCardWithDetails) => {
           handleViewBinCardDetails(binCard);
         },

@@ -10,7 +10,7 @@ export interface TableColumn {
 }
 
 export interface ActionButton {
-  label: string;
+  label: string | React.ReactNode;
   onClick: (row: any) => void;
   className?: string;
   icon?: React.ReactNode;

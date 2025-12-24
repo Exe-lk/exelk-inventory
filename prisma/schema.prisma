@@ -75,6 +75,7 @@ model employees {
   productversion_createdBy productversion[] @relation("productVersion_createdBy")
   productversion_deletedBy productversion[] @relation("productVersion_deletedBy")
   productversion_updatedBy productversion[] @relation("productVersion_updatedBy")
+  returns                  returns[]
   supplier_createdBy       supplier[]       @relation("supplier_createdBy")
   supplier_deletedBy       supplier[]       @relation("supplier_deletedBy")
   supplier_updatedBy       supplier[]       @relation("supplier_updatedBy")
@@ -133,6 +134,7 @@ model product {
   productVersion    productversion[]
   stock             stock[]
 
+  @@index([productId, deletedAt], map: "idx_product_id_deleted")
   @@map("product")
 }
 
@@ -157,7 +159,7 @@ model productsupplier {
 }
 
 model productvariation {
-  variationId   Int            @id @default(autoincrement())
+  variationId   Int             @id @default(autoincrement())
   versionId     Int
   variationName String?
   color         String?
@@ -168,15 +170,16 @@ model productvariation {
   quantity      Int?
   minStockLevel Int?
   maxStockLevel Int?
-  isActive      Boolean?       @default(true)
+  isActive      Boolean?        @default(true)
   createdBy     Int?
-  createdAt     DateTime?      @default(now())
+  createdAt     DateTime?       @default(now())
   updatedBy     Int?
-  updatedAt     DateTime?      @updatedAt
+  updatedAt     DateTime?       @updatedAt
   deletedBy     Int?
   deletedAt     DateTime?
   bincard       bincard[]
-  version       productversion @relation(fields: [versionId], references: [versionId])
+  version       productversion  @relation(fields: [versionId], references: [versionId])
+  returnproduct returnproduct[]
   specdetails   specdetails[]
   stock         stock[]
 
@@ -262,10 +265,12 @@ model supplier {
   grn               grn[]
   product           product[]
   productsupplier   productsupplier[]
+  returns           returns[]
   createdByEmployee employees         @relation("supplier_createdBy", fields: [createdBy], references: [EmployeeID])
   deletedByEmployee employees?        @relation("supplier_deletedBy", fields: [deletedBy], references: [EmployeeID])
   updatedByEmployee employees         @relation("supplier_updatedBy", fields: [updatedBy], references: [EmployeeID])
 
+  @@index([supplierId, deletedAt], map: "idx_supplier_id_deleted")
   @@map("supplier")
 }
 
@@ -353,6 +358,8 @@ model stock {
   grn               grn[]
   product           product           @relation(fields: [productId], references: [productId], onDelete: NoAction, onUpdate: NoAction, map: "fk_stock_product")
   productvariation  productvariation? @relation(fields: [variationId], references: [variationId], onDelete: NoAction, onUpdate: NoAction, map: "fk_stock_variation")
+
+  @@index([productId, variationId], map: "idx_stock_product_variation")
 }
 
 model transactionlog {
@@ -365,4 +372,29 @@ model transactionlog {
   oldValue    String?
   newValue    String?
   employees   employees @relation(fields: [employeeId], references: [EmployeeID], onDelete: NoAction, onUpdate: NoAction, map: "fk_transactionlog_employee")
+}
+
+model returns {
+  returnId      Int             @id @default(autoincrement())
+  supplierId    Int
+  employeeId    Int
+  returnType    String?         @db.VarChar
+  returnDate    DateTime?       @db.Date
+  reason        String?
+  remarks       String?
+  approved      Boolean?
+  returnStatus  String?         @db.VarChar
+  returnproduct returnproduct[]
+  employees     employees       @relation(fields: [employeeId], references: [EmployeeID], onDelete: NoAction, onUpdate: NoAction, map: "fk_return_employee")
+  supplier      supplier        @relation(fields: [supplierId], references: [supplierId], onDelete: NoAction, onUpdate: NoAction, map: "fk_return_supplier")
+}
+
+model returnproduct {
+  returnProductId  Int              @id @default(autoincrement())
+  returnId         Int
+  variationId      Int
+  quantity         Int?
+  remarks          String?
+  returns          returns          @relation(fields: [returnId], references: [returnId], onDelete: NoAction, onUpdate: NoAction, map: "fk_returnproduct_return")
+  productvariation productvariation @relation(fields: [variationId], references: [variationId], onDelete: NoAction, onUpdate: NoAction, map: "fk_returnproduct_variation")
 }

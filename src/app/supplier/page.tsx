@@ -12,6 +12,7 @@ import { Employee, hasAdminAccess, isStockKeeper } from '@/types/user';
 import { Supplier } from '@/types/supplier';
 import { fetchSuppliers, createSupplier, updateSupplier, deleteSupplier } from '@/lib/services/supplierService';
 import { getCurrentUser, logoutUser } from '@/lib/auth';
+import { Pencil, Eye, Trash2 } from 'lucide-react';
 
 const SupplierPage: React.FC = () => {
   const router = useRouter();
@@ -443,14 +444,24 @@ const SupplierPage: React.FC = () => {
     
     return [
       {
-        label: 'Edit',
+        label: (
+                <span className="flex items-center gap-2">
+                  <Pencil size={16} />
+                  
+                </span>
+              ),
         onClick: (supplier: Supplier) => {
           handleEditSupplier(supplier);
         },
         variant: 'primary'
       },
       {
-        label: 'Delete',
+        label: (
+                <span className="flex items-center gap-2">
+                  <Trash2 size={16} />
+                  
+                </span>
+              ),
         onClick: (supplier: Supplier) => {
           // Check if currently being deleted
           if (isDeleting === supplier.SupplierID) {

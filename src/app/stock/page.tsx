@@ -11,6 +11,7 @@ import { Employee, isStockKeeper } from '@/types/user';
 import { getCurrentUser, logoutUser } from '@/lib/auth';
 import { fetchStocks, createStockIn, createStockOut, deleteStock, fetchProducts, fetchSuppliers, fetchVariationsByProductId,  } from '@/lib/services/stockService';
 import { Stock as StockType } from '@/types/stock';
+import {  ArrowUpCircle,ArrowDownCircle, Trash2 } from 'lucide-react';
 
 
 // // Stock interfaces
@@ -488,21 +489,36 @@ const StockPage: React.FC = () => {
       //   variant: 'primary'
       // },
       {
-        label: 'Stock-IN',
+        label: (
+    <span className="flex items-center gap-2">
+      <ArrowDownCircle size={16} />
+      
+    </span>
+  ),
         onClick: () => {
           handleStockInClick();
         },
         variant: 'primary'
       },
       {
-        label: 'Stock-Out',
+        label: (
+    <span className="flex items-center gap-2">
+      <ArrowUpCircle size={19} />
+      
+    </span>
+  ),
         onClick: () => {
           handleStockOutClick();
         },
         variant: 'primary'
       },
       {
-        label: 'Delete',
+        label: (
+                <span className="flex items-center gap-2">
+                  <Trash2 size={16} />
+                  
+                </span>
+              ),
         onClick: (stock: Stock) => {
           if (isDeleting === stock.stockId) {
             return;

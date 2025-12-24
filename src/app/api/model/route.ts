@@ -850,8 +850,8 @@ export async function GET(request: NextRequest) {
     const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'modelName'
     orderBy[sortColumn] = sortOrder === 'asc' ? 'asc' : 'desc'
 
-    console.log('🔍 Where clause:', JSON.stringify(where, null, 2));
-    console.log('📈 Order by:', orderBy);
+    console.log(' Where clause:', JSON.stringify(where, null, 2));
+    console.log('Order by:', orderBy);
 
     try {
       console.log('🔌 Testing database connection...');

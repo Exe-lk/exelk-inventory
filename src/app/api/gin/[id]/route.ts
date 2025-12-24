@@ -45,9 +45,10 @@ function getEmployeeIdFromToken(accessToken: string): number {
 // GET - Get single GIN by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     
     // Verify authentication
     const accessToken = getAuthTokenFromCookies(request)
@@ -77,7 +78,7 @@ export async function GET(
       )
     }
 
-    const ginId = parseInt(params.id)
+    const ginId = parseInt(resolvedParams.id)
 
     if (isNaN(ginId)) {
       return NextResponse.json(
@@ -147,7 +148,7 @@ export async function GET(
       )
 
     } catch (dbError) {
-      console.error('💥 Database error:', dbError)
+      console.error(' Database error:', dbError)
       return NextResponse.json(
         { 
           status: 'error',
@@ -161,7 +162,7 @@ export async function GET(
     }
 
   } catch (error) {
-    console.error('💥 GIN GET error:', error)
+    console.error(' GIN GET error:', error)
     return NextResponse.json(
       { 
         status: 'error',
@@ -227,9 +228,11 @@ export async function GET(
 // PUT - Update GIN
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
+
     // Verify authentication
     const accessToken = getAuthTokenFromCookies(request)
     if (!accessToken) {
@@ -260,7 +263,7 @@ export async function PUT(
       )
     }
 
-    const ginId = parseInt(params.id)
+    const ginId = parseInt(resolvedParams.id)
     const body = await request.json()
 
     if (isNaN(ginId)) {
@@ -372,7 +375,7 @@ export async function PUT(
       )
 
     } catch (dbError) {
-      console.error('💥 Database error:', dbError)
+      console.error(' Database error:', dbError)
       return NextResponse.json(
         { 
           status: 'error',
@@ -386,7 +389,7 @@ export async function PUT(
     }
 
   } catch (error) {
-    console.error('💥 GIN PUT error:', error)
+    console.error(' GIN PUT error:', error)
     return NextResponse.json(
       { 
         status: 'error',
@@ -430,9 +433,11 @@ export async function PUT(
 // DELETE - Delete GIN
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
+
     // Verify authentication
     const accessToken = getAuthTokenFromCookies(request)
     if (!accessToken) {
@@ -461,7 +466,7 @@ export async function DELETE(
       )
     }
 
-    const ginId = parseInt(params.id)
+    const ginId = parseInt(resolvedParams.id)
 
     if (isNaN(ginId)) {
       return NextResponse.json(

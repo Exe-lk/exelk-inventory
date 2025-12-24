@@ -13,6 +13,7 @@ import { Model } from '@/types/model';
 import { Brand } from '@/types/brand';
 import { fetchModels, createModel, updateModel, deleteModel, fetchBrands } from '@/lib/services/modelService';
 import { getCurrentUser, logoutUser } from '@/lib/auth';
+import { Pencil, Eye, Trash2 } from 'lucide-react';
 
 const ModelPage: React.FC = () => {
   const router = useRouter();
@@ -372,14 +373,24 @@ const ModelPage: React.FC = () => {
     
     return [
       {
-        label: 'Edit',
+        label: (
+                <span className="flex items-center gap-2">
+                  <Pencil size={16} />
+                  
+                </span>
+              ),
         onClick: (model: Model) => {
           handleEditModel(model);
         },
         variant: 'primary'
       },
       {
-        label: 'Delete',
+        label: (
+                <span className="flex items-center gap-2">
+                  <Trash2 size={16} />
+                  
+                </span>
+              ),
         onClick: (model: Model) => {
           // Check if currently being deleted
           if (isDeleting === model.ModelID) {

@@ -16,38 +16,40 @@ function getEmployeeIdFromToken(accessToken: string): number {
 
 /**
  * @swagger
- * /api/grn/details/{detailId}:
+ * /api/grn/{id}:
  *   get:
  *     tags:
- *       - GRN Details
- *     summary: Get GRN detail by ID
- *     description: Retrieve a specific GRN detail by ID
+ *       - GRN
+ *     summary: Get GRN by ID
+ *     description: Retrieve a specific GRN record by ID
  *     security:
  *       - cookieAuth: []
  *     parameters:
  *       - in: path
- *         name: detailId
+ *         name: id
  *         required: true
  *         schema:
  *           type: integer
- *         description: GRN Detail ID
+ *         description: GRN ID
  *     responses:
  *       200:
- *         description: GRN detail retrieved successfully
+ *         description: GRN retrieved successfully
  *       401:
  *         description: Unauthorized
  *       404:
- *         description: GRN detail not found
+ *         description: GRN not found
  *       500:
  *         description: Internal server error
  */
 
-// GET - Get single GRN detail by ID
+// GET - Get single GRN by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { detailId: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
+
     // Verify authentication
     const accessToken = getAuthTokenFromCookies(request)
     if (!accessToken) {
@@ -76,14 +78,14 @@ export async function GET(
       )
     }
 
-    const detailId = parseInt(params.detailId)
+    const grnId = parseInt(resolvedParams.id)
 
-    if (isNaN(detailId)) {
+    if (isNaN(grnId)) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 400,
-          message: 'Invalid GRN detail ID',
+          message: 'Invalid GRN ID',
           timestamp: new Date().toISOString()
         },
         { status: 400 }
@@ -91,28 +93,31 @@ export async function GET(
     }
 
     try {
-      // Get GRN detail by ID
-      const grnDetail = await prisma.grndetails.findUnique({
+      // Get GRN by ID
+      const grn = await prisma.grn.findUnique({
         where: {
-          grnDetailId: detailId
+          grnId: grnId
         },
         select: {
-          grnDetailId: true,
           grnId: true,
-          productId: true,
-          quantityReceived: true,
-          unitCost: true,
-          subTotal: true,
-          location: true,
+          grnNumber: true,
+          supplierId: true,
+          employeeId: true,
+          receivedDate: true,
+          totalAmount: true,
+          remarks: true,
+          createdDate: true,
+          updatedDate: true,
+          stockId: true,
         }
       })
 
-      if (!grnDetail) {
+      if (!grn) {
         return NextResponse.json(
           { 
             status: 'error',
             code: 404,
-            message: 'GRN detail not found',
+            message: 'GRN not found',
             timestamp: new Date().toISOString()
           },
           { status: 404 }
@@ -120,23 +125,23 @@ export async function GET(
       }
 
       // Transform response
-      const transformedDetail = {
-        grnDetailId: grnDetail.grnDetailId,
-        grnId: grnDetail.grnId,
-        productId: grnDetail.productId,
-        quantityReceived: grnDetail.quantityReceived,
-        unitCost: grnDetail.unitCost ? parseFloat(grnDetail.unitCost.toString()) : 0,
-        subTotal: grnDetail.subTotal ? parseFloat(grnDetail.subTotal.toString()) : 0,
-        location: grnDetail.location
+      const transformedGrn = {
+        grnId: grn.grnId,
+        grnNumber: grn.grnNumber,
+        supplierId: grn.supplierId,
+        stockKeeperId: grn.employeeId,
+        receivedDate: grn.receivedDate?.toISOString().split('T')[0],
+        totalAmount: grn.totalAmount ? parseFloat(grn.totalAmount.toString()) : 0,
+        remarks: grn.remarks
       }
 
       return NextResponse.json(
         {
           status: 'success',
           code: 200,
-          message: 'GRN detail retrieved successfully',
+          message: 'GRN retrieved successfully',
           timestamp: new Date().toISOString(),
-          data: transformedDetail
+          data: transformedGrn
         },
         { status: 200 }
       )
@@ -147,7 +152,7 @@ export async function GET(
         { 
           status: 'error',
           code: 500,
-          message: 'Failed to retrieve GRN detail',
+          message: 'Failed to retrieve GRN',
           timestamp: new Date().toISOString(),
           details: dbError instanceof Error ? dbError.message : 'Unknown database error'
         },
@@ -156,7 +161,7 @@ export async function GET(
     }
 
   } catch (error) {
-    console.error(' GRN Detail GET error:', error)
+    console.error(' GRN GET error:', error)
     return NextResponse.json(
       { 
         status: 'error',
@@ -171,21 +176,21 @@ export async function GET(
 
 /**
  * @swagger
- * /api/grn/details/{detailId}:
+ * /api/grn/{id}:
  *   put:
  *     tags:
- *       - GRN Details
- *     summary: Update GRN detail
- *     description: Update a specific GRN detail
+ *       - GRN
+ *     summary: Update GRN
+ *     description: Update a specific GRN record
  *     security:
  *       - cookieAuth: []
  *     parameters:
  *       - in: path
- *         name: detailId
+ *         name: id
  *         required: true
  *         schema:
  *           type: integer
- *         description: GRN Detail ID
+ *         description: GRN ID
  *     requestBody:
  *       required: true
  *       content:
@@ -193,33 +198,39 @@ export async function GET(
  *           schema:
  *             type: object
  *             properties:
- *               productId:
+ *               grnNumber:
+ *                 type: string
+ *               supplierId:
  *                 type: integer
- *               quantityReceived:
- *                 type: integer
- *               unitCost:
+ *               receivedDate:
+ *                 type: string
+ *                 format: date
+ *               totalAmount:
  *                 type: number
- *               location:
- *                 type: integer
+ *               remarks:
+ *                 type: string
  *     responses:
  *       200:
- *         description: GRN detail updated successfully
+ *         description: GRN updated successfully
  *       400:
  *         description: Bad request
  *       401:
  *         description: Unauthorized
  *       404:
- *         description: GRN detail not found
+ *         description: GRN not found
+ *       409:
+ *         description: GRN number already exists
  *       500:
  *         description: Internal server error
  */
 
-// PUT - Update GRN detail
+// PUT - Update GRN
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { detailId: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     // Verify authentication
     const accessToken = getAuthTokenFromCookies(request)
     if (!accessToken) {
@@ -234,8 +245,10 @@ export async function PUT(
       )
     }
 
+    let employeeId: number;
     try {
       verifyAccessToken(accessToken)
+      employeeId = getEmployeeIdFromToken(accessToken)
     } catch (error) {
       return NextResponse.json(
         { 
@@ -248,15 +261,15 @@ export async function PUT(
       )
     }
 
-    const detailId = parseInt(params.detailId)
+    const grnId = parseInt(resolvedParams.id)
     const body = await request.json()
 
-    if (isNaN(detailId)) {
+    if (isNaN(grnId)) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 400,
-          message: 'Invalid GRN detail ID',
+          message: 'Invalid GRN ID',
           timestamp: new Date().toISOString()
         },
         { status: 400 }
@@ -264,40 +277,62 @@ export async function PUT(
     }
 
     try {
-      // Check if GRN detail exists
-      const existingDetail = await prisma.grndetails.findUnique({
+      // Check if GRN exists
+      const existingGrn = await prisma.grn.findUnique({
         where: {
-          grnDetailId: detailId
+          grnId: grnId
         }
       })
 
-      if (!existingDetail) {
+      if (!existingGrn) {
         return NextResponse.json(
           { 
             status: 'error',
             code: 404,
-            message: 'GRN detail not found',
+            message: 'GRN not found',
             timestamp: new Date().toISOString()
           },
           { status: 404 }
         )
       }
 
-      // Check if product exists (if being updated)
-      if (body.productId) {
-        const existingProduct = await prisma.product.findFirst({
+      // Check if GRN number already exists (excluding current GRN)
+      if (body.grnNumber && body.grnNumber !== existingGrn.grnNumber) {
+        const duplicateGrn = await prisma.grn.findFirst({
           where: {
-            productId: parseInt(body.productId),
+            grnNumber: body.grnNumber,
+            grnId: { not: grnId }
+          }
+        })
+
+        if (duplicateGrn) {
+          return NextResponse.json(
+            { 
+              status: 'error',
+              code: 409,
+              message: 'GRN number already exists',
+              timestamp: new Date().toISOString()
+            },
+            { status: 409 }
+          )
+        }
+      }
+
+      // Check if supplier exists (if being updated)
+      if (body.supplierId) {
+        const existingSupplier = await prisma.supplier.findFirst({
+          where: {
+            supplierId: parseInt(body.supplierId),
             deletedAt: null
           }
         })
 
-        if (!existingProduct) {
+        if (!existingSupplier) {
           return NextResponse.json(
             { 
               status: 'error',
               code: 400,
-              message: 'Invalid product ID',
+              message: 'Invalid supplier ID',
               timestamp: new Date().toISOString()
             },
             { status: 400 }
@@ -306,55 +341,54 @@ export async function PUT(
       }
 
       // Prepare update data
-      const updateData: any = {}
-
-      if (body.productId !== undefined) updateData.productId = parseInt(body.productId)
-      if (body.quantityReceived !== undefined) updateData.quantityReceived = parseInt(body.quantityReceived)
-      if (body.unitCost !== undefined) updateData.unitCost = parseFloat(body.unitCost.toString())
-      if (body.location !== undefined) updateData.location = body.location || null
-
-      // Recalculate subtotal if quantity or unit cost changed
-      if (body.quantityReceived !== undefined || body.unitCost !== undefined) {
-        const qty = body.quantityReceived !== undefined ? parseInt(body.quantityReceived) : (existingDetail.quantityReceived || 0)
-        const cost = body.unitCost !== undefined ? parseFloat(body.unitCost.toString()) : (existingDetail.unitCost ? parseFloat(existingDetail.unitCost.toString()) : 0)
-        updateData.subTotal = qty * cost
+      const updateData: any = {
+        updatedDate: new Date()
       }
 
-      // Update GRN detail
-      const grnDetail = await prisma.grndetails.update({
+      if (body.grnNumber !== undefined) updateData.grnNumber = body.grnNumber
+      if (body.supplierId !== undefined) updateData.supplierId = parseInt(body.supplierId)
+      if (body.receivedDate !== undefined) updateData.receivedDate = new Date(body.receivedDate)
+      if (body.totalAmount !== undefined) updateData.totalAmount = parseFloat(body.totalAmount.toString())
+      if (body.remarks !== undefined) updateData.remarks = body.remarks
+
+      // Update GRN
+      const grn = await prisma.grn.update({
         where: {
-          grnDetailId: detailId
+          grnId: grnId
         },
         data: updateData,
         select: {
-          grnDetailId: true,
           grnId: true,
-          productId: true,
-          quantityReceived: true,
-          unitCost: true,
-          subTotal: true,
-          location: true,
+          grnNumber: true,
+          supplierId: true,
+          employeeId: true,
+          receivedDate: true,
+          totalAmount: true,
+          remarks: true,
+          createdDate: true,
+          updatedDate: true,
+          stockId: true,
         }
       })
 
       // Transform response
-      const transformedDetail = {
-        grnDetailId: grnDetail.grnDetailId,
-        grnId: grnDetail.grnId,
-        productId: grnDetail.productId,
-        quantityReceived: grnDetail.quantityReceived,
-        unitCost: grnDetail.unitCost ? parseFloat(grnDetail.unitCost.toString()) : 0,
-        subTotal: grnDetail.subTotal ? parseFloat(grnDetail.subTotal.toString()) : 0,
-        location: grnDetail.location
+      const transformedGrn = {
+        grnId: grn.grnId,
+        grnNumber: grn.grnNumber,
+        supplierId: grn.supplierId,
+        stockKeeperId: grn.employeeId,
+        receivedDate: grn.receivedDate?.toISOString().split('T')[0],
+        totalAmount: grn.totalAmount ? parseFloat(grn.totalAmount.toString()) : 0,
+        remarks: grn.remarks
       }
 
       return NextResponse.json(
         {
           status: 'success',
           code: 200,
-          message: 'GRN detail updated successfully',
+          message: 'GRN updated successfully',
           timestamp: new Date().toISOString(),
-          data: transformedDetail
+          data: transformedGrn
         },
         { status: 200 }
       )
@@ -365,7 +399,7 @@ export async function PUT(
         { 
           status: 'error',
           code: 500,
-          message: 'Failed to update GRN detail',
+          message: 'Failed to update GRN',
           timestamp: new Date().toISOString(),
           details: dbError instanceof Error ? dbError.message : 'Unknown database error'
         },
@@ -374,7 +408,7 @@ export async function PUT(
     }
 
   } catch (error) {
-    console.error(' GRN Detail PUT error:', error)
+    console.error(' GRN PUT error:', error)
     return NextResponse.json(
       { 
         status: 'error',
@@ -389,38 +423,39 @@ export async function PUT(
 
 /**
  * @swagger
- * /api/grn/details/{detailId}:
+ * /api/grn/{id}:
  *   delete:
  *     tags:
- *       - GRN Details
- *     summary: Delete GRN detail
- *     description: Delete a specific GRN detail
+ *       - GRN
+ *     summary: Delete GRN
+ *     description: Delete a specific GRN record
  *     security:
  *       - cookieAuth: []
  *     parameters:
  *       - in: path
- *         name: detailId
+ *         name: id
  *         required: true
  *         schema:
  *           type: integer
- *         description: GRN Detail ID
+ *         description: GRN ID
  *     responses:
  *       200:
- *         description: GRN detail deleted successfully
+ *         description: GRN deleted successfully
  *       401:
  *         description: Unauthorized
  *       404:
- *         description: GRN detail not found
+ *         description: GRN not found
  *       500:
  *         description: Internal server error
  */
 
-// DELETE - Delete GRN detail
+// DELETE - Delete GRN
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { detailId: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     // Verify authentication
     const accessToken = getAuthTokenFromCookies(request)
     if (!accessToken) {
@@ -449,14 +484,14 @@ export async function DELETE(
       )
     }
 
-    const detailId = parseInt(params.detailId)
+    const grnId = parseInt(resolvedParams.id)
 
-    if (isNaN(detailId)) {
+    if (isNaN(grnId)) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 400,
-          message: 'Invalid GRN detail ID',
+          message: 'Invalid GRN ID',
           timestamp: new Date().toISOString()
         },
         { status: 400 }
@@ -464,37 +499,47 @@ export async function DELETE(
     }
 
     try {
-      // Check if GRN detail exists
-      const existingDetail = await prisma.grndetails.findUnique({
+      // Check if GRN exists
+      const existingGrn = await prisma.grn.findUnique({
         where: {
-          grnDetailId: detailId
+          grnId: grnId
         }
       })
 
-      if (!existingDetail) {
+      if (!existingGrn) {
         return NextResponse.json(
           { 
             status: 'error',
             code: 404,
-            message: 'GRN detail not found',
+            message: 'GRN not found',
             timestamp: new Date().toISOString()
           },
           { status: 404 }
         )
       }
 
-      // Delete GRN detail
-      await prisma.grndetails.delete({
-        where: {
-          grnDetailId: detailId
-        }
+      // Delete GRN and related details
+      await prisma.$transaction(async (tx) => {
+        // Delete related GRN details first
+        await tx.grndetails.deleteMany({
+          where: {
+            grnId: grnId
+          }
+        })
+
+        // Delete the GRN
+        await tx.grn.delete({
+          where: {
+            grnId: grnId
+          }
+        })
       })
 
       return NextResponse.json(
         {
           status: 'success',
           code: 200,
-          message: 'GRN detail deleted successfully',
+          message: 'GRN deleted successfully',
           timestamp: new Date().toISOString(),
           data: null
         },
@@ -507,7 +552,7 @@ export async function DELETE(
         { 
           status: 'error',
           code: 500,
-          message: 'Failed to delete GRN detail',
+          message: 'Failed to delete GRN',
           timestamp: new Date().toISOString(),
           details: dbError instanceof Error ? dbError.message : 'Unknown database error'
         },
@@ -516,7 +561,7 @@ export async function DELETE(
     }
 
   } catch (error) {
-    console.error(' GRN Detail DELETE error:', error)
+    console.error(' GRN DELETE error:', error)
     return NextResponse.json(
       { 
         status: 'error',

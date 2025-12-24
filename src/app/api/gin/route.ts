@@ -102,13 +102,13 @@ function getEmployeeIdFromToken(accessToken: string): number {
 
 // GET - Retrieve GIN records with enhanced search functionality
 export async function GET(request: NextRequest) {
-  console.log('🚀 GIN GET request started with enhanced search');
+  console.log(' GIN GET request started with enhanced search');
   
   try {
     // Verify authentication
     const accessToken = getAuthTokenFromCookies(request)
     if (!accessToken) {
-      console.log('❌ No access token found');
+      console.log(' No access token found');
       return NextResponse.json(
         { 
           status: 'error',
@@ -122,9 +122,9 @@ export async function GET(request: NextRequest) {
 
     try {
       verifyAccessToken(accessToken)
-      console.log('✅ Access token verified');
+      console.log(' Access token verified');
     } catch (error) {
-      console.log('❌ Invalid access token:', error);
+      console.log(' Invalid access token:', error);
       return NextResponse.json(
         { 
           status: 'error',
@@ -143,7 +143,7 @@ export async function GET(request: NextRequest) {
     
     if (ginId) {
       // GET SINGLE GIN BY ID
-      console.log(`🔍 Getting single GIN with ID: ${ginId}`);
+      console.log(` Getting single GIN with ID: ${ginId}`);
       
       const parsedGinId = parseInt(ginId)
       if (isNaN(parsedGinId)) {
@@ -204,7 +204,7 @@ export async function GET(request: NextRequest) {
           updatedAt: gin.updatedDate?.toISOString()
         }
 
-        console.log('✅ Single GIN retrieved successfully');
+        console.log(' Single GIN retrieved successfully');
 
         return NextResponse.json(
           {
@@ -218,7 +218,7 @@ export async function GET(request: NextRequest) {
         )
 
       } catch (dbError) {
-        console.error('💥 Database error:', dbError)
+        console.error(' Database error:', dbError)
         return NextResponse.json(
           { 
             status: 'error',
@@ -233,7 +233,7 @@ export async function GET(request: NextRequest) {
     }
 
     // GET ALL GINs WITH ENHANCED SEARCH FUNCTIONALITY
-    console.log('📋 Getting all GINs with enhanced search and filtering');
+    console.log(' Getting all GINs with enhanced search and filtering');
 
     // Parse query parameters for list retrieval
     const page = parseInt(searchParams.get('page') || '1')
@@ -245,7 +245,7 @@ export async function GET(request: NextRequest) {
     const stockKeeperId = searchParams.get('stockKeeperId')
     const issueReasonFilter = searchParams.get('issueReason')
 
-    console.log('📊 Query parameters:', { 
+    console.log(' Query parameters:', { 
       page, limit, sortBy, sortOrder, search, 
       issuedToFilter, stockKeeperId, issueReasonFilter 
     });
@@ -259,7 +259,7 @@ export async function GET(request: NextRequest) {
     // Apply search filter - Enhanced to support GIN number, issued to, and product name search
     if (search) {
       const searchTerm = search.trim();
-      console.log(`🔍 Enhanced search term: "${searchTerm}"`);
+      console.log(` Enhanced search term: "${searchTerm}"`);
       
       where.OR = [
         // Search by GIN number
@@ -324,21 +324,21 @@ export async function GET(request: NextRequest) {
     const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'issueDate'
     orderBy[sortColumn] = sortOrder === 'asc' ? 'asc' : 'desc'
 
-    console.log('🔍 Enhanced where clause:', JSON.stringify(where, null, 2));
-    console.log('📈 Order by:', orderBy);
+    console.log(' Enhanced where clause:', JSON.stringify(where, null, 2));
+    console.log(' Order by:', orderBy);
 
     try {
-      console.log('🔌 Testing database connection...');
+      console.log(' Testing database connection...');
       await prisma.$connect();
-      console.log('✅ Database connected successfully');
+      console.log(' Database connected successfully');
 
       // Get total count for pagination
-      console.log('📊 Getting total count...');
+      console.log(' Getting total count...');
       const totalCount = await prisma.gin.count({ where });
-      console.log(`📊 Total count: ${totalCount}`);
+      console.log(` Total count: ${totalCount}`);
 
       // Get GIN records with pagination and enhanced data including product information
-      console.log('📋 Fetching GIN records with enhanced search...');
+      console.log(' Fetching GIN records with enhanced search...');
       const gins = await prisma.gin.findMany({
         where,
         orderBy,
@@ -370,7 +370,7 @@ export async function GET(request: NextRequest) {
         }
       }) 
 
-      console.log(`✅ Found ${gins.length} GIN records with enhanced data`);
+      console.log(` Found ${gins.length} GIN records with enhanced data`);
 
       // Transform data to match response format with enhanced search context
       const transformedGins = gins.map((gin: any) => ({
@@ -388,7 +388,7 @@ export async function GET(request: NextRequest) {
         gindetails: gin.gindetails
       }));
 
-      console.log('✅ GIN records transformed successfully with enhanced search data');
+      console.log(' GIN records transformed successfully with enhanced search data');
 
       return NextResponse.json(
         {
@@ -420,8 +420,8 @@ export async function GET(request: NextRequest) {
       )
 
     } catch (dbError) {
-      console.error('💥 Database error:', dbError);
-      console.error('🔍 Error details:', {
+      console.error(' Database error:', dbError);
+      console.error(' Error details:', {
         name: dbError instanceof Error ? dbError.name : 'Unknown',
         message: dbError instanceof Error ? dbError.message : 'Unknown error',
         stack: dbError instanceof Error ? dbError.stack : 'No stack trace'
@@ -440,7 +440,7 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('💥 GIN GET error:', error);
+    console.error(' GIN GET error:', error);
     return NextResponse.json(
       { 
         status: 'error',
@@ -543,7 +543,7 @@ export async function GET(request: NextRequest) {
 
 // POST - Create complete GIN with details
 export async function POST(request: NextRequest) {
-  console.log('🚀 GIN POST request started');
+  console.log(' GIN POST request started');
   
   try {
     // Verify authentication
@@ -564,7 +564,7 @@ export async function POST(request: NextRequest) {
     try {
       verifyAccessToken(accessToken)
       employeeId = getEmployeeIdFromToken(accessToken)
-      console.log('✅ Access token verified, employee ID:', employeeId);
+      console.log(' Access token verified, employee ID:', employeeId);
     } catch (error) {
       return NextResponse.json(
         { 
@@ -579,13 +579,13 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     
-    console.log('📋 Received complete GIN data:', JSON.stringify(body, null, 2));
+    console.log(' Received complete GIN data:', JSON.stringify(body, null, 2));
     
     // Validate required fields
     const { ginNumber, issuedTo, issueReason, issueDate, remarks, stockId, ginDetails } = body
     
-    console.log('📊 Received data:', { ginNumber, issuedTo, issueReason, issueDate, remarks, stockId });
-    console.log('👤 Using employee ID:', employeeId);
+    console.log(' Received data:', { ginNumber, issuedTo, issueReason, issueDate, remarks, stockId });
+    console.log(' Using employee ID:', employeeId);
 
     if (!ginNumber || !issuedTo || !issueDate) {
       return NextResponse.json(
@@ -631,7 +631,7 @@ export async function POST(request: NextRequest) {
     try {
       // Start transaction for creating complete GIN
       const result = await prisma.$transaction(async (tx) => {
-        console.log('🔄 Starting transaction for complete GIN creation');
+        console.log(' Starting transaction for complete GIN creation');
 
         // Check if GIN number already exists
         const existingGin = await tx.gin.findFirst({
@@ -654,7 +654,7 @@ export async function POST(request: NextRequest) {
           })
 
           if (!existingStock) {
-            console.warn(`⚠️ Stock ID ${stockId} not found, creating GIN without stock reference`);
+            console.warn(` Stock ID ${stockId} not found, creating GIN without stock reference`);
             validatedStockId = null;
           } else {
             validatedStockId = parseInt(stockId);
@@ -674,7 +674,7 @@ export async function POST(request: NextRequest) {
           updatedDate: new Date()
         }
 
-        console.log('📝 Creating GIN with data:', ginData);
+        console.log(' Creating GIN with data:', ginData);
 
         const createdGin = await tx.gin.create({
           data: ginData,
@@ -692,13 +692,13 @@ export async function POST(request: NextRequest) {
           }
         })
 
-        console.log('✅ Created GIN:', createdGin);
+        console.log(' Created GIN:', createdGin);
 
         // Create GIN Details
         const createdDetails = []
 
         for (const detail of ginDetails) {
-          console.log('📦 Processing GIN detail:', detail);
+          console.log(' Processing GIN detail:', detail);
 
           // Validate product exists
           const existingProduct = await tx.product.findFirst({
@@ -726,7 +726,7 @@ export async function POST(request: NextRequest) {
             location: detail.location ? detail.location.toString() : null
           }
 
-          console.log('📝 Creating GIN detail with data:', detailData);
+          console.log(' Creating GIN detail with data:', detailData);
 
           const createdDetail = await tx.gindetails.create({
             data: detailData,
@@ -741,7 +741,7 @@ export async function POST(request: NextRequest) {
             }
           })
 
-          console.log('✅ Created GIN detail:', createdDetail);
+          console.log(' Created GIN detail:', createdDetail);
 
           // Transform detail for response
           const transformedDetail = {
@@ -787,12 +787,12 @@ export async function POST(request: NextRequest) {
         }
       };
 
-      console.log('✅ Returning successful response:', JSON.stringify(response, null, 2));
+      console.log(' Returning successful response:', JSON.stringify(response, null, 2));
 
       return NextResponse.json(response, { status: 201 })
 
     } catch (dbError) {
-      console.error('💥 Database error:', dbError)
+      console.error(' Database error:', dbError)
       
       // Handle specific error cases
       if (dbError instanceof Error) {
@@ -834,7 +834,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('💥 GIN POST error:', error)
+    console.error(' GIN POST error:', error)
     return NextResponse.json(
       { 
         status: 'error',
@@ -902,7 +902,7 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update GIN
 export async function PUT(request: NextRequest) {
-  console.log('🚀 GIN PUT request started');
+  console.log(' GIN PUT request started');
   
   try {
     // Verify authentication
@@ -923,7 +923,7 @@ export async function PUT(request: NextRequest) {
     try {
       verifyAccessToken(accessToken)
       employeeId = getEmployeeIdFromToken(accessToken)
-      console.log('✅ Access token verified, employee ID:', employeeId);
+      console.log(' Access token verified, employee ID:', employeeId);
     } catch (error) {
       return NextResponse.json(
         { 
@@ -965,7 +965,7 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    console.log(`📝 Updating GIN ID: ${ginId}`, body);
+    console.log(` Updating GIN ID: ${ginId}`, body);
 
     try {
       // Check if GIN exists
@@ -1020,7 +1020,7 @@ export async function PUT(request: NextRequest) {
           })
 
           if (!existingStock) {
-            console.warn(`⚠️ Stock ID ${body.stockId} not found, setting to null`);
+            console.warn(` Stock ID ${body.stockId} not found, setting to null`);
             validatedStockId = null;
           } else {
             validatedStockId = parseInt(body.stockId);
@@ -1042,7 +1042,7 @@ export async function PUT(request: NextRequest) {
       if (body.remarks !== undefined) updateData.remarks = body.remarks
       if (body.stockId !== undefined) updateData.stockId = validatedStockId
 
-      console.log('📝 Update data:', updateData);
+      console.log(' Update data:', updateData);
 
       // Update GIN
       const gin = await prisma.gin.update({
@@ -1064,7 +1064,7 @@ export async function PUT(request: NextRequest) {
         }
       })
 
-      console.log('✅ GIN updated:', gin);
+      console.log(' GIN updated:', gin);
 
       // Transform response
       const transformedGin = {
@@ -1092,7 +1092,7 @@ export async function PUT(request: NextRequest) {
       )
 
     } catch (dbError) {
-      console.error('💥 Database error:', dbError)
+      console.error(' Database error:', dbError)
       return NextResponse.json(
         { 
           status: 'error',
@@ -1106,7 +1106,7 @@ export async function PUT(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('💥 GIN PUT error:', error)
+    console.error(' GIN PUT error:', error)
     return NextResponse.json(
       { 
         status: 'error',
@@ -1151,7 +1151,7 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Delete GIN
 export async function DELETE(request: NextRequest) {
-  console.log('🚀 GIN DELETE request started');
+  console.log(' GIN DELETE request started');
   
   try {
     // Verify authentication
@@ -1170,7 +1170,7 @@ export async function DELETE(request: NextRequest) {
 
     try {
       verifyAccessToken(accessToken)
-      console.log('✅ Access token verified');
+      console.log(' Access token verified');
     } catch (error) {
       return NextResponse.json(
         { 
@@ -1211,7 +1211,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    console.log(`🗑️ Deleting GIN ID: ${ginId}`);
+    console.log(` Deleting GIN ID: ${ginId}`);
 
     try {
       // Check if GIN exists
@@ -1244,7 +1244,7 @@ export async function DELETE(request: NextRequest) {
         })
 
         // Delete the GIN
-        console.log('🗑️ Deleting GIN...');
+        console.log(' Deleting GIN...');
         await tx.gin.delete({
           where: {
             ginId: ginId
@@ -1252,7 +1252,7 @@ export async function DELETE(request: NextRequest) {
         })
       })
 
-      console.log('✅ GIN and related details deleted successfully');
+      console.log(' GIN and related details deleted successfully');
 
       return NextResponse.json(
         {
@@ -1266,7 +1266,7 @@ export async function DELETE(request: NextRequest) {
       )
 
     } catch (dbError) {
-      console.error('💥 Database error:', dbError)
+      console.error(' Database error:', dbError)
       return NextResponse.json(
         { 
           status: 'error',
@@ -1280,7 +1280,7 @@ export async function DELETE(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('💥 GIN DELETE error:', error)
+    console.error(' GIN DELETE error:', error)
     return NextResponse.json(
       { 
         status: 'error',

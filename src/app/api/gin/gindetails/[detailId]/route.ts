@@ -45,9 +45,11 @@ function getEmployeeIdFromToken(accessToken: string): number {
 // GET - Get single GIN detail by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { detailId: string } }
+  { params }: { params: Promise<{ detailId: string }> }
 ) {
   try {
+    const resolvedParams = await params;
+
     // Verify authentication
     const accessToken = getAuthTokenFromCookies(request)
     if (!accessToken) {
@@ -76,7 +78,7 @@ export async function GET(
       )
     }
 
-    const detailId = parseInt(params.detailId)
+    const detailId = parseInt(resolvedParams.detailId)
 
     if (isNaN(detailId)) {
       return NextResponse.json(
@@ -142,7 +144,7 @@ export async function GET(
       )
 
     } catch (dbError) {
-      console.error('💥 Database error:', dbError)
+      console.error(' Database error:', dbError)
       return NextResponse.json(
         { 
           status: 'error',
@@ -156,7 +158,7 @@ export async function GET(
     }
 
   } catch (error) {
-    console.error('💥 GIN Detail GET error:', error)
+    console.error(' GIN Detail GET error:', error)
     return NextResponse.json(
       { 
         status: 'error',
@@ -217,9 +219,11 @@ export async function GET(
 // PUT - Update GIN detail
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { detailId: string } }
+  { params }: { params: Promise<{ detailId: string }> }
 ) {
   try {
+    const resolvedParams = await params;
+
     // Verify authentication
     const accessToken = getAuthTokenFromCookies(request)
     if (!accessToken) {
@@ -248,7 +252,7 @@ export async function PUT(
       )
     }
 
-    const detailId = parseInt(params.detailId)
+    const detailId = parseInt(resolvedParams.detailId)
     const body = await request.json()
 
     if (isNaN(detailId)) {
@@ -360,7 +364,7 @@ export async function PUT(
       )
 
     } catch (dbError) {
-      console.error('💥 Database error:', dbError)
+      console.error(' Database error:', dbError)
       return NextResponse.json(
         { 
           status: 'error',
@@ -374,7 +378,7 @@ export async function PUT(
     }
 
   } catch (error) {
-    console.error('💥 GIN Detail PUT error:', error)
+    console.error(' GIN Detail PUT error:', error)
     return NextResponse.json(
       { 
         status: 'error',
@@ -418,9 +422,11 @@ export async function PUT(
 // DELETE - Delete GIN detail
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { detailId: string } }
+  { params }: { params: Promise<{ detailId: string }> }
 ) {
   try {
+    const resolvedParams = await params;
+
     // Verify authentication
     const accessToken = getAuthTokenFromCookies(request)
     if (!accessToken) {
@@ -449,7 +455,7 @@ export async function DELETE(
       )
     }
 
-    const detailId = parseInt(params.detailId)
+    const detailId = parseInt(resolvedParams.detailId)
 
     if (isNaN(detailId)) {
       return NextResponse.json(
@@ -502,7 +508,7 @@ export async function DELETE(
       )
 
     } catch (dbError) {
-      console.error('💥 Database error:', dbError)
+      console.error(' Database error:', dbError)
       return NextResponse.json(
         { 
           status: 'error',
@@ -516,7 +522,7 @@ export async function DELETE(
     }
 
   } catch (error) {
-    console.error('💥 GIN Detail DELETE error:', error)
+    console.error(' GIN Detail DELETE error:', error)
     return NextResponse.json(
       { 
         status: 'error',

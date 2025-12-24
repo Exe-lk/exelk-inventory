@@ -155,7 +155,7 @@ export async function GET(request: NextRequest) {
       )
 
     } catch (dbError) {
-      console.error('❌ Database error:', dbError)
+      console.error(' Database error:', dbError)
       return NextResponse.json(
         { 
           status: 'error',
@@ -169,7 +169,7 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('❌ GRN Details GET error:', error)
+    console.error(' GRN Details GET error:', error)
     return NextResponse.json(
       { 
         status: 'error',
@@ -374,7 +374,7 @@ export async function POST(request: NextRequest) {
       )
 
     } catch (dbError) {
-      console.error('❌ Database error:', dbError)
+      console.error(' Database error:', dbError)
       return NextResponse.json(
         { 
           status: 'error',
@@ -388,7 +388,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('❌ GRN Details POST error:', error)
+    console.error(' GRN Details POST error:', error)
     return NextResponse.json(
       { 
         status: 'error',

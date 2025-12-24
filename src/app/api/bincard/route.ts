@@ -67,7 +67,7 @@ function getEmployeeIdFromToken(accessToken: string): number {
 
 // GET - Retrieve all bin cards with pagination, sorting, search, and filtering
 export async function GET(request: NextRequest) {
-  console.log('🚀 BinCards GET request started');
+  console.log(' BinCards GET request started');
   
   try {
     // Verify authentication
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
 
     try {
       verifyAccessToken(accessToken)
-      console.log('✅ Access token verified');
+      console.log(' Access token verified');
     } catch (error) {
       return NextResponse.json(
         { 
@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
     const transactionType = searchParams.get('transactionType')
     const stockKeeperId = searchParams.get('stockKeeperId')
 
-    console.log('📋 Query parameters:', { 
+    console.log(' Query parameters:', { 
       page, limit, sortBy, sortOrder, search, 
       variationId, transactionType, stockKeeperId 
     });
@@ -151,8 +151,8 @@ export async function GET(request: NextRequest) {
     const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'transactionDate'
     const sortDirection = sortOrder === 'asc' ? 'asc' : 'desc'
 
-    console.log('🔍 Where conditions:', JSON.stringify(where, null, 2));
-    console.log('📊 Sort by:', sortColumn, sortDirection);
+    console.log(' Where conditions:', JSON.stringify(where, null, 2));
+    console.log(' Sort by:', sortColumn, sortDirection);
 
     try {
       // Get bin cards with counts - include related data
@@ -201,7 +201,7 @@ export async function GET(request: NextRequest) {
 
       const totalPages = Math.ceil(totalCount / limit)
 
-      console.log(`📊 Found ${binCards.length} bin cards out of ${totalCount} total`);
+      console.log(` Found ${binCards.length} bin cards out of ${totalCount} total`);
 
       // Transform data for response
       const transformedBinCards = binCards.map(binCard => ({
@@ -257,7 +257,7 @@ export async function GET(request: NextRequest) {
       )
 
     } catch (dbError) {
-      console.error('❌ Database error:', dbError);
+      console.error(' Database error:', dbError);
       return NextResponse.json(
         { 
           status: 'error',
@@ -271,7 +271,7 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('❌ BinCards GET error:', error)
+    console.error(' BinCards GET error:', error)
     return NextResponse.json(
       { 
         status: 'error',
@@ -331,7 +331,7 @@ export async function GET(request: NextRequest) {
 
 // POST - Create a new bin card entry
 export async function POST(request: NextRequest) {
-  console.log('🚀 BinCards POST request started');
+  console.log(' BinCards POST request started');
   
   try {
     // Verify authentication
@@ -352,7 +352,7 @@ export async function POST(request: NextRequest) {
     try {
       verifyAccessToken(accessToken)
       employeeId = getEmployeeIdFromToken(accessToken)
-      console.log('✅ Access token verified, employee ID:', employeeId);
+      console.log(' Access token verified, employee ID:', employeeId);
     } catch (error) {
       return NextResponse.json(
         { 
@@ -366,7 +366,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    console.log('📝 Request body:', body);
+    console.log(' Request body:', body);
 
     // Validate required fields
     const { 
@@ -444,7 +444,7 @@ export async function POST(request: NextRequest) {
         return binCard
       })
 
-      console.log('✅ Bin card created successfully:', result.bincardId);
+      console.log(' Bin card created successfully:', result.bincardId);
 
       return NextResponse.json(
         {
@@ -469,7 +469,7 @@ export async function POST(request: NextRequest) {
       )
 
     } catch (dbError) {
-      console.error('❌ Database error:', dbError);
+      console.error(' Database error:', dbError);
       return NextResponse.json(
         { 
           status: 'error',
@@ -482,7 +482,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('❌ BinCards POST error:', error)
+    console.error(' BinCards POST error:', error)
     return NextResponse.json(
       { 
         status: 'error',

@@ -12,6 +12,7 @@ import { Employee, hasAdminAccess, isStockKeeper } from '@/types/user';
 import { Brand } from '@/types/brand';
 import { fetchBrands, createBrand, updateBrand, deleteBrand } from '@/lib/services/brandService';
 import { getCurrentUser, logoutUser } from '@/lib/auth';
+import { Pencil, Eye, Trash2 } from 'lucide-react';
 
 const BrandPage: React.FC = () => {
   const router = useRouter();
@@ -351,14 +352,24 @@ const BrandPage: React.FC = () => {
     
     return [
       {
-        label: 'Edit',
+        label: (
+                <span className="flex items-center gap-2">
+                  <Pencil size={16} />
+                  
+                </span>
+              ),
         onClick: (brand: Brand) => {
           handleEditBrand(brand);
         },
         variant: 'primary'
       },
       {
-        label: 'Delete',
+        label: (
+                <span className="flex items-center gap-2">
+                  <Trash2 size={16} />
+                 
+                </span>
+              ),
         onClick: (brand: Brand) => {
           // Check if currently being deleted
           if (isDeleting === brand.BrandID) {

@@ -12,6 +12,7 @@ import { Employee, hasAdminAccess, isStockKeeper } from '@/types/user';
 import { Category } from '@/types/category';
 import { fetchCategories, createCategory, updateCategory, deleteCategory } from '@/lib/services/categoryService';
 import { getCurrentUser, logoutUser } from '@/lib/auth';
+import { Pencil, Eye, Trash2 } from 'lucide-react';
 
 const CategoryPage: React.FC = () => {
   const router = useRouter();
@@ -380,14 +381,24 @@ const CategoryPage: React.FC = () => {
     
     return [
       {
-        label: 'Edit',
+        label: (
+                <span className="flex items-center gap-2">
+                  <Pencil size={16} />
+                  
+                </span>
+              ),
         onClick: (category: Category) => {
           handleEditCategory(category);
         },
         variant: 'primary'
       },
       {
-        label: 'Delete',
+        label: (
+                <span className="flex items-center gap-2">
+                  <Trash2 size={16} />
+                  
+                </span>
+              ),
         onClick: (category: Category) => {
           // Check if currently being deleted
           if (isDeleting === category.CategoryID) {

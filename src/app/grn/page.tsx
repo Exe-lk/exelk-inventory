@@ -13,6 +13,7 @@ import { getCurrentUser, logoutUser } from '@/lib/auth';
 import { fetchSuppliers } from '@/lib/services/supplierService';
 import { fetchProducts } from '@/lib/services/productService';
 import { fetchGrnDetailsByGrnId } from '@/lib/services/grndetailsService';
+import { Pencil, Eye, Trash2 } from 'lucide-react';
 
 // GRN interface
 interface GRN {
@@ -775,7 +776,12 @@ const GrnPage: React.FC = () => {
     
     return [
       {
-        label: 'View',
+        label: (
+        <span className="flex items-center gap-2">
+          <Eye size={16} />
+          
+        </span>
+      ),
         onClick: (grn: GRN) => {
           if (isDeleting === grn.grnId) {
             return;
@@ -785,7 +791,12 @@ const GrnPage: React.FC = () => {
         variant: 'secondary'
       },
       {
-        label: 'Update',
+        label:  (
+                <span className="flex items-center gap-2">
+                  <Pencil size={16} />
+                  
+                </span>
+              ),
         onClick: (grn: GRN) => {
           if (isDeleting === grn.grnId) {
             return;
@@ -795,7 +806,12 @@ const GrnPage: React.FC = () => {
         variant: 'primary'
       },
       {
-        label: 'Delete',
+        label: (
+                <span className="flex items-center gap-2">
+                  <Trash2 size={16} />
+                  
+                </span>
+              ),
         onClick: (grn: GRN) => {
           if (isDeleting === grn.grnId) {
             return;

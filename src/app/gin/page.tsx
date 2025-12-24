@@ -11,26 +11,44 @@ import { Employee, hasAdminAccess, isStockKeeper } from '@/types/user';
 import { getCurrentUser, logoutUser } from '@/lib/auth';
 import { fetchProducts } from '@/lib/services/productService';
 import { fetchGinDetailsByGinId } from '@/lib/services/gindetailsService';
-import { 
-  fetchGins, 
-  createCompleteGin, 
-  updateGin, 
-  deleteGin, 
-  CreateCompleteGINRequest 
-} from '@/lib/services/ginService';
+import { fetchGins, createCompleteGin, updateGin, deleteGin, CreateCompleteGINRequest } from '@/lib/services/ginService';
+import { Pencil, Eye, Trash2 } from 'lucide-react';
+import { GINDetail } from '@/types/gindetails';
+
 
 // GIN interface
+// interface GIN {
+//   ginId: number;
+//   ginNumber: string;
+//   stockKeeperId: number;
+//   issuedTo: string;
+//   issueReason: string | null;
+//   issueDate: string;
+//   remarks: string | null;
+//   stockId?: number | null;
+//   createdDate?: string;
+//   updatedDate?: string;
+//   // Enhanced for search context
+//   gindetails?: {
+//     product?: {
+//       productName: string;
+//       sku: string;
+//     };
+//   }[];
+// }
+
 interface GIN {
   ginId: number;
-  ginNumber: string;
-  stockKeeperId: number;
-  issuedTo: string;
+  ginNumber: string | null; // Changed from string to string | null
+  stockKeeperId?: number; // Made optional
+  employeeId?: number; // Added as optional
+  issuedTo: string | null; // Changed from string to string | null
   issueReason: string | null;
-  issueDate: string;
+  issueDate: string | null; // Changed from string to string | null
   remarks: string | null;
   stockId?: number | null;
-  createdDate?: string;
-  updatedDate?: string;
+  createdDate?: string | null; // Changed from string to string | null
+  updatedDate?: string | null; // Changed from string to string | null
   // Enhanced for search context
   gindetails?: {
     product?: {
@@ -49,15 +67,15 @@ interface Product {
 }
 
 // GIN Detail interface
-interface GINDetail {
-  ginDetailId: number;
-  ginId: number;
-  productId: number;
-  quantityIssued: number;
-  unitCost: number;
-  subTotal: number;
-  location: string | null;
-}
+// interface GINDetail {
+//   ginDetailId: number;
+//   ginId: number;
+//   productId: number;
+//   quantityIssued: number;
+//   unitCost: number;
+//   subTotal: number;
+//   location: string | null;
+// }
 
 // GIN Detail for form
 interface GINDetailFormData {
@@ -219,7 +237,7 @@ const GinPage: React.FC = () => {
       searchParams.set('sortOrder', 'desc');
       
       const url = `/api/gin${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
-      console.log('🌐 Enhanced Search URL:', url);
+      console.log(' Enhanced Search URL:', url);
       
       const response = await fetch(url, {
         method: 'GET',
@@ -253,7 +271,7 @@ const GinPage: React.FC = () => {
       }
       
     } catch (err) {
-      console.error('❌ Error in enhanced search:', err);
+      console.error(' Error in enhanced search:', err);
       setError(err instanceof Error ? err.message : 'Failed to search GINs');
     } finally {
       setLoading(false);
@@ -272,18 +290,18 @@ const GinPage: React.FC = () => {
   // Handle View GIN Details
   const handleViewGinDetails = async (gin: GIN) => {
     try {
-      console.log('🔍 Viewing GIN details for:', gin);
+      console.log(' Viewing GIN details for:', gin);
       setViewingGin(gin);
       setIsLoadingDetails(true);
       setIsViewModalOpen(true);
       
       // Fetch GIN details
       const details = await fetchGinDetailsByGinId(gin.ginId);
-      console.log('📋 Fetched GIN details:', details);
+      console.log(' Fetched GIN details:', details);
       setViewGinDetails(details);
       
     } catch (error) {
-      console.error('❌ Error fetching GIN details:', error);
+      console.error(' Error fetching GIN details:', error);
       alert('Failed to load GIN details. Please try again.');
       setIsViewModalOpen(false);
     } finally {
@@ -509,7 +527,7 @@ const GinPage: React.FC = () => {
         issueReason: formData.issueReason,
         issueDate: formData.issueDate,
         remarks: formData.remarks,
-        stockId: formData.stockId ? parseInt(formData.stockId) : null
+        stockId: formData.stockId ? parseInt(formData.stockId) : undefined
       };
       
       const updatedGin = await updateGin(selectedGin.ginId, updateData);
@@ -670,7 +688,12 @@ const GinPage: React.FC = () => {
     
     return [
       {
-        label: 'View',
+        label: (
+        <span className="flex items-center gap-2">
+          <Eye size={16} />
+          
+        </span>
+      ),
         onClick: (gin: GIN) => {
           if (isDeleting === gin.ginId) {
             return;
@@ -680,7 +703,12 @@ const GinPage: React.FC = () => {
         variant: 'secondary'
       },
       {
-        label: 'Update',
+        label: (
+                <span className="flex items-center gap-2">
+                  <Pencil size={16} />
+                  
+                </span>
+              ),
         onClick: (gin: GIN) => {
           if (isDeleting === gin.ginId) {
             return;
@@ -690,7 +718,12 @@ const GinPage: React.FC = () => {
         variant: 'primary'
       },
       {
-        label: 'Delete',
+        label: (
+                <span className="flex items-center gap-2">
+                  <Trash2 size={16} />
+                  
+                </span>
+              ),
         onClick: (gin: GIN) => {
           if (isDeleting === gin.ginId) {
             return;
@@ -753,7 +786,7 @@ const GinPage: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg text-center">
-          <div className="text-red-500 text-4xl mb-4">🚫</div>
+          <div className="text-red-500 text-4xl mb-4"></div>
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
           <p className="text-gray-600 mb-6">
             Only stockkeepers can access GIN management.
@@ -831,7 +864,7 @@ const GinPage: React.FC = () => {
               <div className="flex items-center justify-center min-h-[60vh]">
                 <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
                   <div className="text-center">
-                    <div className="text-red-500 text-xl mb-4">⚠️</div>
+                    <div className="text-red-500 text-xl mb-4"></div>
                     <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Data</h3>
                     <p className="text-gray-500 mb-4">{error}</p>
                     <button 
@@ -880,7 +913,7 @@ const GinPage: React.FC = () => {
                       {viewingGin && (
                         <p className="text-sm text-gray-500 mt-1">
                           {viewingGin.ginNumber} • Issued To: {viewingGin.issuedTo} • 
-                          Date: {new Date(viewingGin.issueDate).toLocaleDateString()}
+                          Date: {viewingGin.issueDate ? new Date(viewingGin.issueDate).toLocaleDateString() : 'N/A'}
                         </p>
                       )}
                     </div>
@@ -928,11 +961,13 @@ const GinPage: React.FC = () => {
                             <div>
                               <label className="block text-sm font-medium text-gray-700">Issue Date</label>
                               <p className="text-sm text-gray-900">
-                                {new Date(viewingGin.issueDate).toLocaleDateString('en-US', {
-                                  year: 'numeric',
-                                  month: 'long',
-                                  day: 'numeric'
-                                })}
+                                {viewingGin.issueDate 
+                                  ? new Date(viewingGin.issueDate).toLocaleDateString('en-US', {
+                                      year: 'numeric',
+                                      month: 'long',
+                                      day: 'numeric',
+                                    })
+                                  : 'N/A'}
                               </p>
                             </div>
                             {viewingGin.issueReason && (
@@ -1008,10 +1043,10 @@ const GinPage: React.FC = () => {
                                     }) || '0.00'}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    LKR {detail.subTotal?.toLocaleString('en-US', {
+                                    LKR {(detail.subTotal ?? 0).toLocaleString('en-US', {
                                       minimumFractionDigits: 2,
                                       maximumFractionDigits: 2
-                                    }) || '0.00'}
+                                    })}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {detail.location || 'N/A'}
@@ -1025,7 +1060,7 @@ const GinPage: React.FC = () => {
                                   Total Value:
                                 </td>
                                 <td className="px-6 py-4 text-sm font-bold text-gray-900">
-                                  LKR {viewGinDetails.reduce((total, detail) => total + (detail.subTotal || 0), 0).toLocaleString('en-US', {
+                                  LKR {viewGinDetails.reduce((total, detail) => total + (detail.subTotal ?? 0), 0).toLocaleString('en-US', {
                                     minimumFractionDigits: 2,
                                     maximumFractionDigits: 2
                                   })}
@@ -1338,7 +1373,7 @@ const GinPage: React.FC = () => {
         confirmButtonText="Yes, Delete"
         cancelButtonText="No, Cancel"
         loading={isDeleting === ginToDelete?.ginId}
-        itemName={ginToDelete?.ginNumber}
+        itemName={ginToDelete?.ginNumber ?? undefined}
       />
     </div>
   );

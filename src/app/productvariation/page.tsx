@@ -12,6 +12,7 @@ import { Employee, hasAdminAccess, isStockKeeper } from '@/types/user';
 import { ProductVariation } from '@/types/productvariation';
 import { fetchProductVariations, createProductVariation, updateProductVariation, deleteProductVariation } from '@/lib/services/productvariationService';
 import { getCurrentUser, logoutUser } from '@/lib/auth';
+import { Pencil, Eye, Trash2 } from 'lucide-react';
 
 const ProductVariationPage: React.FC = () => {
   const router = useRouter();
@@ -421,8 +422,15 @@ const ProductVariationPage: React.FC = () => {
       sortable: true,
       render: (value: number) => (
         <span className="font-medium text-gray-900">
-          {value ? `$${value.toLocaleString()}` : '$0'}
+          {value ? `LKR:${value.toLocaleString()}` : '$0'}
         </span>
+
+        // <span className="font-medium ">
+        //   LKR:{value ? value.toLocaleString('en-US', {
+        //     minimumFractionDigits: 2,
+        //     maximumFractionDigits: 2
+        //   }) : '0.00'}
+        // </span>
       )
     },
     {
@@ -473,23 +481,33 @@ const ProductVariationPage: React.FC = () => {
     }
     
     return [
+      // {
+      //   label: 'Add Spec',
+      //   onClick: (productVariation: ProductVariation) => {
+      //     // Navigate to product variation specs page
+      //     router.push(`/productvariation/${productVariation.variationId}/specs`);
+      //   },
+      //   variant: 'secondary'
+      // },
       {
-        label: 'Add Spec',
-        onClick: (productVariation: ProductVariation) => {
-          // Navigate to product variation specs page
-          router.push(`/productvariation/${productVariation.variationId}/specs`);
-        },
-        variant: 'secondary'
-      },
-      {
-        label: 'Update',
+        label: (
+                <span className="flex items-center gap-2">
+                  <Pencil size={16} />
+                  
+                </span>
+              ),
         onClick: (productVariation: ProductVariation) => {
           handleEditProductVariation(productVariation);
         },
         variant: 'primary'
       },
       {
-        label: 'Delete',
+        label: (
+                <span className="flex items-center gap-2">
+                  <Trash2 size={16} />
+                  
+                </span>
+              ),
         onClick: (productVariation: ProductVariation) => {
           if (isDeleting === productVariation.variationId) {
             return;
@@ -648,12 +666,12 @@ const ProductVariationPage: React.FC = () => {
                   >
                     Back
                   </button>
-                  <button
+                  {/* <button
                     onClick={handleAddNewSpecClick}
                     className="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
                   >
                     Add New Spec
-                  </button>
+                  </button> */}
                 </div>
               </div>
             </div>

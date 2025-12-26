@@ -733,7 +733,7 @@ function getEmployeeIdFromToken(accessToken: string): number {
 
 // GET - Retrieve categories with pagination, sorting, search, and filtering
 export async function GET(request: NextRequest) {
-  console.log('🔍 Category GET request started');
+  console.log(' Category GET request started');
   
   try {
     // Verify authentication

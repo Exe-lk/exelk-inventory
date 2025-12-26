@@ -10,7 +10,7 @@ export interface TableColumn {
 }
 
 export interface ActionButton {
-  label: string;
+  label: string | React.ReactNode;
   onClick: (row: any) => void;
   className?: string;
   icon?: React.ReactNode;
@@ -29,6 +29,7 @@ export interface TableProps {
   emptyMessage?: string;
   onCreateClick?: () => void;
   createButtonLabel?: string;
+  getRowClassName?: (row: any) => string;
 }
 
 const Table: React.FC<TableProps> = ({
@@ -42,7 +43,8 @@ const Table: React.FC<TableProps> = ({
   loading = false,
   emptyMessage = 'No data available',
   onCreateClick,
-  createButtonLabel = 'Create'
+  createButtonLabel = 'Create',
+  getRowClassName
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortColumn, setSortColumn] = useState<string>('');
@@ -349,7 +351,7 @@ const Table: React.FC<TableProps> = ({
               </tr>
             ) : (
               paginatedData.map((row, index) => (
-                <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                <tr key={index} className={`border-b border-gray-100 hover:bg-gray-50 ${getRowClassName ? getRowClassName(row) : ''}`}>
                   {columns.map((column) => (
                     <td key={column.key} className="px-6 py-4 text-sm text-gray-900">
                       {column.render ? column.render(row[column.key], row) : row[column.key]}

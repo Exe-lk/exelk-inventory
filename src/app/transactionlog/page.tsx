@@ -1,0 +1,891 @@
+
+'use client';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Table, { TableColumn, ActionButton } from '@/components/Table/table';
+import SidebarWrapper from '@/components/Common/SidebarWraper';
+import Navbar from '@/components/Common/navbar';
+import Login from '@/components/login/login';
+import { Employee, hasAdminAccess, isStockKeeper } from '@/types/user';
+import { TransactionLogWithDetails, TransactionLogQueryParams, TransactionLogFilters } from '@/types/transactionlog';
+import { getCurrentUser, logoutUser } from '@/lib/auth';
+
+// Service function to fetch transaction logs
+const fetchTransactionLogs = async (params: TransactionLogQueryParams = {}) => {
+  try {
+    console.log(' Fetching transaction logs with params:', params);
+    
+    const queryParams = new URLSearchParams();
+    
+    if (params.page) queryParams.set('page', params.page.toString());
+    if (params.limit) queryParams.set('limit', params.limit.toString());
+    if (params.sortBy) queryParams.set('sortBy', params.sortBy);
+    if (params.sortOrder) queryParams.set('sortOrder', params.sortOrder);
+    if (params.search) queryParams.set('search', params.search);
+    if (params.stockKeeperId) queryParams.set('stockKeeperId', params.stockKeeperId.toString());
+    if (params.actionType) queryParams.set('actionType', params.actionType);
+    if (params.entityName) queryParams.set('entityName', params.entityName);
+    if (params.referenceId) queryParams.set('referenceId', params.referenceId.toString());
+    if (params.dateFrom) queryParams.set('dateFrom', params.dateFrom);
+    if (params.dateTo) queryParams.set('dateTo', params.dateTo);
+
+    const url = queryParams.toString() ? `/api/transactionlog?${queryParams}` : '/api/transactionlog';
+    console.log('🔗 Request URL:', url);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('❌ Fetch transaction logs error response:', errorData);
+      throw new Error(errorData.message || 'Failed to fetch transaction logs');
+    }
+    
+    const result = await response.json();
+    console.log('📋 Transaction Logs API Response:', result);
+    
+    if (result.status === 'success' && result.data) {
+      return result.data;
+    } else {
+      throw new Error(result.message || 'Invalid response format');
+    }
+  } catch (error) {
+    console.error('❌ Error fetching transaction logs:', error);
+    throw error;
+  }
+};
+
+const TransactionLogPage: React.FC = () => {
+  const router = useRouter();
+  
+  // Auth states
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<Omit<Employee, 'Password'> | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  
+  // Sidebar states
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
+  
+  // Data states
+  const [transactionLogs, setTransactionLogs] = useState<TransactionLogWithDetails[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Pagination and filtering states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [filters, setFilters] = useState<TransactionLogFilters>({
+    stockKeeperId: null,
+    actionType: null,
+    entityName: null,
+    referenceId: null,
+    dateFrom: null,
+    dateTo: null
+  });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'logId' | 'employeeId' | 'actionType' | 'entityName' | 'referenceId' | 'actionDate'>('actionDate');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  // Filter form states
+  const [isFilterFormOpen, setIsFilterFormOpen] = useState(false);
+  const [tempFilters, setTempFilters] = useState(filters);
+
+  // Check authentication and authorization
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const user = await getCurrentUser();
+        if (user) {
+          // Only allow stockkeepers to access transaction logs
+          if (!isStockKeeper(user.RoleID)) {
+            router.push('/home');
+            return;
+          }
+          setCurrentUser(user);
+          setIsLoggedIn(true);
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+      } finally {
+        setIsAuthLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [router]);
+
+  // Fetch transaction log data
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const params: TransactionLogQueryParams = {
+          page: currentPage,
+          limit: 10,
+          sortBy,
+          sortOrder,
+          search: searchTerm || undefined,
+          stockKeeperId: filters.stockKeeperId || undefined,
+          actionType: filters.actionType || undefined,
+          entityName: filters.entityName || undefined,
+          referenceId: filters.referenceId || undefined,
+          dateFrom: filters.dateFrom || undefined,
+          dateTo: filters.dateTo || undefined
+        };
+
+        const data = await fetchTransactionLogs(params);
+        
+        setTransactionLogs(data.items);
+        setTotalPages(data.pagination.totalPages);
+        setTotalItems(data.pagination.totalItems);
+        
+        console.log('Loaded transaction logs:', data.items.length);
+        
+      } catch (err) {
+        console.error('Error loading transaction logs:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load transaction logs');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [isLoggedIn, currentPage, sortBy, sortOrder, searchTerm, filters]);
+
+  // Auth handlers
+  const handleLogin = (user: Omit<Employee, 'Password'>) => {
+    if (!isStockKeeper(user.RoleID)) {
+      alert('Access denied. Only stockkeepers can access transaction logs.');
+      return;
+    }
+    setCurrentUser(user);
+    setIsLoggedIn(true);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      setIsLoggedIn(false);
+      setCurrentUser(null);
+      router.push('/');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
+  // Sidebar handlers
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const closeMobileSidebar = () => {
+    setIsSidebarOpen(false);
+  };
+
+  const handleSidebarExpandChange = (isExpanded: boolean) => {
+    setIsSidebarExpanded(isExpanded);
+  };
+
+  // Filter handlers
+  const handleFilterChange = (key: keyof TransactionLogFilters, value: any) => {
+    setTempFilters(prev => ({
+      ...prev,
+      [key]: value || null
+    }));
+  };
+
+  const applyFilters = () => {
+    setFilters(tempFilters);
+    setCurrentPage(1);
+    setIsFilterFormOpen(false);
+  };
+
+  const clearFilters = () => {
+    const emptyFilters = {
+      stockKeeperId: null,
+      actionType: null,
+      entityName: null,
+      referenceId: null,
+      dateFrom: null,
+      dateTo: null
+    };
+    setTempFilters(emptyFilters);
+    setFilters(emptyFilters);
+    setSearchTerm('');
+    setCurrentPage(1);
+    setIsFilterFormOpen(false);
+  };
+
+  // Search handler
+  const handleSearch = (search: string) => {
+    setSearchTerm(search);
+    setCurrentPage(1);
+  };
+
+  // Format action type for display
+  const formatActionType = (actionType: string) => {
+    return actionType.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  // Format entity name for display
+  const formatEntityName = (entityName: string) => {
+    return entityName.toUpperCase();
+  };
+
+  // Format values for display
+  const formatValue = (value: string | null, maxLength: number = 100) => {
+    if (!value) return 'N/A';
+    try {
+      // Try to parse as JSON for better formatting
+      const parsed = JSON.parse(value);
+      const formatted = JSON.stringify(parsed, null, 2);
+      return formatted.length > maxLength ? `${formatted.substring(0, maxLength)}...` : formatted;
+    } catch {
+      // If not JSON, treat as regular string
+      return value.length > maxLength ? `${value.substring(0, maxLength)}...` : value;
+    }
+  };
+
+  // Define table columns
+  const columns: TableColumn[] = [
+    {
+      key: 'logId',
+      label: 'Log ID',
+      sortable: true,
+      render: (value: number) => (
+        <span className="font-medium text-gray-900">
+          {String(value).padStart(4, '0')}
+        </span>
+      )
+    },
+    {
+      key: 'actionDate',
+      label: 'Date & Time',
+      sortable: true,
+      filterable: true,
+      render: (value: string) => (
+        <div className="text-sm">
+          <div className="font-medium text-gray-900">
+            {new Date(value).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            })}
+          </div>
+          <div className="text-gray-500">
+            {new Date(value).toLocaleTimeString('en-US', {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit'
+            })}
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'stockKeeperName',
+      label: 'Stock Keeper',
+      sortable: false,
+      filterable: true,
+      render: (value: string | null, row: TransactionLogWithDetails) => (
+        <div className="text-sm">
+          <div className="font-medium text-gray-900">
+            {value || 'Unknown User'}
+          </div>
+          {/* <div className="text-gray-500">
+            ID: {row.stockKeeperId}
+          </div> */}
+        </div>
+      )
+    },
+    {
+      key: 'actionType',
+      label: 'Action',
+      sortable: true,
+      filterable: true,
+      render: (value: string) => (
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium `}>
+          {formatActionType(value)}
+        </span>
+      )
+    },
+    {
+      key: 'entityName',
+      label: 'Stock/Return', // old lable is 'Entity'
+      sortable: true,
+      filterable: true,
+      render: (value: string) => (
+        <span className="font-medium text-gray-700">
+          {formatEntityName(value)}
+        </span>
+      )
+    },
+    {
+      key: 'referenceId',
+      label: 'Reference ID',
+      sortable: true,
+      filterable: true,
+      render: (value: number | null) => (
+        <span className="text-gray-600">
+          {value ? `${value}` : 'N/A'}
+        </span>
+      )
+    },
+    // {
+    //   key: 'oldValue',
+    //   label: 'Old Value',
+    //   sortable: false,
+    //   render: (value: string | null) => (
+    //     <div className="text-xs text-gray-600 max-w-xs">
+    //       <pre className="whitespace-pre-wrap break-words font-mono">
+    //         {formatValue(value, 100)}
+    //       </pre>
+    //     </div>
+    //   )
+    // },
+
+    {
+      key: 'oldValue',
+      label: 'Old Value',
+      sortable: false,
+      render: (value: string | null) => {
+        if (!value) return '-';
+
+        try {
+          const parsed = JSON.parse(value);
+          return (
+            <div className="text-xs text-gray-600">
+              {parsed.previousQuantity ?? '-'}
+            </div>
+          );
+        } catch (error) {
+          // Fallback if value is not valid JSON
+          return (
+            <div className="text-xs text-gray-600">
+              {value}
+            </div>
+          );
+        }
+      }
+    },
+
+    {
+      key: 'newValue',
+      label: 'New Value',
+      sortable: false,
+      render: (value: string | null) => {
+        if (!value) return '-';
+
+        try {
+          const parsed = JSON.parse(value);
+          return (
+            <div className="text-xs text-gray-600">
+              {parsed.newQuantity ?? '-'}
+            </div>
+          );
+        } catch (error) {
+          // Fallback if value is not valid JSON
+          return (
+            <div className="text-xs text-gray-600">
+              {value}
+            </div>
+          );
+        }
+      }
+    },
+
+    // {
+    //   key: 'newValue',
+    //   label: 'New Value',
+    //   sortable: false,
+    //   render: (value: string | null) => (
+    //     <div className="text-xs text-gray-600 max-w-xs">
+    //       <pre className="whitespace-pre-wrap break-words font-mono">
+    //         {formatValue(value, 100)}
+    //       </pre>
+    //     </div>
+    //   )
+    // }
+  ];
+
+  // Define action buttons
+  const getActions = (): ActionButton[] => {
+    if (!isStockKeeper(currentUser?.RoleID || 0)) {
+      return [];
+    }
+    return [];
+    // return [
+    //   {
+    //     label: 'View Details',
+    //     onClick: (log: TransactionLogWithDetails) => {
+    //       // Show detailed view in modal
+    //       alert(`Log Details:\n\nLog ID: ${log.logId}\nDate: ${new Date(log.actionDate).toLocaleString()}\nAction: ${log.actionType}\nEntity: ${log.entityName}\nReference: ${log.referenceId || 'N/A'}\nStock Keeper: ${log.stockKeeperName}\n\nOld Value:\n${log.oldValue || 'N/A'}\n\nNew Value:\n${log.newValue || 'N/A'}`);
+    //     },
+    //     variant: 'primary'
+    //   }
+    // ];
+  };
+
+  const actions = getActions();
+
+  // Refresh data
+  const refreshData = async () => {
+    try {
+      setLoading(true);
+      const params: TransactionLogQueryParams = {
+        page: currentPage,
+        limit: 10,
+        sortBy,
+        sortOrder,
+        search: searchTerm || undefined,
+        stockKeeperId: filters.stockKeeperId || undefined,
+        actionType: filters.actionType || undefined,
+        entityName: filters.entityName || undefined,
+        referenceId: filters.referenceId || undefined,
+        dateFrom: filters.dateFrom || undefined,
+        dateTo: filters.dateTo || undefined
+      };
+      
+      const data = await fetchTransactionLogs(params);
+      setTransactionLogs(data.items);
+      setTotalPages(data.pagination.totalPages);
+      setTotalItems(data.pagination.totalItems);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to refresh data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Show loading spinner during auth check
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <div className="text-lg text-gray-600">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login if not authenticated
+  if (!isLoggedIn) {
+    return <Login onLogin={handleLogin} />;
+  }
+
+  // Show access denied for unauthorized users
+  if (!isStockKeeper(currentUser?.RoleID || 0)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg text-center">
+          <div className="text-red-500 text-4xl mb-4">🚫</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
+          <p className="text-gray-600 mb-6">
+            Only stockkeepers can access transaction logs.
+          </p>
+          <button
+            onClick={() => router.push('/home')}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Go to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <Navbar currentUser={currentUser} onMenuClick={toggleSidebar} />
+        <SidebarWrapper
+          currentUser={currentUser}
+          onLogout={handleLogout} 
+          isMobileOpen={isSidebarOpen}
+          onMobileClose={closeMobileSidebar}
+          onExpandedChange={handleSidebarExpandChange}
+        />
+        <div className={`pt-[70px] transition-all duration-300 ease-in-out ${isSidebarExpanded ? 'lg:ml-[300px]' : 'lg:ml-16'}`}>
+          <main className="overflow-y-auto bg-gray-50 p-6" style={{ minHeight: 'calc(100vh - 70px)' }}>
+            <div className="flex items-center justify-center min-h-[60vh]">
+              <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+                <div className="text-center">
+                  <div className="text-red-500 text-xl mb-4">⚠️</div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Data</h3>
+                  <p className="text-gray-500 mb-4">{error}</p>
+                  <div className="space-x-4">
+                    <button onClick={refreshData} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                      Retry
+                    </button>
+                    <button onClick={() => window.location.reload()} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors">
+                      Reload Page
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      {/* Navbar */}
+      <Navbar currentUser={currentUser} onMenuClick={toggleSidebar} />
+
+      {/* Role-based Sidebar */}
+      <SidebarWrapper
+        currentUser={currentUser}
+        onLogout={handleLogout} 
+        isMobileOpen={isSidebarOpen}
+        onMobileClose={closeMobileSidebar}
+        onExpandedChange={handleSidebarExpandChange}
+      />
+
+      {/* Main Content */}
+      <div className={`pt-[70px] transition-all duration-300 ease-in-out ${isSidebarExpanded ? 'lg:ml-[300px]' : 'lg:ml-16'}`}>
+        <main className="overflow-y-auto bg-gray-50 p-6" style={{ minHeight: 'calc(100vh - 70px)' }}>
+          <div className="max-w-full">
+            <div className="mb-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">Transaction Logs</h1>
+                  <p className="mt-2 text-gray-600">
+                    View all system transaction logs and audit trail
+                  </p>
+                </div>
+                <div className="flex items-center space-x-4">
+                  {/* <button
+                    onClick={() => setIsFilterFormOpen(true)}
+                    className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z" />
+                    </svg>
+                    Advanced Filters
+                  </button> */}
+                  <button
+                    onClick={refreshData}
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Refresh
+                  </button>
+                </div>
+              </div>
+
+              {/* Summary Info */}
+              {/* <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <div className="text-2xl font-bold text-gray-900">{totalItems}</div>
+                  <div className="text-sm text-gray-600">Total Records</div>
+                </div>
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <div className="text-2xl font-bold text-blue-600">{transactionLogs.filter(log => log.actionType === 'CREATE').length}</div>
+                  <div className="text-sm text-gray-600">Create Actions</div>
+                </div>
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <div className="text-2xl font-bold text-green-600">{transactionLogs.filter(log => log.actionType === 'STOCK_IN').length}</div>
+                  <div className="text-sm text-gray-600">Stock-In Actions</div>
+                </div>
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <div className="text-2xl font-bold text-orange-600">{transactionLogs.filter(log => log.actionType === 'STOCK_OUT').length}</div>
+                  <div className="text-sm text-gray-600">Stock-Out Actions</div>
+                </div>
+              </div> */}
+
+              {/* Active Filters Display */}
+              {(Object.values(filters).some(v => v !== null) || searchTerm) && (
+                <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-medium text-blue-800">Active Filters:</h3>
+                      <div className="mt-1 flex flex-wrap gap-2">
+                        {searchTerm && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            Search: "{searchTerm}"
+                          </span>
+                        )}
+                        {filters.stockKeeperId && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            Stock Keeper ID: {filters.stockKeeperId}
+                          </span>
+                        )}
+                        {filters.actionType && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            Action: {formatActionType(filters.actionType)}
+                          </span>
+                        )}
+                        {filters.entityName && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            Entity: {formatEntityName(filters.entityName)}
+                          </span>
+                        )}
+                        {filters.referenceId && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            Reference ID: {filters.referenceId}
+                          </span>
+                        )}
+                        {filters.dateFrom && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            From: {filters.dateFrom}
+                          </span>
+                        )}
+                        {filters.dateTo && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            To: {filters.dateTo}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={clearFilters}
+                      className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white rounded-lg shadow">
+              <Table
+                data={transactionLogs}
+                columns={columns}
+                actions={actions}
+                itemsPerPage={10}
+                searchable={true}
+                filterable={true}
+                loading={loading}
+                emptyMessage="No transaction logs found."
+                //onSearch={handleSearch}
+                className="border border-gray-200"
+              />
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-6 flex items-center justify-between bg-white px-4 py-3 border border-gray-200 rounded-lg">
+                <div className="flex-1 flex justify-between sm:hidden">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      Showing <span className="font-medium">{((currentPage - 1) * 10) + 1}</span> to{' '}
+                      <span className="font-medium">{Math.min(currentPage * 10, totalItems)}</span> of{' '}
+                      <span className="font-medium">{totalItems}</span> results
+                    </p>
+                  </div>
+                  <div>
+                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        Previous
+                      </button>
+                      
+                      {/* Page numbers */}
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                              currentPage === pageNum
+                                ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                                : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                      
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage === totalPages}
+                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        Next
+                      </button>
+                    </nav>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+
+      {/* Advanced Filter Modal */}
+      {isFilterFormOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={() => setIsFilterFormOpen(false)}></div>
+          
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative w-full max-w-2xl">
+              <div className="relative bg-white rounded-lg shadow-xl p-6">
+                <button
+                  onClick={() => setIsFilterFormOpen(false)}
+                  className="absolute right-4 top-4 z-10 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+
+                <div className="mb-6">
+                  <h3 className="text-lg font-medium text-gray-900">Advanced Filters</h3>
+                  <p className="mt-1 text-sm text-gray-600">
+                    Filter transaction logs by specific criteria
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Stock Keeper ID</label>
+                    <input
+                      type="number"
+                      placeholder="Enter stock keeper ID"
+                      value={tempFilters.stockKeeperId || ''}
+                      onChange={(e) => handleFilterChange('stockKeeperId', e.target.value ? parseInt(e.target.value) : null)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Action Type</label>
+                    <select
+                      value={tempFilters.actionType || ''}
+                      onChange={(e) => handleFilterChange('actionType', e.target.value || null)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">All Actions</option>
+                      <option value="CREATE">Create</option>
+                      <option value="UPDATE">Update</option>
+                      <option value="DELETE">Delete</option>
+                      <option value="STOCK_IN">Stock In</option>
+                      <option value="STOCK_OUT">Stock Out</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Entity Name</label>
+                    <select
+                      value={tempFilters.entityName || ''}
+                      onChange={(e) => handleFilterChange('entityName', e.target.value || null)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">All Entities</option>
+                      <option value="GRN">GRN</option>
+                      <option value="GIN">GIN</option>
+                      <option value="PRODUCT">Product</option>
+                      <option value="STOCK">Stock</option>
+                      <option value="BINCARD">Bincard</option>
+                      <option value="SUPPLIER">Supplier</option>
+                      <option value="EMPLOYEE">Employee</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Reference ID</label>
+                    <input
+                      type="number"
+                      placeholder="Enter reference ID"
+                      value={tempFilters.referenceId || ''}
+                      onChange={(e) => handleFilterChange('referenceId', e.target.value ? parseInt(e.target.value) : null)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Date From</label>
+                    <input
+                      type="date"
+                      value={tempFilters.dateFrom || ''}
+                      onChange={(e) => handleFilterChange('dateFrom', e.target.value || null)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Date To</label>
+                    <input
+                      type="date"
+                      value={tempFilters.dateTo || ''}
+                      onChange={(e) => handleFilterChange('dateTo', e.target.value || null)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-6 flex justify-end space-x-3">
+                  <button
+                    onClick={clearFilters}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 border border-gray-300 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  >
+                    Clear All
+                  </button>
+                  <button
+                    onClick={applyFilters}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    Apply Filters
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default TransactionLogPage;

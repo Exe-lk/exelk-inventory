@@ -632,6 +632,7 @@ import { Employee, hasAdminAccess, isStockKeeper } from '@/types/user';
 import { ProductVersion } from '@/types/productversion';
 import { fetchProductVersions, createProductVersion, updateProductVersion, deleteProductVersion } from '@/lib/services/productversionService';
 import { getCurrentUser, logoutUser } from '@/lib/auth';
+import { Pencil, Eye, Trash2 } from 'lucide-react';
 
 const ProductVersionPage: React.FC = () => {
   const router = useRouter();
@@ -972,14 +973,24 @@ const ProductVersionPage: React.FC = () => {
     
     return [
       {
-        label: 'Update',
+        label: (
+                <span className="flex items-center gap-2">
+                  <Pencil size={16} />
+                  
+                </span>
+              ),
         onClick: (productVersion: ProductVersion) => {
           handleEditProductVersion(productVersion);
         },
         variant: 'primary'
       },
       {
-        label: 'Delete',
+        label: (
+                <span className="flex items-center gap-2">
+                  <Trash2 size={16} />
+                  
+                </span>
+              ),
         onClick: (productVersion: ProductVersion) => {
           // Check if currently being deleted
           if (isDeleting === productVersion.versionId) {

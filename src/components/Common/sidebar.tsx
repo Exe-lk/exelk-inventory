@@ -4,7 +4,8 @@ import {
   UserPlus, 
   CreditCard,
   FileText, 
-  LogOut, 
+  LogOut,
+  FileInput, 
   ChevronLeft, 
   ChevronRight,
   Truck,
@@ -89,9 +90,9 @@ const Sidebar: React.FC<SidebarProps> = ({
       href: '/gin'
     },
     {
-      icon: Shield,
-      label: 'Gate Pass',
-      href: '/gate-pass'
+      icon: FileInput,
+      label: 'Import Files',
+      href: '/import'
     },
     {
       icon: Undo,
@@ -103,11 +104,11 @@ const Sidebar: React.FC<SidebarProps> = ({
       label: 'Suppliers',
       href: '/supplier'
     },
-    {
-      icon: FileText,
-      label: 'API Documentation',
-      href: '/swagger'
-    }
+    // {
+    //   icon: FileText,
+    //   label: 'API Documentation',
+    //   href: '/swagger'
+    // }
   ];
 
   const toggleSidebar = () => {

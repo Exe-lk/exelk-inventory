@@ -16,6 +16,7 @@ import {
   ArrowRight,
   ArrowLeft,
   Shield,
+  FileInput,
   Undo,
   Users
 } from 'lucide-react';
@@ -89,9 +90,9 @@ const Sidebar: React.FC<SidebarProps> = ({
       href: '/gin'
     },
     {
-      icon: Shield,
-      label: 'Gate Pass',
-      href: '/gate-pass'
+      icon: FileInput,
+      label: 'Import Files',
+      href: '/import'
     },
     {
       icon: Undo,

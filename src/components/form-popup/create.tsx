@@ -15,6 +15,7 @@ export interface FormField {
   defaultValue?: any;
   className?: string;
   rows?: number; // for textarea
+  accept?: string;
 }
 
 export interface FormProps {
@@ -66,32 +67,109 @@ const Form: React.FC<FormProps> = ({
     { id: '1', name: '', value: '', description: '', dataType: 'TEXT', isActive: true }
   ]);
 
-  const validateField = (field: FormField, value: any): string | null => {
-    if (field.required && (!value || (typeof value === 'string' && value.trim() === ''))) {
-      return `${field.label} is required`;
-    }
+  // const validateField = (field: FormField, value: any): string | null => {
+  //   if (field.required && (!value || (typeof value === 'string' && value.trim() === ''))) {
+  //     return `${field.label} is required`;
+  //   }
 
-    if (field.validation) {
-      return field.validation(value);
-    }
+  //   if (field.validation) {
+  //     return field.validation(value);
+  //   }
 
-    // Built-in validations
-    if (field.type === 'email' && value) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(value)) {
-        return 'Please enter a valid email address';
+  //   // Built-in validations
+  //   if (field.type === 'email' && value) {
+  //     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  //     if (!emailRegex.test(value)) {
+  //       return 'Please enter a valid email address';
+  //     }
+  //   }
+
+  //   if (field.type === 'phone' && value) {
+  //     const phoneRegex = /^[0-9-+\s()]+$/;
+  //     if (!phoneRegex.test(value)) {
+  //       return 'Please enter a valid phone number';
+  //     }
+  //   }
+
+  //   return null;
+  // };
+
+  
+
+const validateField = (field: FormField, value: any): string | null => {
+  // Handle required validation
+  if (field.required) {
+    // if (field.type === 'file') {
+    //   if (!value || !(value instanceof File)) {
+    //     return `${field.label} is required`;
+    //   }
+    // } else {
+    //   if (!value || (typeof value === 'string' && value.trim() === '')) {
+    //     return `${field.label} is required`;
+    //   }
+    // }
+  }
+
+  // Handle custom validation
+  if (field.validation && value !== null && value !== undefined) {
+    try {
+      const validationResult = field.validation(value);
+      if (validationResult) {
+        return validationResult;
       }
+    } catch (error) {
+      console.error('Validation error:', error);
+      return 'Validation failed';
     }
+  }
 
-    if (field.type === 'phone' && value) {
-      const phoneRegex = /^[0-9-+\s()]+$/;
-      if (!phoneRegex.test(value)) {
-        return 'Please enter a valid phone number';
-      }
+  // Built-in validations for other field types
+  if (field.type === 'email' && value) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(value)) {
+      return 'Please enter a valid email address';
     }
+  }
 
-    return null;
-  };
+  if (field.type === 'phone' && value) {
+    const phoneRegex = /^[0-9-+\s()]+$/;
+    if (!phoneRegex.test(value)) {
+      return 'Please enter a valid phone number';
+    }
+  }
+
+  return null;
+};
+
+
+
+
+// In your Form component, add debugging to the validation:
+
+// const validateForm = (): boolean => {
+//   const newErrors: Record<string, string | null> = {};
+//   let isValid = true;
+
+//   fields.forEach((field) => {
+//     try {
+//       const fieldValue = values[field.name];
+//       console.log(`Validating field ${field.name}:`, fieldValue, typeof fieldValue);
+      
+//       const error = validateField(field, fieldValue);
+//       if (error) {
+//         newErrors[field.name] = error;
+//         isValid = false;
+//       }
+//     } catch (error) {
+//       console.error(`Error validating field ${field.name}:`, error);
+//       newErrors[field.name] = 'Validation error occurred';
+//       isValid = false;
+//     }
+//   });
+
+//   setErrors(newErrors);
+//   return isValid;
+// };
 
   const handleInputChange = (fieldName: string, value: any) => {
     setFormData(prev => ({
@@ -205,6 +283,9 @@ const Form: React.FC<FormProps> = ({
       [fieldName]: !prev[fieldName]
     }));
   };
+
+  
+  
 
   const renderField = (field: FormField) => {
     const hasError = !!errors[field.name];
@@ -347,6 +428,104 @@ const Form: React.FC<FormProps> = ({
             step="any"
           />
         );
+
+    //   case 'file':
+    //     console.log('Rendering file input with accept:', field.accept);
+    // return (
+    //   <div className="mb-4">
+        
+    //     <input
+    //       type="file"
+    //       accept={field.accept}
+    //       onChange={(e) => {
+    //         const file = e.target.files?.[0] || null;
+    //         console.log('File selected:', file?.name, file?.type);
+    //         handleInputChange(field.name, file);
+            
+    //         // Clear any previous validation errors when a new file is selected
+    //         if (file && errors[field.name]) {
+    //           setErrors(prev => ({
+    //             ...prev,
+    //             [field.name]: ''
+    //           }));
+    //         }
+    //       }}
+    //       className="block w-full text-sm text-gray-500 
+    //                 file:mr-4 file:py-2 file:px-4 
+    //                 file:rounded-full file:border-0 
+    //                 file:text-sm file:font-semibold 
+    //                 file:bg-blue-50 file:text-blue-700 
+    //                 hover:file:bg-blue-100
+    //                 border border-gray-300 rounded-md
+    //                 focus:ring-blue-500 focus:border-blue-500"
+    //       disabled={field.disabled}
+    //     />
+    //     <p className="text-xs text-gray-500 mt-1">
+    //     Accepted: {field.accept}
+    //   </p>
+    //     {formData[field.name] && (
+    //       <p className="text-gray-600 text-xs mt-1">
+    //         Selected: {(formData[field.name] as File).name}
+    //       </p>
+    //     )}
+    //      {errors[field.name] && (
+    //     <p className="text-red-500 text-xs mt-1">{errors[field.name]}</p>
+    //   )}
+    //   </div>
+    // );
+
+
+
+
+    
+// case 'file':
+//   console.log('Rendering file input with accept:', field.accept);
+//   return (
+//     <div className="mb-4">
+//       <label className="block text-sm font-medium text-gray-700 mb-2">
+//         {field.label}
+//         {field.required && <span className="text-red-500 ml-1">*</span>}
+//       </label>
+//       <input
+//         type="file"
+//         accept={field.accept}
+//         onChange={(e) => {
+//           const file = e.target.files?.[0] || null;
+//           console.log('File selected:', file?.name, file?.type);
+//           handleInputChange(field.name, file);
+          
+//           if (file && errors[field.name]) {
+//             setErrors(prev => ({
+//               ...prev,
+//               [field.name]: ''
+//             }));
+//           }
+//         }}
+//         className="block w-full text-sm text-gray-500 
+//                    file:mr-4 file:py-2 file:px-4 
+//                    file:rounded-full file:border-0 
+//                    file:text-sm file:font-semibold 
+//                    file:bg-blue-50 file:text-blue-700 
+//                    hover:file:bg-blue-100
+//                    border border-gray-300 rounded-md
+//                    focus:ring-blue-500 focus:border-blue-500"
+//         disabled={field.disabled}
+//       />
+//       <p className="text-xs text-gray-500 mt-1">
+//         Accepted: {field.accept}
+//       </p>
+//       {formData[field.name] && (
+//         <p className="text-gray-600 text-xs mt-1">
+//           Selected: {(formData[field.name] as File).name}
+//         </p>
+//       )}
+//       {errors[field.name] && (
+//         <p className="text-red-500 text-xs mt-1">{errors[field.name]}</p>
+//       )}
+//     </div>
+//   );
+
+
 
       default:
         return (

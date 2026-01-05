@@ -392,6 +392,24 @@ import { prisma } from '@/lib/prisma/client'
 import { verifyAccessToken } from '@/lib/jwt'
 import { getAuthTokenFromCookies } from '@/lib/cookies'
 
+interface LowStockItem {
+  stockId: number;
+  productId: number;
+  productName: string;
+  productSku?: string | null;
+  brandName?: string | null;
+  categoryName?: string | null;
+  variationId: number | null;
+  variationName?: string | null;
+  variationColor?: string | null;
+  variationSize?: string | null;
+  variationCapacity?: string | null;
+  quantityAvailable: number;
+  reorderLevel: number;
+  location?: string | null;
+  lastUpdatedDate: string;
+}
+
 // Helper function to extract employee ID from token
 function getEmployeeIdFromToken(accessToken: string): number {
   try {
@@ -562,17 +580,93 @@ export async function GET(request: NextRequest) {
         }))
       }));
 
+      const lowStockItems = await prisma.stock.findMany({
+        where: {
+          OR: [
+            {
+              quantityAvailable: {
+                lte: prisma.stock.fields.reorderLevel
+              }
+            },
+            {
+              quantityAvailable: 0
+            }
+          ]
+        },
+        include: {
+          product: {
+            select: {
+              productName: true,
+              sku: true,
+              brand: {
+                select: {
+                  brandName: true
+                }
+              },
+              category: {
+                select: {
+                  categoryName: true
+                }
+              }
+            }
+          },
+          productvariation: {
+            select: {
+              variationName: true,
+              color: true,
+              size: true,
+              capacity: true
+            }
+          }
+        },
+        orderBy: [
+          {
+            quantityAvailable: 'asc'
+          },
+          {
+            productId: 'asc'
+          }
+        ],
+        take: 10 // Limit to top 10 most critical items
+      });
+
+       const transformedLowStockItems: LowStockItem[] = lowStockItems.map(stock => ({
+        stockId: stock.stockId,
+        productId: stock.productId,
+        productName: stock.product?.productName || 'Unknown Product',
+        productSku: stock.product?.sku,
+        brandName: stock.product?.brand?.brandName,
+        categoryName: stock.product?.category?.categoryName,
+        variationId: stock.variationId,
+        variationName: stock.productvariation?.variationName,
+        variationColor: stock.productvariation?.color,
+        variationSize: stock.productvariation?.size,
+        variationCapacity: stock.productvariation?.capacity,
+        quantityAvailable: stock.quantityAvailable || 0,
+        reorderLevel: stock.reorderLevel || 0,
+        location: stock.location,
+        lastUpdatedDate: stock.lastUpdatedDate?.toISOString() || new Date().toISOString()
+      }));
+
+      // Calculate additional stock statistics
+      const totalLowStockItems = lowStockItems.length;
+      const outOfStockItems = lowStockItems.filter(item => (item.quantityAvailable || 0) === 0).length;
+
+
       const dashboardData = {
         statistics: {
           totalReturns,
           pendingReturns: pendingReturns.length,
           approvedReturns,
-          rejectedReturns
+          rejectedReturns,
+          totalLowStockItems,
+          outOfStockItems
         },
-        pendingReturns: transformedPendingReturns
+        pendingReturns: transformedPendingReturns,
+        lowStockItems: transformedLowStockItems
       };
 
-      console.log(` Found ${pendingReturns.length} pending returns`);
+      console.log(` Found ${pendingReturns.length} pending returns and ${totalLowStockItems} low stock items`);
 
       return NextResponse.json(
         {

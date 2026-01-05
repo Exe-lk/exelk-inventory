@@ -17,6 +17,7 @@ import {
   ArrowRight,
   ArrowLeft,
   Shield,
+  FileInput,
   Undo,
   Users
 } from 'lucide-react';
@@ -91,7 +92,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       icon: FileInput,
-      label: 'Import/Export Log',
+      label: 'Import Files',
       href: '/import'
     },
     {

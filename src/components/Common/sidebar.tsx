@@ -91,7 +91,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       icon: FileInput,
-      label: 'Import Files',
+      label: 'Import/Export Log',
       href: '/import'
     },
     {

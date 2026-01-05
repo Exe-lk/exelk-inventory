@@ -9,6 +9,8 @@ import Login from '@/components/login/login';
 import { Employee, hasAdminAccess, isStockKeeper } from '@/types/user';
 import { TransactionLogWithDetails, TransactionLogQueryParams, TransactionLogFilters } from '@/types/transactionlog';
 import { getCurrentUser, logoutUser } from '@/lib/auth';
+import { exportTransactionLogsToCSV } from '@/lib/services/transactionlogService';
+import { Download } from 'lucide-react';
 
 // Service function to fetch transaction logs
 const fetchTransactionLogs = async (params: TransactionLogQueryParams = {}) => {
@@ -96,6 +98,21 @@ const TransactionLogPage: React.FC = () => {
   // Filter form states
   const [isFilterFormOpen, setIsFilterFormOpen] = useState(false);
   const [tempFilters, setTempFilters] = useState(filters);
+
+  const [isExportFormOpen, setIsExportFormOpen] = useState(false);
+  const [exportOptions, setExportOptions] = useState<{
+    exportAll: boolean;
+    includeHeaders: boolean;
+    dateRange: {
+      start: string;
+      end: string;
+    } | null;
+  }>({
+    exportAll: true,
+    includeHeaders: true,
+    dateRange: null
+  });
+  const [isExporting, setIsExporting] = useState(false);
 
   // Check authentication and authorization
   useEffect(() => {
@@ -225,6 +242,89 @@ const TransactionLogPage: React.FC = () => {
     setSearchTerm('');
     setCurrentPage(1);
     setIsFilterFormOpen(false);
+  };
+
+  // Add export handlers (around line 228, after clearFilters function)
+
+// Export handlers
+const handleExportClick = () => {
+  setIsExportFormOpen(true);
+  setExportOptions({
+    exportAll: true,
+    includeHeaders: true,
+    dateRange: null
+  });
+};
+
+const handleCloseExportForm = () => {
+  if (isExporting) return;
+  setIsExportFormOpen(false);
+};
+
+const handleExportSubmit = async () => {
+    try {
+      setIsExporting(true);
+
+      let logsToExport: TransactionLogWithDetails[] = [];
+
+      if (exportOptions.exportAll) {
+        // Fetch all transaction logs (not just the current page)
+        const allLogsData = await fetchTransactionLogs({
+          page: 1,
+          limit: 10000, // Large limit to get all logs
+          sortBy,
+          sortOrder,
+          // Apply current filters when exporting all
+          search: searchTerm || undefined,
+          stockKeeperId: filters.stockKeeperId || undefined,
+          actionType: filters.actionType || undefined,
+          entityName: filters.entityName || undefined,
+          referenceId: filters.referenceId || undefined,
+          dateFrom: exportOptions.dateRange?.start || filters.dateFrom || undefined,
+          dateTo: exportOptions.dateRange?.end || filters.dateTo || undefined
+        });
+        logsToExport = allLogsData.items;
+      } else {
+        // Export only currently displayed logs
+        logsToExport = transactionLogs;
+      }
+
+      // Apply date filter if specified in export options (overrides current filters)
+      if (exportOptions.dateRange && exportOptions.dateRange.start && exportOptions.dateRange.end) {
+        const startDate = new Date(exportOptions.dateRange.start);
+        const endDate = new Date(exportOptions.dateRange.end);
+        endDate.setHours(23, 59, 59, 999); // Include entire end date
+
+        logsToExport = logsToExport.filter(log => {
+          if (!log.actionDate) return false;
+          const logDate = new Date(log.actionDate);
+          return logDate >= startDate && logDate <= endDate;
+        });
+      }
+
+      if (logsToExport.length === 0) {
+        alert('No transaction log records found to export');
+        return;
+      }
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().split('T')[0];
+      const filename = `transaction_logs_export_${timestamp}.csv`;
+
+      // Export to CSV
+      await exportTransactionLogsToCSV(logsToExport, filename);
+
+      alert(` Successfully exported ${logsToExport.length} transaction log records!`);
+      
+      setTimeout(() => {
+        handleCloseExportForm();
+      }, 1000);
+    } catch (error) {
+      console.error(' Export error:', error);
+      alert(`Failed to export transaction logs: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   // Search handler
@@ -439,6 +539,152 @@ const TransactionLogPage: React.FC = () => {
 
   const actions = getActions();
 
+
+
+// Export Form Component
+const ExportForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+    return (
+      <div className="bg-white p-8 max-w-4xl mx-auto">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-semibold text-gray-700">Export Transaction Logs to CSV</h2>
+          <p className="mt-2 text-sm text-gray-500">
+            Export transaction log records to a CSV file for external use
+          </p>
+        </div>
+
+        {/* Export Options */}
+        <div className="space-y-6 mb-6">
+          {/* Export Scope */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <h3 className="font-semibold text-gray-900 mb-3">Export Scope</h3>
+            <div className="space-y-2">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="exportScope"
+                  checked={exportOptions.exportAll}
+                  onChange={() => setExportOptions(prev => ({ ...prev, exportAll: true }))}
+                  disabled={isExporting}
+                  className="mr-2"
+                />
+                <span className="text-sm text-gray-700">Export all transaction logs (with current filters applied)</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="exportScope"
+                  checked={!exportOptions.exportAll}
+                  onChange={() => setExportOptions(prev => ({ ...prev, exportAll: false }))}
+                  disabled={isExporting}
+                  className="mr-2"
+                />
+                <span className="text-sm text-gray-700">Export currently displayed logs only ({transactionLogs.length} records)</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Date Range Filter (Optional) */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <h3 className="font-semibold text-gray-900 mb-3">Additional Date Range Filter (Optional)</h3>
+            <p className="text-xs text-gray-500 mb-3">This will further filter the exported data</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  value={exportOptions.dateRange?.start || ''}
+                  onChange={(e) => setExportOptions(prev => ({
+                    ...prev,
+                    dateRange: {
+                      start: e.target.value,
+                      end: prev.dateRange?.end || ''
+                    }
+                  }))}
+                  disabled={isExporting}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  value={exportOptions.dateRange?.end || ''}
+                  onChange={(e) => setExportOptions(prev => ({
+                    ...prev,
+                    dateRange: {
+                      start: prev.dateRange?.start || '',
+                      end: e.target.value
+                    }
+                  }))}
+                  disabled={isExporting}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+            <button
+              onClick={() => setExportOptions(prev => ({ ...prev, dateRange: null }))}
+              disabled={isExporting}
+              className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+            >
+              Clear date filter
+            </button>
+          </div>
+
+          {/* CSV Options */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <h3 className="font-semibold text-gray-900 mb-3">CSV Options</h3>
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={exportOptions.includeHeaders}
+                onChange={(e) => setExportOptions(prev => ({ ...prev, includeHeaders: e.target.checked }))}
+                disabled={isExporting}
+                className="mr-2"
+              />
+              <span className="text-sm text-gray-700">Include column headers</span>
+            </label>
+          </div>
+
+          {/* Export Preview */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 className="font-semibold text-blue-900 mb-2">Export Preview</h3>
+            <div className="text-sm text-blue-800 space-y-1">
+              <div>Records to export: <strong>{exportOptions.exportAll ? 'All logs (with filters)' : transactionLogs.length}</strong></div>
+              {exportOptions.dateRange?.start && exportOptions.dateRange?.end && (
+                <div>
+                  Date range: <strong>{exportOptions.dateRange.start}</strong> to <strong>{exportOptions.dateRange.end}</strong>
+                </div>
+              )}
+              <div>File format: <strong>CSV (Comma-separated values)</strong></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-end space-x-4">
+          <button
+            onClick={handleExportSubmit}
+            disabled={isExporting}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isExporting ? 'Exporting...' : 'Export to CSV'}
+          </button>
+          <button
+            onClick={onClose}
+            disabled={isExporting}
+            className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   // Refresh data
   const refreshData = async () => {
     try {
@@ -570,16 +816,15 @@ const TransactionLogPage: React.FC = () => {
                     View all system transaction logs and audit trail
                   </p>
                 </div>
+                
                 <div className="flex items-center space-x-4">
-                  {/* <button
-                    onClick={() => setIsFilterFormOpen(true)}
-                    className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                  <button
+                    onClick={handleExportClick}
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                   >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z" />
-                    </svg>
-                    Advanced Filters
-                  </button> */}
+                    <Download size={20} className="mr-2" />
+                    Export
+                  </button>
                   <button
                     onClick={refreshData}
                     className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
@@ -762,6 +1007,32 @@ const TransactionLogPage: React.FC = () => {
           </div>
         </main>
       </div>
+
+     
+      {/* Export Form Popup */}
+      {isExportFormOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={handleCloseExportForm}></div>
+          
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+              <div className="relative bg-white rounded-lg shadow-xl">
+                <button
+                  onClick={handleCloseExportForm}
+                  disabled={isExporting}
+                  className="absolute right-4 top-4 z-10 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+
+                <ExportForm onClose={handleCloseExportForm} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Advanced Filter Modal */}
       {isFilterFormOpen && (

@@ -278,33 +278,7 @@ export async function deleteImportFile(id: number): Promise<void> {
   }
 }
 
-// Upload file and create import record
-// export async function uploadImportFile(file: File, stockKeeperID?: number): Promise<ImportFile> {
-//   try {
-//     console.log('Uploading file:', file.name, file.type); // Debug log
-    
-//     // For now, we'll simulate the file upload and create the record
-//     // In a real implementation, you'd first upload the file to a storage service
-//     // and get the file path, then create the import record
-    
-//     const filePath = `/uploads/${file.name}`; // Simulated file path
-    
-//     const importData: CreateImportRequest = {
-//       FileName: file.name,
-//       FileType: file.type || file.name.split('.').pop() || 'unknown',
-//       FilePath: filePath,
-//       StockKeeperID: stockKeeperID || 1, // Use provided ID or default
-//       Status: 'processing',
-//       ErrorCount: 0,
-//       Remarks: null
-//     };
-    
-//     return await createImportFile(importData);
-//   } catch (error) {
-//     console.error('Error uploading import file:', error);
-//     throw error;
-//   }
-// }
+
 
 // Update import file status
 export async function updateImportFileStatus(id: number, status: string, errorCount?: number, remarks?: string): Promise<ImportFile> {

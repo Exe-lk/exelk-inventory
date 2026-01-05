@@ -434,3 +434,136 @@ export class TransactionLogService {
     }
   }
 }
+
+
+
+export async function exportTransactionLogsToCSV(
+  logs: TransactionLogWithDetails[], 
+  filename?: string
+): Promise<void> {
+  try {
+    console.log(' Exporting transaction logs to CSV:', logs.length, 'records');
+
+    // Define CSV headers based on your table columns
+    const headers = [
+      'Log ID',
+      'Date & Time',
+      'Stock Keeper Name',
+      'Stock Keeper ID',
+      'Action Type',
+      'Entity Name',
+      'Reference ID',
+      'Old Value',
+      'New Value'
+    ];
+
+    // Convert transaction log data to CSV rows
+    const csvRows = logs.map(log => {
+      // Format date for CSV
+      const actionDate = log.actionDate 
+        ? new Date(log.actionDate).toLocaleString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          })
+        : '';
+
+      // Format action type (replace underscores with spaces)
+      const formattedActionType = log.actionType
+        ? log.actionType.replace(/_/g, ' ').toLowerCase()
+            .replace(/\b\w/g, l => l.toUpperCase())
+        : '';
+
+      // Parse oldValue and newValue if they're JSON strings
+      let oldValueDisplay = log.oldValue || '';
+      let newValueDisplay = log.newValue || '';
+
+      try {
+        if (log.oldValue) {
+          const parsed = JSON.parse(log.oldValue);
+          oldValueDisplay = parsed.previousQuantity ?? parsed.quantity ?? log.oldValue;
+        }
+      } catch {
+        // Keep original value if not JSON
+      }
+
+      try {
+        if (log.newValue) {
+          const parsed = JSON.parse(log.newValue);
+          newValueDisplay = parsed.newQuantity ?? parsed.quantity ?? log.newValue;
+        }
+      } catch {
+        // Keep original value if not JSON
+      }
+
+      return [
+        log.logId?.toString() || '',
+        actionDate,
+        log.stockKeeperName || 'Unknown',
+        log.stockKeeperId?.toString() || '',
+        formattedActionType,
+        log.entityName?.toUpperCase() || '',
+        log.referenceId?.toString() || 'N/A',
+        String(oldValueDisplay),
+        String(newValueDisplay)
+      ].map(field => {
+        // Escape fields that contain commas, quotes, or newlines
+        if (typeof field === 'string' && (field.includes(',') || field.includes('"') || field.includes('\n'))) {
+          return `"${field.replace(/"/g, '""')}"`;
+        }
+        return field;
+      });
+    });
+
+    // Combine headers and rows
+    const csvContent = [
+      headers.join(','),
+      ...csvRows.map(row => row.join(','))
+    ].join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    const finalFilename = filename || `transaction_logs_export_${new Date().toISOString().split('T')[0]}.csv`;
+    link.setAttribute('download', finalFilename);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up the URL object
+    URL.revokeObjectURL(url);
+
+    // Track export in database (optional but recommended)
+    try {
+      await fetch('/api/transactionlog/export', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          fileName: finalFilename,
+          recordCount: logs.length,
+          remarks: `Transaction logs export - ${logs.length} records`
+        })
+      });
+      console.log(' Export tracked in database');
+    } catch (trackingError) {
+      console.error(' Failed to track export (non-critical):', trackingError);
+      // Don't throw - export was successful, tracking is just for audit
+    }
+
+    console.log(' Transaction logs exported successfully');
+  } catch (error) {
+    console.error(' Error exporting transaction logs:', error);
+    throw new Error('Failed to export transaction logs to CSV');
+  }
+}

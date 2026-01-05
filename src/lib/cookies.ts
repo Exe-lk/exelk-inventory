@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 const COOKIE_NAME = process.env.COOKIE_NAME || 'auth-token'
 const REFRESH_COOKIE_NAME = process.env.REFRESH_COOKIE_NAME || 'refresh-token'
 const IS_PRODUCTION = process.env.NODE_ENV === 'production'
+const IS_SECURE = process.env.NEXT_PUBLIC_IS_HTTPS === 'true' || IS_PRODUCTION
 
 export interface CookieOptions {
   httpOnly?: boolean
@@ -19,8 +20,8 @@ export function setAuthCookies(
 ): void {
   const commonOptions: CookieOptions = {
     httpOnly: true,
-    secure: IS_PRODUCTION,
-    sameSite: 'lax',
+    secure: IS_SECURE,
+    sameSite: IS_SECURE ? 'lax' : 'lax', 
     path: '/',
   }
 
@@ -40,7 +41,7 @@ export function setAuthCookies(
 export function clearAuthCookies(response: NextResponse): void {
   const commonOptions: CookieOptions = {
     httpOnly: true,
-    secure: IS_PRODUCTION,
+    secure: IS_SECURE,
     sameSite: 'lax',
     path: '/',
     maxAge: 0,

@@ -4,7 +4,8 @@ import {
   UserPlus, 
   CreditCard,
   FileText, 
-  LogOut, 
+  LogOut,
+  FileInput, 
   ChevronLeft, 
   ChevronRight,
   Truck,
@@ -16,7 +17,6 @@ import {
   ArrowRight,
   ArrowLeft,
   Shield,
-  FileInput,
   Undo,
   Users
 } from 'lucide-react';
@@ -91,7 +91,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       icon: FileInput,
-      label: 'Import Files',
+      label: 'Import/Export Log',
       href: '/import'
     },
     {
@@ -104,11 +104,11 @@ const Sidebar: React.FC<SidebarProps> = ({
       label: 'Suppliers',
       href: '/supplier'
     },
-    {
-      icon: FileText,
-      label: 'API Documentation',
-      href: '/swagger'
-    }
+    // {
+    //   icon: FileText,
+    //   label: 'API Documentation',
+    //   href: '/swagger'
+    // }
   ];
 
   const toggleSidebar = () => {

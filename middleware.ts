@@ -50,6 +50,19 @@ export function middleware(request: NextRequest) {
         }
       }
     }
+    if (!accessToken && refreshToken) {
+      try {
+        verifyRefreshToken(refreshToken)
+        // Refresh token is valid, let the request continue
+        return NextResponse.next()
+      } catch (refreshError) {
+        // Refresh token invalid, redirect to login
+        const response = NextResponse.redirect(new URL('/', request.url))
+        response.cookies.delete('auth-token')
+        response.cookies.delete('refresh-token')
+        return response
+      }
+    }
   }
 
   // If user is logged in and trying to access auth routes, redirect to home

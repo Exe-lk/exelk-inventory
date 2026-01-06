@@ -71,7 +71,8 @@ export default function Login({ onLogin }: LoginProps) {
         
         setTimeout(() => {
           console.log('Redirecting to /home')
-          window.location.href = '/home'
+          router.push('/home')
+          //window.location.href = '/home'
         }, 150)
       } else {
         const errorMessage = response?.message || 'Login failed'

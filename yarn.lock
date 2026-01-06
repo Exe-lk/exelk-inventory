@@ -3668,6 +3668,17 @@ neotraverse@=0.6.18:
   resolved "https://registry.yarnpkg.com/neotraverse/-/neotraverse-0.6.18.tgz#abcb33dda2e8e713cf6321b29405e822230cdb30"
   integrity sha512-Z4SmBUweYa09+o6pG+eASabEpP6QkQ70yHj351pQoEXIs8uHbaU2DWVmzBANKgflPa47A50PtB2+NgRpQvr7vA==
 
+next-devtools-mcp@^0.3.7:
+  version "0.3.8"
+  resolved "https://registry.yarnpkg.com/next-devtools-mcp/-/next-devtools-mcp-0.3.8.tgz#5a417bd1a68dc8ec43094b19f4eb0e10dbcf46e0"
+  integrity sha512-YSQDb82ixJOgmGPOvrYAmo8yvC3M0aUoJR3HoAerRWzkqfDTT6rZZ+ndH10rHUso327SCl0y0Di6AqCWMZR1hQ==
+  dependencies:
+    "@modelcontextprotocol/sdk" "1.24.3"
+    find-process "2.0.0"
+    pid-port "2.0.0"
+    undici "7.16.0"
+    zod "3.25.76"
+
 next@16.0.10:
   version "16.0.10"
   resolved "https://registry.yarnpkg.com/next/-/next-16.0.10.tgz#74289793cd4e0a577732353aada1d54cfec97556"

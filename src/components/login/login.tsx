@@ -45,11 +45,15 @@ export default function Login({ onLogin }: LoginProps) {
     try {
       setStatus(null)
       setApiError('')
+
+      console.log('Attempting login for:', values.username)
       
       const response = await loginUser({
         username: values.username,
         password: values.password
       })
+
+      console.log('Login API response:', response)
 
       if (response.success && response.data) {
         // Call onLogin prop if provided
@@ -66,21 +70,28 @@ export default function Login({ onLogin }: LoginProps) {
         console.log('Login successful:', response.data)
         
         setTimeout(() => {
+          console.log('Redirecting to /home')
           window.location.href = '/home'
         }, 150)
       } else {
-        const errorMessage = response.message || 'Login failed'
+        const errorMessage = response?.message || 'Login failed'
+        console.error('Login failed:', errorMessage, response)
         setStatus(errorMessage)
         setApiError(errorMessage)
+        setSubmitting(false)
       }
     } catch (error: any) {
-      console.error('Login error:', error)
-      const errorMessage = error.message || 'Login failed. Please try again.'
+      console.error('Login error caught:', error)
+      const errorMessage = error?.message || error?.toString() || 'Login failed. Please try again.'
+      console.error('Error details:', {
+        message: errorMessage,
+        error: error,
+        stack: error?.stack
+      })
       setStatus(errorMessage)
       setApiError(errorMessage)
-    } finally {
       setSubmitting(false)
-    }
+    } 
   }
 
   return (

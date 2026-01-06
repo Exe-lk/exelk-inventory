@@ -87,8 +87,37 @@
 
 import { LoginRequest, LoginResponse, Employee } from '@/types/user'
 
+// export const loginUser = async (credentials: LoginRequest): Promise<LoginResponse> => {
+//   try {
+//     const response = await fetch('/api/auth/login', {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       },
+//       body: JSON.stringify(credentials),
+//       credentials: 'include', // Important for cookies
+//     })
+
+//     const data: LoginResponse = await response.json()
+
+//     if (!response.ok) {
+//       throw new Error(data.message || 'Login failed')
+//     }
+
+//     return data
+//   } catch (error) {
+//     console.error('Login error:', error)
+//     throw error
+//   }
+// }
+
+
+// ... existing code ...
+
 export const loginUser = async (credentials: LoginRequest): Promise<LoginResponse> => {
   try {
+    console.log('loginUser called with:', { username: credentials.username })
+    
     const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: {
@@ -98,18 +127,38 @@ export const loginUser = async (credentials: LoginRequest): Promise<LoginRespons
       credentials: 'include', // Important for cookies
     })
 
+    console.log('Login fetch response status:', response.status)
+    console.log('Login fetch response ok:', response.ok)
+
+    // Check if response is ok before parsing JSON
+    const contentType = response.headers.get('content-type')
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text()
+      console.error('Non-JSON response:', text)
+      throw new Error('Invalid response from server')
+    }
+
     const data: LoginResponse = await response.json()
+    console.log('Login response data:', data)
 
     if (!response.ok) {
+      console.error('Login failed with status:', response.status, data)
       throw new Error(data.message || 'Login failed')
     }
 
     return data
-  } catch (error) {
-    console.error('Login error:', error)
-    throw error
+  } catch (error: any) {
+    console.error('Login error in loginUser:', error)
+    // Re-throw with more context
+    if (error instanceof Error) {
+      throw error
+    }
+    throw new Error(error?.message || 'Login failed. Please try again.')
   }
 }
+
+// ... rest of the file remains the same ...
+
 
 // export const getCurrentUser = async (): Promise<Omit<Employee, 'Password'> | null> => {
 //   try {

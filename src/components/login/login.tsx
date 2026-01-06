@@ -66,8 +66,8 @@ export default function Login({ onLogin }: LoginProps) {
         console.log('Login successful:', response.data)
         
         // Redirect to dashboard or home
-        router.push('/home')
-         //window.location.href = '/home'
+        //router.push('/home')
+        window.location.href = '/home'
       } else {
         const errorMessage = response.message || 'Login failed'
         setStatus(errorMessage)

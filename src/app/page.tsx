@@ -55,7 +55,7 @@ export default function RootPage() {
 
   const handleLogin = (user: Omit<Employee, 'Password'>) => {
     setIsAuthenticated(true)
-    router.push('/home')
+    //router.push('/home')
   }
 
   if (isCheckingAuth) {

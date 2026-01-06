@@ -18,10 +18,14 @@ export function setAuthCookies(
   accessToken: string,
   refreshToken: string
 ): void {
+
+  const isProduction = process.env.NODE_ENV === 'production'
+  const isSecure = isProduction || process.env.NEXT_PUBLIC_IS_HTTPS === 'true'
+
   const commonOptions: CookieOptions = {
     httpOnly: true,
     secure: IS_SECURE,
-    sameSite: IS_SECURE ? 'lax' : 'lax', 
+    sameSite: 'lax', 
     path: '/',
   }
 

@@ -40,6 +40,15 @@ export function setAuthCookies(
     ...commonOptions,
     maxAge: 7 * 24 * 60 * 60, // 7 days
   })
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Cookies set with options:', {
+      secure: isSecure,
+      sameSite: 'lax',
+      path: '/',
+      isProduction
+    })
+  }
 }
 
 export function clearAuthCookies(response: NextResponse): void {

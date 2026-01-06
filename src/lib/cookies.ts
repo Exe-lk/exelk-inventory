@@ -24,7 +24,7 @@ export function setAuthCookies(
 
   const commonOptions: CookieOptions = {
     httpOnly: true,
-    secure: IS_SECURE,
+    secure: isSecure,
     sameSite: 'lax', 
     path: '/',
   }
@@ -43,6 +43,9 @@ export function setAuthCookies(
 }
 
 export function clearAuthCookies(response: NextResponse): void {
+  const isProduction = process.env.NODE_ENV === 'production'
+  const isSecure = isProduction || process.env.NEXT_PUBLIC_IS_HTTPS === 'true'
+
   const commonOptions: CookieOptions = {
     httpOnly: true,
     secure: IS_SECURE,

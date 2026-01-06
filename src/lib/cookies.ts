@@ -48,7 +48,7 @@ export function clearAuthCookies(response: NextResponse): void {
 
   const commonOptions: CookieOptions = {
     httpOnly: true,
-    secure: IS_SECURE,
+    secure: isSecure,
     sameSite: 'lax',
     path: '/',
     maxAge: 0,

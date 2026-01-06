@@ -38,7 +38,8 @@ export default function RootPage() {
         const user = await getCurrentUser()
         if (user) {
           setIsAuthenticated(true)
-          router.push('/home')
+          //router.push('/home')
+          window.location.href = '/home'
         } else {
           setIsAuthenticated(false)
         }

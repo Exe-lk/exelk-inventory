@@ -73,7 +73,7 @@ export default function Login({ onLogin }: LoginProps) {
         setTimeout(() => {
           console.log('Redirecting to /home')
           window.location.href = '/home'
-        }, 500)
+        }, 1000)
           //window.location.href = '/home'
         
       } else {

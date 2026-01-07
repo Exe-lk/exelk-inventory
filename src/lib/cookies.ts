@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 const COOKIE_NAME = process.env.COOKIE_NAME || 'auth-token'
 const REFRESH_COOKIE_NAME = process.env.REFRESH_COOKIE_NAME || 'refresh-token'
@@ -46,7 +46,9 @@ export function setAuthCookies(
       secure: isSecure,
       sameSite: 'lax',
       path: '/',
-      isProduction
+      isProduction,
+      cookieName: COOKIE_NAME,
+      refreshCookieName: REFRESH_COOKIE_NAME
     })
   }
 }
@@ -67,7 +69,14 @@ export function clearAuthCookies(response: NextResponse): void {
   response.cookies.set(REFRESH_COOKIE_NAME, '', commonOptions)
 }
 
-export function getAuthTokenFromCookies(request: Request): string | null {
+export function getAuthTokenFromCookies(request: Request | NextRequest): string | null {
+  // Check if it's a NextRequest (has cookies property)
+  if ('cookies' in request && request.cookies && typeof request.cookies.get === 'function') {
+    const cookie = request.cookies.get(COOKIE_NAME)
+    return cookie?.value || null
+  }
+  
+  // Fallback to header parsing for regular Request objects
   const cookieHeader = request.headers.get('cookie')
   if (!cookieHeader) return null
 
@@ -75,7 +84,15 @@ export function getAuthTokenFromCookies(request: Request): string | null {
   return cookies[COOKIE_NAME] || null
 }
 
-export function getRefreshTokenFromCookies(request: Request): string | null {
+// Updated to support both Request and NextRequest
+export function getRefreshTokenFromCookies(request: Request | NextRequest): string | null {
+  // Check if it's a NextRequest (has cookies property)
+  if ('cookies' in request && request.cookies && typeof request.cookies.get === 'function') {
+    const cookie = request.cookies.get(REFRESH_COOKIE_NAME)
+    return cookie?.value || null
+  }
+  
+  // Fallback to header parsing for regular Request objects
   const cookieHeader = request.headers.get('cookie')
   if (!cookieHeader) return null
 

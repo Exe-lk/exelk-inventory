@@ -113,7 +113,8 @@ export function middleware(request: NextRequest) {
   if (isProtectedRoute) {
     if (!accessToken && !refreshToken) {
       // No tokens, redirect to login
-      return NextResponse.redirect(new URL('/', request.url))
+      const loginUrl = new URL('/', request.url)
+      return NextResponse.redirect(loginUrl, { status: 307 })
     }
 
     if (accessToken) {
@@ -138,7 +139,7 @@ export function middleware(request: NextRequest) {
           }
         } else {
           // No refresh token, redirect to login
-          return NextResponse.redirect(new URL('/', request.url))
+          return NextResponse.redirect(new URL('/', request.url), { status: 307 })
         }
       }
     }
@@ -150,7 +151,7 @@ export function middleware(request: NextRequest) {
         return NextResponse.next()
       } catch (refreshError) {
         // Refresh token invalid, redirect to login
-        const response = NextResponse.redirect(new URL('/', request.url))
+        const response = NextResponse.redirect(new URL('/', request.url), { status: 307 })
         response.cookies.delete(COOKIE_NAME)
         response.cookies.delete(REFRESH_COOKIE_NAME)
         return response

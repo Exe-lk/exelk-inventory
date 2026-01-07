@@ -147,8 +147,9 @@ export default function Login({ onLogin }: LoginProps) {
             
             if (testResponse.ok) {
               // Cookies are set, safe to redirect
-              console.log('Cookies verified, redirecting to /home')
-              window.location.href = '/home'
+              console.log('Cookies verified, redirecting to /home') // end in here.....
+              //window.location.href = '/home'
+              router.push('/home')
               return
             }
           } catch (error) {

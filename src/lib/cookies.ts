@@ -41,6 +41,16 @@ export function setAuthCookies(
     maxAge: 7 * 24 * 60 * 60, // 7 days
   })
 
+  if (process.env.NODE_ENV === 'production') {
+    console.log('Cookies set in production:', {
+      secure: isSecure,
+      sameSite: 'lax',
+      path: '/',
+      cookieName: COOKIE_NAME,
+      refreshCookieName: REFRESH_COOKIE_NAME
+    })
+  }
+
   if (process.env.NODE_ENV === 'development') {
     console.log('Cookies set with options:', {
       secure: isSecure,

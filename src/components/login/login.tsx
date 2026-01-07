@@ -97,7 +97,7 @@ export default function Login({ onLogin }: LoginProps) {
   //   } 
   // }
 
-// ... existing imports ...
+
 
   const handleSubmit = async (
     values: LoginFormValues, 
@@ -149,7 +149,7 @@ export default function Login({ onLogin }: LoginProps) {
               // Cookies are set, safe to redirect
               console.log('Cookies verified, redirecting to /home') // end in here.....
               //window.location.href = '/home'
-              router.push('/home')
+              router.replace('/home')
               return
             }
           } catch (error) {
@@ -190,7 +190,7 @@ export default function Login({ onLogin }: LoginProps) {
     } 
   }
 
-// ... rest of the code ...
+
 
 
   return (

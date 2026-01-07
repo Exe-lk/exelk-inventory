@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify password (assuming passwords are hashed in your database)
-    // If your passwords are not hashed, you can use direct comparison for now
+   
     const isPasswordValid = password === employee.Password
     // For hashed passwords, use: await verifyPassword(password, employee.Password)
 

@@ -138,33 +138,12 @@ export interface DashboardStatistics {
   pendingReturns: number;
   approvedReturns: number;
   rejectedReturns: number;
-  totalLowStockItems: number;
-  outOfStockItems: number;
-}
-
-export interface LowStockItem {
-  stockId: number;
-  productId: number;
-  productName: string;
-  productSku?: string;
-  brandName?: string;
-  categoryName?: string;
-  variationId: number | null;
-  variationName?: string;
-  variationColor?: string;
-  variationSize?: string;
-  variationCapacity?: string;
-  quantityAvailable: number;
-  reorderLevel: number;
-  location?: string;
-  lastUpdatedDate: string;
 }
 
 // Interface for dashboard data
 export interface DashboardData {
   statistics: DashboardStatistics;
   pendingReturns: ReturnResponse[];
-  lowStockItems: LowStockItem[];
 }
 
 // Interface for approve return request
@@ -351,30 +330,6 @@ export async function getReturnStockImpact(returnId: number): Promise<any> {
     }
   } catch (error) {
     console.error(' Error getting stock impact:', error);
-    throw error;
-  }
-}
-
-export async function getLowStockDetails(): Promise<LowStockItem[]> {
-  try {
-    console.log(' Fetching detailed low stock information');
-    
-    const dashboardData = await fetchDashboardData();
-    return dashboardData.lowStockItems;
-  } catch (error) {
-    console.error(' Error fetching low stock details:', error);
-    throw error;
-  }
-}
-
-export async function getCriticalStockAlerts(): Promise<LowStockItem[]> {
-  try {
-    console.log(' Fetching critical stock alerts');
-    
-    const dashboardData = await fetchDashboardData();
-    return dashboardData.lowStockItems.filter(item => item.quantityAvailable === 0);
-  } catch (error) {
-    console.error(' Error fetching critical stock alerts:', error);
     throw error;
   }
 }

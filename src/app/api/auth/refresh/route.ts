@@ -72,55 +72,102 @@ import { getRefreshTokenFromCookies, setAuthCookies } from '@/lib/cookies'
  *                   example: "User not found"
  */
 
+// export async function POST(request: NextRequest) {
+//   try {
+//     const refreshToken = getRefreshTokenFromCookies(request)
+
+//     if (!refreshToken) {
+//       return NextResponse.json(
+//         { success: false, message: 'Refresh token not found' },
+//         { status: 401 }
+//       )
+//     }
+
+//     // Verify refresh token
+//     const { userId } = verifyRefreshToken(refreshToken)
+
+//     const supabase = createServerClient()
+
+//     // Get user from database
+//     const { data: employee, error } = await supabase
+//       .from('employees')
+//       .select('EmployeeID, UserName, Email, RoleID')
+//       .eq('EmployeeID', userId)
+//       .single()
+
+//     if (error || !employee) {
+//       return NextResponse.json(
+//         { success: false, message: 'User not found' },
+//         { status: 404 }
+//       )
+//     }
+
+//     // Generate new access token
+//     const newAccessToken = generateAccessToken(
+//       employee.EmployeeID,
+//       employee.UserName,
+//       employee.Email,
+//       employee.RoleID
+//     )
+
+//     const response = NextResponse.json(
+//       {
+//         success: true,
+//         message: 'Token refreshed successfully',
+//         data: { accessToken: newAccessToken }
+//       },
+//       { status: 200 }
+//     )
+
+//     // Set new access token cookie (keep the same refresh token)
+//     setAuthCookies(response, newAccessToken, refreshToken)
+
+//     return response
+
+//   } catch (error) {
+//     console.error('Token refresh error:', error)
+//     return NextResponse.json(
+//       { success: false, message: 'Invalid refresh token' },
+//       { status: 401 }
+//     )
+//   }
+// }
+
+
+
+
 export async function POST(request: NextRequest) {
   try {
-    const refreshToken = getRefreshTokenFromCookies(request)
+    const supabase = await createServerClient()
 
-    if (!refreshToken) {
+    // Get current session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
       return NextResponse.json(
         { success: false, message: 'Refresh token not found' },
         { status: 401 }
       )
     }
 
-    // Verify refresh token
-    const { userId } = verifyRefreshToken(refreshToken)
+    // Refresh the session
+    const { data: refreshedSession, error: refreshError } = await supabase.auth.refreshSession()
 
-    const supabase = createServerClient()
-
-    // Get user from database
-    const { data: employee, error } = await supabase
-      .from('employees')
-      .select('EmployeeID, UserName, Email, RoleID')
-      .eq('EmployeeID', userId)
-      .single()
-
-    if (error || !employee) {
+    if (refreshError || !refreshedSession.session) {
       return NextResponse.json(
-        { success: false, message: 'User not found' },
-        { status: 404 }
+        { success: false, message: 'Invalid refresh token' },
+        { status: 401 }
       )
     }
-
-    // Generate new access token
-    const newAccessToken = generateAccessToken(
-      employee.EmployeeID,
-      employee.UserName,
-      employee.Email,
-      employee.RoleID
-    )
 
     const response = NextResponse.json(
       {
         success: true,
         message: 'Token refreshed successfully',
-        data: { accessToken: newAccessToken }
+        data: { accessToken: refreshedSession.session.access_token }
       },
       { status: 200 }
     )
-
-    // Set new access token cookie (keep the same refresh token)
-    setAuthCookies(response, newAccessToken, refreshToken)
 
     return response
 
@@ -132,4 +179,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-

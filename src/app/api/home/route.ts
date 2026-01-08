@@ -1,7 +1,26 @@
+
 // import { NextRequest, NextResponse } from 'next/server'
 // import { prisma } from '@/lib/prisma/client'
 // import { verifyAccessToken } from '@/lib/jwt'
 // import { getAuthTokenFromCookies } from '@/lib/cookies'
+
+// interface LowStockItem {
+//   stockId: number;
+//   productId: number;
+//   productName: string;
+//   productSku?: string | null;
+//   brandName?: string | null;
+//   categoryName?: string | null;
+//   variationId: number | null;
+//   variationName?: string | null;
+//   variationColor?: string | null;
+//   variationSize?: string | null;
+//   variationCapacity?: string | null;
+//   quantityAvailable: number;
+//   reorderLevel: number;
+//   location?: string | null;
+//   lastUpdatedDate: string;
+// }
 
 // // Helper function to extract employee ID from token
 // function getEmployeeIdFromToken(accessToken: string): number {
@@ -14,15 +33,14 @@
 //   }
 // }
 
-// /**
-//  * @swagger
-//  * /api/home:
-//  *   get:
-//  *     tags:
-//  *       - Home
-//  *     summary: Get home dashboard data
-//  *     description: Retrieve dashboard statistics and pending returns
-//  */
+// // Generate return number for reference
+// function generateReturnReference(returnId: number): string {
+//   const now = new Date();
+//   const year = now.getFullYear();
+//   const month = String(now.getMonth() + 1).padStart(2, '0');
+//   const day = String(now.getDate()).padStart(2, '0');
+//   return `RTN-${year}${month}${day}-${String(returnId).padStart(6, '0')}`;
+// }
 
 // // GET - Get dashboard data including pending returns
 // export async function GET(request: NextRequest) {
@@ -174,17 +192,93 @@
 //         }))
 //       }));
 
+//       const lowStockItems = await prisma.stock.findMany({
+//         where: {
+//           OR: [
+//             {
+//               quantityAvailable: {
+//                 lte: prisma.stock.fields.reorderLevel
+//               }
+//             },
+//             {
+//               quantityAvailable: 0
+//             }
+//           ]
+//         },
+//         include: {
+//           product: {
+//             select: {
+//               productName: true,
+//               sku: true,
+//               brand: {
+//                 select: {
+//                   brandName: true
+//                 }
+//               },
+//               category: {
+//                 select: {
+//                   categoryName: true
+//                 }
+//               }
+//             }
+//           },
+//           productvariation: {
+//             select: {
+//               variationName: true,
+//               color: true,
+//               size: true,
+//               capacity: true
+//             }
+//           }
+//         },
+//         orderBy: [
+//           {
+//             quantityAvailable: 'asc'
+//           },
+//           {
+//             productId: 'asc'
+//           }
+//         ],
+//         take: 10 // Limit to top 10 most critical items
+//       });
+
+//        const transformedLowStockItems: LowStockItem[] = lowStockItems.map(stock => ({
+//         stockId: stock.stockId,
+//         productId: stock.productId,
+//         productName: stock.product?.productName || 'Unknown Product',
+//         productSku: stock.product?.sku,
+//         brandName: stock.product?.brand?.brandName,
+//         categoryName: stock.product?.category?.categoryName,
+//         variationId: stock.variationId,
+//         variationName: stock.productvariation?.variationName,
+//         variationColor: stock.productvariation?.color,
+//         variationSize: stock.productvariation?.size,
+//         variationCapacity: stock.productvariation?.capacity,
+//         quantityAvailable: stock.quantityAvailable || 0,
+//         reorderLevel: stock.reorderLevel || 0,
+//         location: stock.location,
+//         lastUpdatedDate: stock.lastUpdatedDate?.toISOString() || new Date().toISOString()
+//       }));
+
+//       // Calculate additional stock statistics
+//       const totalLowStockItems = lowStockItems.length;
+//       const outOfStockItems = lowStockItems.filter(item => (item.quantityAvailable || 0) === 0).length;
+
+
 //       const dashboardData = {
 //         statistics: {
 //           totalReturns,
 //           pendingReturns: pendingReturns.length,
 //           approvedReturns,
-//           rejectedReturns
+//           rejectedReturns,
+//           totalLowStockItems,
+//           outOfStockItems
 //         },
-//         pendingReturns: transformedPendingReturns
+//         pendingReturns: transformedPendingReturns,
+//         lowStockItems: transformedLowStockItems
 //       };
 
-//       console.log(` Found ${pendingReturns.length} pending returns`);
+//       console.log(` Found ${pendingReturns.length} pending returns and ${totalLowStockItems} low stock items`);
 
 //       return NextResponse.json(
 //         {
@@ -225,16 +319,7 @@
 //   }
 // }
 
-// /**
-//  * @swagger
-//  * /api/home/approve-return:
-//  *   post:
-//  *     tags:
-//  *       - Home
-//  *     summary: Approve a pending return
-//  */
-
-// // POST - Approve return from home dashboard
+// // POST - Approve return from home dashboard WITH STOCK UPDATES
 // export async function POST(request: NextRequest) {
 //   console.log(' Home approve return POST request started');
   
@@ -285,11 +370,31 @@
 //       )
 //     }
 
-//     // Check if return exists and is pending
+//     // Check if return exists and is pending with its products
 //     const existingReturn = await prisma.returns.findUnique({
 //       where: { returnId: parseInt(returnId) },
 //       include: {
-//         returnproduct: true
+//         returnproduct: {
+//           include: {
+//             productvariation: {
+//               select: {
+//                 variationId: true,
+//                 variationName: true,
+//                 version: {
+//                   select: {
+//                     product: {
+//                       select: {
+//                         productId: true,
+//                         productName: true,
+//                         sku: true
+//                       }
+//                     }
+//                   }
+//                 }
+//               }
+//             }
+//           }
+//         }
 //       }
 //     });
 
@@ -317,9 +422,57 @@
 //       )
 //     }
 
-//     // Update return to approved
+//     // Validate that all returned products have stock available
+//     console.log(' Validating stock availability for return items...');
+    
+//     for (const returnProduct of existingReturn.returnproduct) {
+//       const productId = returnProduct.productvariation.version.product.productId;
+//       const variationId = returnProduct.variationId;
+//       const quantityToDeduct = returnProduct.quantity || 0;
+
+//       if (quantityToDeduct <= 0) {
+//         continue; // Skip if no quantity to deduct
+//       }
+
+//       // Find existing stock for this product/variation combination
+//       const existingStock = await prisma.stock.findFirst({
+//         where: {
+//           productId: productId,
+//           variationId: variationId
+//         }
+//       });
+
+//       if (!existingStock) {
+//         return NextResponse.json(
+//           { 
+//             status: 'error',
+//             code: 400,
+//             message: `No stock found for product "${returnProduct.productvariation.version.product.productName}" (Variation: ${returnProduct.productvariation.variationName})`,
+//             timestamp: new Date().toISOString()
+//           },
+//           { status: 400 }
+//         )
+//       }
+
+//       const availableQuantity = existingStock.quantityAvailable || 0;
+//       if (availableQuantity < quantityToDeduct) {
+//         return NextResponse.json(
+//           { 
+//             status: 'error',
+//             code: 400,
+//             message: `Insufficient stock for product "${returnProduct.productvariation.version.product.productName}" (Variation: ${returnProduct.productvariation.variationName}). Available: ${availableQuantity}, Required: ${quantityToDeduct}`,
+//             timestamp: new Date().toISOString()
+//           },
+//           { status: 400 }
+//         )
+//       }
+//     }
+
+//     // Execute the approval and stock updates in a transaction
 //     const result = await prisma.$transaction(async (tx) => {
-//       // Update return status and approval
+//       console.log(' Starting transaction for return approval and stock updates...');
+
+//       // 1. Update return status and approval
 //       const updatedReturn = await tx.returns.update({
 //         where: { returnId: parseInt(returnId) },
 //         data: {
@@ -328,43 +481,170 @@
 //         }
 //       });
 
-//       // Create transaction log
+//       console.log(` Return ${returnId} status updated to APPROVED`);
+
+//       // 2. Process each return product and update stock
+//       const stockUpdates: any[] = [];
+//       const binCardEntries: any[] = [];
+//       const productDetails: any[] = [];
+
+//       for (const returnProduct of existingReturn.returnproduct) {
+//         const productId = returnProduct.productvariation.version.product.productId;
+//         const variationId = returnProduct.variationId;
+//         const quantityToDeduct = returnProduct.quantity || 0;
+
+//         if (quantityToDeduct <= 0) {
+//           console.log(`  Skipping return product ${returnProduct.returnProductId} - no quantity to deduct`);
+//           continue;
+//         }
+
+//         console.log(` Processing return product: ${returnProduct.productvariation.version.product.productName} (${quantityToDeduct} units)`);
+
+//         // Find the existing stock record
+//         const existingStock = await tx.stock.findFirst({
+//           where: {
+//             productId: productId,
+//             variationId: variationId
+//           }
+//         });
+
+//         if (existingStock) {
+//           const quantityBefore = existingStock.quantityAvailable || 0;
+//           const quantityAfter = quantityBefore - quantityToDeduct;
+
+//           // Update stock quantity
+//           const updatedStock = await tx.stock.update({
+//             where: { stockId: existingStock.stockId },
+//             data: {
+//               quantityAvailable: quantityAfter,
+//               lastUpdatedDate: new Date()
+//             }
+//           });
+
+//           console.log(` Stock updated: ${quantityBefore} → ${quantityAfter} (Product: ${returnProduct.productvariation.version.product.productName})`);
+
+//           stockUpdates.push({
+//             stockId: existingStock.stockId,
+//             productId: productId,
+//             variationId: variationId,
+//             productName: returnProduct.productvariation.version.product.productName,
+//             variationName: returnProduct.productvariation.variationName,
+//             quantityBefore: quantityBefore,
+//             quantityAfter: quantityAfter,
+//             quantityDeducted: quantityToDeduct,
+//             action: 'deducted'
+//           });
+
+//           // Create bin card entry for stock deduction
+//           const returnReference = generateReturnReference(parseInt(returnId));
+          
+//           const binCardEntry = await tx.bincard.create({
+//             data: {
+//               variationId: variationId,
+//               transactionDate: new Date(),
+//               transactionType: 'RETURN_OUT',
+//               referenceId: parseInt(returnId),
+//               quantityIn: null,
+//               quantityOut: quantityToDeduct,
+//               balance: quantityAfter,
+//               employeeId: employeeId,
+//               remarks: `Return Approved: ${returnReference} - Stock deducted for returned items`
+//             }
+//           });
+
+//           binCardEntries.push({
+//             binCardId: binCardEntry.bincardId,
+//             variationId: variationId,
+//             transactionType: 'RETURN_OUT',
+//             quantityOut: quantityToDeduct,
+//             balance: quantityAfter,
+//             transactionDate: binCardEntry.transactionDate?.toISOString()
+//           });
+
+//           productDetails.push({
+//             returnProductId: returnProduct.returnProductId,
+//             productId: productId,
+//             productName: returnProduct.productvariation.version.product.productName,
+//             productSku: returnProduct.productvariation.version.product.sku,
+//             variationId: variationId,
+//             variationName: returnProduct.productvariation.variationName,
+//             quantityReturned: quantityToDeduct,
+//             stockBefore: quantityBefore,
+//             stockAfter: quantityAfter
+//           });
+//         }
+//       }
+
+//       // 3. Create comprehensive transaction log
 //       await tx.transactionlog.create({
 //         data: {
 //           employeeId: employeeId,
-//           actionType: 'APPROVE',
+//           actionType: 'APPROVE_RETURN',
 //           entityName: 'RETURN',
 //           referenceId: parseInt(returnId),
 //           actionDate: new Date(),
 //           oldValue: JSON.stringify({
 //             returnId: existingReturn.returnId,
 //             approved: existingReturn.approved,
-//             returnStatus: existingReturn.returnStatus
+//             returnStatus: existingReturn.returnStatus,
+//             productCount: existingReturn.returnproduct.length
 //           }),
 //           newValue: JSON.stringify({
 //             returnId: updatedReturn.returnId,
 //             approved: updatedReturn.approved,
 //             returnStatus: updatedReturn.returnStatus,
-//             approvedBy: employeeId
+//             approvedBy: employeeId,
+//             stockUpdatesCount: stockUpdates.length,
+//             totalQuantityDeducted: stockUpdates.reduce((sum, update) => sum + update.quantityDeducted, 0),
+//             approvedAt: new Date().toISOString(),
+//             stockUpdates: stockUpdates,
+//             binCardEntriesCreated: binCardEntries.length
 //           })
 //         }
 //       });
 
-//       return updatedReturn;
+//       console.log(` Transaction log created for return approval and stock updates`);
+
+//       return {
+//         updatedReturn,
+//         stockUpdates,
+//         binCardEntries,
+//         productDetails,
+//         summary: {
+//           totalItemsProcessed: stockUpdates.length,
+//           totalQuantityDeducted: stockUpdates.reduce((sum, update) => sum + update.quantityDeducted, 0),
+//           stockEntriesUpdated: stockUpdates.length,
+//           binCardEntriesCreated: binCardEntries.length
+//         }
+//       };
+//     }, {
+//       maxWait: 10000,  // 10 seconds
+//       timeout: 20000,  // 20 seconds
 //     });
 
-//     console.log(` Return ${returnId} approved successfully`);
+//     console.log(` Return ${returnId} approved successfully with stock updates`);
 
 //     return NextResponse.json(
 //       {
 //         status: 'success',
 //         code: 200,
-//         message: 'Return approved successfully',
+//         message: 'Return approved successfully and stock updated',
 //         timestamp: new Date().toISOString(),
 //         data: {
-//           returnId: result.returnId,
-//           approved: result.approved,
-//           returnStatus: result.returnStatus
+//           returnId: result.updatedReturn.returnId,
+//           approved: result.updatedReturn.approved,
+//           returnStatus: result.updatedReturn.returnStatus,
+//           stockUpdates: result.stockUpdates,
+//           binCardEntries: result.binCardEntries,
+//           productDetails: result.productDetails,
+//           summary: result.summary,
+//           auditTrail: {
+//             approvedBy: employeeId,
+//             approvedAt: new Date().toISOString(),
+//             transactionLogCreated: true,
+//             binCardEntriesCreated: result.binCardEntries.length,
+//             stockUpdatesCompleted: result.stockUpdates.length
+//           }
 //         }
 //       },
 //       { status: 200 }
@@ -372,25 +652,46 @@
 
 //   } catch (error) {
 //     console.error(' Home approve return POST error:', error)
+    
+//     let errorMessage = 'Failed to approve return';
+//     let statusCode = 500;
+
+//     if (error instanceof Error) {
+//       if (error.message.includes('Insufficient stock')) {
+//         statusCode = 400;
+//         errorMessage = error.message;
+//       } else if (error.message.includes('No stock found')) {
+//         statusCode = 400;
+//         errorMessage = error.message;
+//       } else if (error.message.includes('Transaction')) {
+//         statusCode = 500;
+//         errorMessage = 'Database transaction error. Please try again.';
+//       } else {
+//         errorMessage = error.message;
+//       }
+//     }
+
 //     return NextResponse.json(
 //       { 
 //         status: 'error',
-//         code: 500,
-//         message: error instanceof Error ? error.message : 'Failed to approve return',
-//         timestamp: new Date().toISOString()
+//         code: statusCode,
+//         message: errorMessage,
+//         timestamp: new Date().toISOString(),
+//         details: error instanceof Error ? {
+//           type: error.constructor.name,
+//           stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+//         } : undefined
 //       },
-//       { status: 500 }
+//       { status: statusCode }
 //     )
 //   }
 // }
 
 
 
-
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
-import { verifyAccessToken } from '@/lib/jwt'
-import { getAuthTokenFromCookies } from '@/lib/cookies'
+import { authenticateRequest } from '@/lib/api-auth'
 
 interface LowStockItem {
   stockId: number;
@@ -410,17 +711,6 @@ interface LowStockItem {
   lastUpdatedDate: string;
 }
 
-// Helper function to extract employee ID from token
-function getEmployeeIdFromToken(accessToken: string): number {
-  try {
-    const payload = verifyAccessToken(accessToken);
-    return payload.userId || 1;
-  } catch (error) {
-    console.error('Error extracting employee ID from token:', error);
-    return 1;
-  }
-}
-
 // Generate return number for reference
 function generateReturnReference(returnId: number): string {
   const now = new Date();
@@ -435,34 +725,14 @@ export async function GET(request: NextRequest) {
   console.log(' Home dashboard GET request started');
   
   try {
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using Supabase
+    const { employeeId, response: authError } = await authenticateRequest(request)
+    
+    if (authError) {
+      return authError
     }
 
-    try {
-      verifyAccessToken(accessToken)
-      console.log(' Access token verified');
-    } catch (error) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid access token',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    console.log(' Access token verified, employee ID:', employeeId);
 
     try {
       // Get pending returns with details
@@ -712,36 +982,14 @@ export async function POST(request: NextRequest) {
   console.log(' Home approve return POST request started');
   
   try {
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using Supabase
+    const { employeeId, response: authError } = await authenticateRequest(request)
+    
+    if (authError) {
+      return authError
     }
 
-    let employeeId: number;
-    try {
-      verifyAccessToken(accessToken)
-      employeeId = getEmployeeIdFromToken(accessToken)
-      console.log(' Access token verified, employee ID:', employeeId);
-    } catch (error) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid access token',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    console.log(' Access token verified, employee ID:', employeeId);
 
     const body = await request.json()
     const { returnId } = body;

@@ -1,18 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
-import { verifyAccessToken } from '@/lib/jwt'
-import { getAuthTokenFromCookies } from '@/lib/cookies'
-
-// Helper function to extract employee ID from token
-function getEmployeeIdFromToken(accessToken: string): number {
-  try {
-    const payload = verifyAccessToken(accessToken);
-    return payload.userId || 1;
-  } catch (error) {
-    console.error('Error extracting employee ID from token:', error);
-    return 1;
-  }
-}
+import { createServerClient } from '@/lib/supabase/server'
 
 /**
  * @swagger
@@ -38,9 +26,12 @@ export async function GET(
   
   try {
     const resolvedParams = await params;
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
@@ -52,20 +43,7 @@ export async function GET(
       )
     }
 
-    try {
-      verifyAccessToken(accessToken)
-      console.log(' Access token verified');
-    } catch (error) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid access token',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    console.log(' Access token verified');
 
     const returnId = parseInt(resolvedParams.id)
     if (isNaN(returnId)) {
@@ -211,211 +189,6 @@ export async function GET(
   }
 }
 
-
-
-// export async function GET(
-//   request: NextRequest,
-//   { params }: { params: { id: string } }
-// ) {
-//   console.log(' Return GET by ID request started');
-  
-//   try {
-//     // Verify authentication
-//     const accessToken = getAuthTokenFromCookies(request)
-//     if (!accessToken) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 401,
-//           message: 'Access token not found',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 401 }
-//       )
-//     }
-
-//     try {
-//       verifyAccessToken(accessToken)
-//       console.log('✅ Access token verified');
-//     } catch (error) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 401,
-//           message: 'Invalid access token',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 401 }
-//       )
-//     }
-
-//     // Extract return ID from path parameters
-
-//     const { searchParams } = new URL(request.url)
-//     const idParam = searchParams.get('id')
-    
-//     console.log(' ID parameter from query:', idParam);
-    
-//     if (!idParam) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 400,
-//           message: 'Return ID parameter is required',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 400 }
-//       )
-//     }
-
-//     const returnId = parseInt(params.id)
-//     if (isNaN(returnId)) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 400,
-//           message: 'Invalid return ID',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 400 }
-//       )
-//     }
-
-//     console.log(` Looking for return with ID: ${returnId}`);
-
-//     const returnRecord = await prisma.returns.findUnique({
-//       where: { returnId },
-//       include: {
-//         supplier: {
-//           select: {
-//             supplierId: true,
-//             supplierName: true,
-//             contactPerson: true,
-//             email: true,
-//             phone: true
-//           }
-//         },
-//         employees: {
-//           select: {
-//             EmployeeID: true,
-//             UserName: true,
-//             Email: true
-//           }
-//         },
-//         returnproduct: {
-//           include: {
-//             productvariation: {
-//               include: {
-//                 version: {
-//                   include: {
-//                     product: {
-//                       select: {
-//                         productId: true,
-//                         productName: true,
-//                         sku: true,
-//                         description: true,
-//                         brand: {
-//                           select: {
-//                             brandName: true
-//                           }
-//                         },
-//                         category: {
-//                           select: {
-//                             categoryName: true
-//                           }
-//                         }
-//                       }
-//                     }
-//                   }
-//                 }
-//               }
-//             }
-//           }
-//         }
-//       }
-//     })
-//     if (!returnRecord) {
-//       console.log(` Return with ID ${returnId} not found`);
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 404,
-//           message: 'Return not found',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 404 }
-//       )
-//     }
-
-//     console.log(` Found return with ${returnRecord.returnproduct.length} products`);
-
-//     const transformedReturn = {
-//       returnId: returnRecord.returnId,
-//       returnNumber: `RT-${String(returnRecord.returnId).padStart(6, '0')}`,
-//       returnedBy: returnRecord.employeeId,
-//       returnDate: returnRecord.returnDate?.toISOString()?.split('T')[0] || null,
-//       reason: returnRecord.reason,
-//       status: returnRecord.returnStatus,
-//       remarks: returnRecord.remarks,
-//       returnType: returnRecord.returnType,
-//       approved: returnRecord.approved,
-//       supplier: {
-//         supplierId: returnRecord.supplier.supplierId,
-//         supplierName: returnRecord.supplier.supplierName,
-//         contactPerson: returnRecord.supplier.contactPerson,
-//         email: returnRecord.supplier.email,
-//         phone: returnRecord.supplier.phone
-//       },
-//       employee: {
-//         employeeId: returnRecord.employees.EmployeeID,
-//         userName: returnRecord.employees.UserName,
-//         email: returnRecord.employees.Email
-//       },
-//       details: returnRecord.returnproduct.map(rp => ({
-//         returnProductId: rp.returnProductId,
-//         productId: rp.productvariation.version.product.productId,
-//         productName: rp.productvariation.version.product.productName,
-//         productSku: rp.productvariation.version.product.sku,
-//         productDescription: rp.productvariation.version.product.description,
-//         brandName: rp.productvariation.version.product.brand?.brandName,
-//         categoryName: rp.productvariation.version.product.category?.categoryName,
-//         variationId: rp.variationId,
-//         variationName: rp.productvariation.variationName,
-//         variationColor: rp.productvariation.color,
-//         variationSize: rp.productvariation.size,
-//         variationCapacity: rp.productvariation.capacity,
-//         quantityReturned: rp.quantity,
-//         remarks: rp.remarks
-//       }))
-//     }
-
-//     return NextResponse.json(
-//       {
-//         status: 'success',
-//         code: 200,
-//         message: 'Return retrieved successfully',
-//         timestamp: new Date().toISOString(),
-//         data: transformedReturn
-//       },
-//       { status: 200 }
-//     )
-
-//     } catch (error) {
-//     console.error(' Return GET by ID error:', error)
-//     return NextResponse.json(
-//       { 
-//         status: 'error',
-//         code: 500,
-//         message: 'Internal server error',
-//         timestamp: new Date().toISOString()
-//       },
-//       { status: 500 }
-//     )
-//   }
-// }
-
-
-
 /**
  * @swagger
  * /api/return/{id}:
@@ -475,9 +248,12 @@ export async function PUT(
   
   try {
     const resolvedParams = await params;
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
@@ -489,22 +265,34 @@ export async function PUT(
       )
     }
 
-    let employeeId: number;
-    try {
-      verifyAccessToken(accessToken)
-      employeeId = getEmployeeIdFromToken(accessToken)
-      console.log(' Access token verified, employee ID:', employeeId);
-    } catch (error) {
+    // Get employee ID from session
+    const employeeId = session.user.user_metadata?.employee_id
+    if (!employeeId) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 401,
-          message: 'Invalid access token',
+          message: 'Invalid access token - employee ID not found',
           timestamp: new Date().toISOString()
         },
         { status: 401 }
       )
     }
+
+    const parsedEmployeeId = parseInt(employeeId.toString())
+    if (isNaN(parsedEmployeeId)) {
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 401,
+          message: 'Invalid employee ID in token',
+          timestamp: new Date().toISOString()
+        },
+        { status: 401 }
+      )
+    }
+
+    console.log(' Access token verified, employee ID:', parsedEmployeeId);
 
     const returnId = parseInt(resolvedParams.id)
     if (isNaN(returnId)) {
@@ -590,7 +378,7 @@ export async function PUT(
       // Create transaction log
       await tx.transactionlog.create({
         data: {
-          employeeId: employeeId,
+          employeeId: parsedEmployeeId,
           actionType: 'UPDATE',
           entityName: 'RETURN',
           referenceId: returnId,
@@ -616,7 +404,7 @@ export async function PUT(
             approved: updatedReturn.approved,
             remarks: updatedReturn.remarks,
             productCount: returnProducts.length,
-            updatedBy: employeeId
+            updatedBy: parsedEmployeeId
           })
         }
       })
@@ -725,9 +513,12 @@ export async function DELETE(
   
   try {
     const resolvedParams = await params;
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
@@ -739,22 +530,34 @@ export async function DELETE(
       )
     }
 
-    let employeeId: number;
-    try {
-      verifyAccessToken(accessToken)
-      employeeId = getEmployeeIdFromToken(accessToken)
-      console.log(' Access token verified, employee ID:', employeeId);
-    } catch (error) {
+    // Get employee ID from session
+    const employeeId = session.user.user_metadata?.employee_id
+    if (!employeeId) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 401,
-          message: 'Invalid access token',
+          message: 'Invalid access token - employee ID not found',
           timestamp: new Date().toISOString()
         },
         { status: 401 }
       )
     }
+
+    const parsedEmployeeId = parseInt(employeeId.toString())
+    if (isNaN(parsedEmployeeId)) {
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 401,
+          message: 'Invalid employee ID in token',
+          timestamp: new Date().toISOString()
+        },
+        { status: 401 }
+      )
+    }
+
+    console.log(' Access token verified, employee ID:', parsedEmployeeId);
 
     const returnId = parseInt(resolvedParams.id)
     if (isNaN(returnId)) {
@@ -793,7 +596,7 @@ export async function DELETE(
       // Create transaction log before deletion
       await tx.transactionlog.create({
         data: {
-          employeeId: employeeId,
+          employeeId: parsedEmployeeId,
           actionType: 'DELETE',
           entityName: 'RETURN',
           referenceId: returnId,
@@ -809,7 +612,7 @@ export async function DELETE(
             remarks: existingReturn.remarks,
             productCount: existingReturn.returnproduct.length
           }),
-          newValue: JSON.stringify({ deleted: true, deletedBy: employeeId })
+          newValue: JSON.stringify({ deleted: true, deletedBy: parsedEmployeeId })
         }
       })
 

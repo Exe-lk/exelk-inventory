@@ -1,18 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
-import { verifyAccessToken } from '@/lib/jwt'
-import { getAuthTokenFromCookies } from '@/lib/cookies'
-
-// Helper function to extract employee ID from token
-function getEmployeeIdFromToken(accessToken: string): number {
-  try {
-    const payload = verifyAccessToken(accessToken);
-    return payload.userId || 1;
-  } catch (error) {
-    console.error('Error extracting employee ID from token:', error);
-    return 1;
-  }
-}
+import { createServerClient } from '@/lib/supabase/server'
 
 /**
  * @swagger
@@ -50,28 +38,16 @@ export async function GET(
   try {
     const resolvedParams = await params;
 
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 401,
           message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
-
-    try {
-      verifyAccessToken(accessToken)
-    } catch (error) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid access token',
           timestamp: new Date().toISOString()
         },
         { status: 401 }
@@ -231,30 +207,17 @@ export async function PUT(
 ) {
   try {
     const resolvedParams = await params;
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 401,
           message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
-
-    let employeeId: number;
-    try {
-      verifyAccessToken(accessToken)
-      employeeId = getEmployeeIdFromToken(accessToken)
-    } catch (error) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid access token',
           timestamp: new Date().toISOString()
         },
         { status: 401 }
@@ -456,28 +419,17 @@ export async function DELETE(
 ) {
   try {
     const resolvedParams = await params;
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 401,
           message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
-
-    try {
-      verifyAccessToken(accessToken)
-    } catch (error) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid access token',
           timestamp: new Date().toISOString()
         },
         { status: 401 }

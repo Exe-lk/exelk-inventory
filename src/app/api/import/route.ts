@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
-import { verifyAccessToken } from '@/lib/jwt'
-import { getAuthTokenFromCookies } from '@/lib/cookies'
+import { createServerClient } from '@/lib/supabase/server'
 
 interface ImportFile {
   importId: number
@@ -13,17 +12,6 @@ interface ImportFile {
   errorCount: number | null
   remarks: string | null
   filePath: string | null
-}
-
-// Helper function to extract employee ID from token
-function getEmployeeIdFromToken(accessToken: string): number {
-  try {
-    const payload = verifyAccessToken(accessToken);
-    return payload.userId || 1;
-  } catch (error) {
-    console.error('Error extracting employee ID from token:', error);
-    return 1;
-  }
 }
 
 /**
@@ -92,9 +80,11 @@ export async function GET(request: NextRequest) {
   console.log(' Import Files GET request started');
   
   try {
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
       console.log(' No access token found');
       return NextResponse.json(
         { 
@@ -107,21 +97,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    try {
-      verifyAccessToken(accessToken)
-      console.log(' Access token verified');
-    } catch (error) {
-      console.log(' Invalid access token:', error);
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid access token',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    console.log(' Access token verified');
 
     const { searchParams } = new URL(request.url)
 
@@ -312,148 +288,15 @@ export async function GET(request: NextRequest) {
  */
 
 // POST - Create new import file record
-// export async function POST(request: NextRequest) {
-//   try {
-//     // Verify authentication
-//     const accessToken = getAuthTokenFromCookies(request)
-//     if (!accessToken) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 401,
-//           message: 'Access token not found',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 401 }
-//       )
-//     }
-
-//     let employeeId: number;
-//     try {
-//       verifyAccessToken(accessToken)
-//       employeeId = getEmployeeIdFromToken(accessToken)
-//     } catch (error) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 401,
-//           message: 'Invalid access token',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 401 }
-//       )
-//     }
-
-//     const body = await request.json()
-    
-//     // Validate required fields
-//     const { fileName, fileType, filePath, StockKeeperID } = body
-    
-//     console.log(' Received data:', { fileName, fileType, filePath, StockKeeperID });
-//     console.log(' Employee ID from token:', employeeId);
-
-//     if (!fileName || !fileType || !filePath) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 400,
-//           message: 'File name, file type, and file path are required',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 400 }
-//       )
-//     }
-
-//     try {
-//       // Create new import file record
-//       const importFile = await prisma.importfile.create({
-//         data: {
-//           EmployeeID: StockKeeperID || employeeId,
-//           fileName,
-//           fileType,
-//           filePath,
-//           status: body.status || 'processing',
-//           errorCount: body.errorCount || 0,
-//           remarks: body.remarks || null
-//         },
-//         select: {
-//           importId: true,
-//           EmployeeID: true,
-//           fileName: true,
-//           fileType: true,
-//           importDate: true,
-//           status: true,
-//           errorCount: true,
-//           remarks: true,
-//           filePath: true,
-//         }
-//       })
-
-//       console.log(' Import file created:', importFile);
-
-//       // Transform response
-//       const transformedImportFile = {
-//         ImportID: importFile.importId,
-//         StockKeeperID: importFile.EmployeeID,
-//         FileName: importFile.fileName,
-//         FileType: importFile.fileType,
-//         ImportDate: importFile.importDate,
-//         Status: importFile.status,
-//         ErrorCount: importFile.errorCount,
-//         Remarks: importFile.remarks,
-//         FilePath: importFile.filePath
-//       }
-
-//       return NextResponse.json(
-//         {
-//           status: 'success',
-//           code: 201,
-//           message: 'Import file created successfully',
-//           timestamp: new Date().toISOString(),
-//           data: transformedImportFile,
-//           errors: null
-//         },
-//         { status: 201 }
-//       )
-
-//     } catch (dbError) {
-//       console.error(' Database error:', dbError)
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 500,
-//           message: 'Failed to create import file',
-//           timestamp: new Date().toISOString(),
-//           details: dbError instanceof Error ? dbError.message : 'Unknown database error'
-//         },
-//         { status: 500 }
-//       )
-//     }
-
-//   } catch (error) {
-//     console.error(' Import Files POST error:', error)
-//     return NextResponse.json(
-//       { 
-//         status: 'error',
-//         code: 500,
-//         message: 'Internal server error',
-//         timestamp: new Date().toISOString()
-//       },
-//       { status: 500 }
-//     )
-//   }
-// }
-
-
-
-// Update the POST function to handle multipart/form-data
 export async function POST(request: NextRequest) {
   console.log(' Import Files POST request started');
   
   try {
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
@@ -465,21 +308,34 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let employeeId: number;
-    try {
-      verifyAccessToken(accessToken)
-      employeeId = getEmployeeIdFromToken(accessToken)
-    } catch (error) {
+    // Get employee ID from session
+    const employeeId = session.user.user_metadata?.employee_id
+    if (!employeeId) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 401,
-          message: 'Invalid access token',
+          message: 'Invalid access token - employee ID not found',
           timestamp: new Date().toISOString()
         },
         { status: 401 }
       )
     }
+
+    const parsedEmployeeId = parseInt(employeeId.toString())
+    if (isNaN(parsedEmployeeId)) {
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 401,
+          message: 'Invalid employee ID in token',
+          timestamp: new Date().toISOString()
+        },
+        { status: 401 }
+      )
+    }
+
+    console.log(' Access token verified, employee ID:', parsedEmployeeId);
 
     // Handle FormData (file upload)
     let fileName: string;
@@ -548,7 +404,7 @@ export async function POST(request: NextRequest) {
       // await saveFileToStorage(buffer, filePath);
 
       remarks = remarksField || null;
-      stockKeeperID = stockKeeperIDField ? parseInt(stockKeeperIDField) : employeeId;
+      stockKeeperID = stockKeeperIDField ? parseInt(stockKeeperIDField) : parsedEmployeeId;
 
       console.log(' Processed file upload:', { fileName, fileType, filePath, remarks, stockKeeperID });
 

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma/client';
-import { verifyAccessToken } from '@/lib/jwt';
-import { getAuthTokenFromCookies } from '@/lib/cookies';
+import { createServerClient } from '@/lib/supabase/server';
 
 /**
  * @swagger
@@ -34,9 +33,11 @@ export async function POST(request: NextRequest) {
   console.log(' Bin Card Export Tracking POST request started');
   
   try {
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request);
-    if (!accessToken) {
+    // Verify authentication using Supabase
+    const supabase = await createServerClient();
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
@@ -48,23 +49,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let employeeId: number;
-    try {
-      verifyAccessToken(accessToken);
-      const payload = verifyAccessToken(accessToken);
-      employeeId = payload.userId || 1;
-      console.log(' Access token verified, employee ID:', employeeId);
-    } catch (error) {
+    // Get employee ID from session metadata
+    const employeeId = session.user.user_metadata?.employee_id;
+    if (!employeeId) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 401,
-          message: 'Invalid access token',
+          message: 'User metadata not found',
           timestamp: new Date().toISOString()
         },
         { status: 401 }
       );
     }
+
+    console.log(' Access token verified, employee ID:', employeeId);
 
     const body = await request.json();
     const { fileName, recordCount, remarks } = body;
@@ -84,7 +83,7 @@ export async function POST(request: NextRequest) {
     // Create importfile record for export
     const importFileRecord = await prisma.importfile.create({
       data: {
-        EmployeeID: employeeId,
+        EmployeeID: parseInt(employeeId),
         fileName: fileName,
         fileType: 'CSV',
         importDate: new Date(),

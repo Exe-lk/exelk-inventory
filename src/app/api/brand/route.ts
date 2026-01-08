@@ -1,12 +1,6 @@
-
-
-
-
-
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
-import { verifyAccessToken } from '@/lib/jwt'
-import { getAuthTokenFromCookies } from '@/lib/cookies'
+import { createServerClient } from '@/lib/supabase/server'
 
 interface Brand {
   brandId: number
@@ -22,42 +16,16 @@ interface Brand {
   deletedBy: number | null
 }
 
-// Helper function to extract employee ID from token
-function getEmployeeIdFromToken(accessToken: string): number {
-  try {
-    const payload = verifyAccessToken(accessToken);
-    return payload.userId || 1;
-  } catch (error) {
-    console.error('Error extracting employee ID from token:', error);
-    return 1;
-  }
-}
-
 // GET - Retrieve brands with pagination, sorting, search, and filtering
 export async function GET(request: NextRequest) {
   console.log('Brand GET request started');
 
-  //  try {
-  //   console.log(' Testing Prisma connection...')
-  //   await prisma.$connect()
-  //   console.log(' Prisma connected')
-    
-  //   const testCount = await prisma.brand.count()
-  //   console.log(` Brand count: ${testCount}`)
-    
-  // } catch (testError) {
-  //   console.error(' Initial test failed:', testError)
-  //   return NextResponse.json({
-  //     status: 'error',
-  //     message: 'Database test failed',
-  //     error: testError instanceof Error ? testError.message : 'Unknown'
-  //   }, { status: 500 })
-  // }
-
   try {
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
       console.log(' No access token found');
       return NextResponse.json(
         { 
@@ -70,20 +38,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    try {
-      verifyAccessToken(accessToken)
-      console.log(' Access token verified');
-    } catch (error) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid access token',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    console.log(' Access token verified');
 
     const { searchParams } = new URL(request.url)
 
@@ -240,9 +195,11 @@ export async function GET(request: NextRequest) {
 // POST - Create new brand
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
@@ -254,16 +211,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let employeeId: number;
-    try {
-      verifyAccessToken(accessToken)
-      employeeId = getEmployeeIdFromToken(accessToken)
-    } catch (error) {
+    // Get employee ID from session metadata
+    const employeeId = session.user.user_metadata?.employee_id
+    if (!employeeId) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 401,
-          message: 'Invalid access token',
+          message: 'User metadata not found',
           timestamp: new Date().toISOString()
         },
         { status: 401 }
@@ -314,8 +269,8 @@ export async function POST(request: NextRequest) {
           description: description || '',
           country: country || '',
           isActive: isActive !== undefined ? isActive : true,
-          createdBy: employeeId,
-          updatedBy: employeeId
+          createdBy: parseInt(employeeId),
+          updatedBy: parseInt(employeeId)
         },
         select: {
           brandId: true,
@@ -389,9 +344,11 @@ export async function POST(request: NextRequest) {
 // PUT - Update brand
 export async function PUT(request: NextRequest) {
   try {
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
@@ -403,16 +360,14 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    let employeeId: number;
-    try {
-      verifyAccessToken(accessToken)
-      employeeId = getEmployeeIdFromToken(accessToken)
-    } catch (error) {
+    // Get employee ID from session metadata
+    const employeeId = session.user.user_metadata?.employee_id
+    if (!employeeId) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 401,
-          message: 'Invalid access token',
+          message: 'User metadata not found',
           timestamp: new Date().toISOString()
         },
         { status: 401 }
@@ -485,7 +440,7 @@ export async function PUT(request: NextRequest) {
         },
         data: {
           ...updateData,
-          updatedBy: employeeId
+          updatedBy: parseInt(employeeId)
         },
         select: {
           brandId: true,
@@ -559,9 +514,11 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete brand (soft delete)
 export async function DELETE(request: NextRequest) {
   try {
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
@@ -573,16 +530,14 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    let employeeId: number;
-    try {
-      verifyAccessToken(accessToken)
-      employeeId = getEmployeeIdFromToken(accessToken)
-    } catch (error) {
+    // Get employee ID from session metadata
+    const employeeId = session.user.user_metadata?.employee_id
+    if (!employeeId) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 401,
-          message: 'Invalid access token',
+          message: 'User metadata not found',
           timestamp: new Date().toISOString()
         },
         { status: 401 }
@@ -652,7 +607,7 @@ export async function DELETE(request: NextRequest) {
         },
         data: {
           deletedAt: new Date(),
-          deletedBy: employeeId,
+          deletedBy: parseInt(employeeId),
           isActive: false
         }
       })
@@ -694,6 +649,9 @@ export async function DELETE(request: NextRequest) {
     )
   }
 }
+
+
+
 
 
 

@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model brand {
@@ -66,6 +67,7 @@ model employees {
   category_updatedBy       category[]       @relation("category_updatedBy")
   gin                      gin[]
   grn                      grn[]
+  importfile               importfile[]
   model_createdBy          model[]          @relation("model_createdBy")
   model_deletedBy          model[]          @relation("model_deletedBy")
   model_updatedBy          model[]          @relation("model_updatedBy")
@@ -397,4 +399,17 @@ model returnproduct {
   remarks          String?
   returns          returns          @relation(fields: [returnId], references: [returnId], onDelete: NoAction, onUpdate: NoAction, map: "fk_returnproduct_return")
   productvariation productvariation @relation(fields: [variationId], references: [variationId], onDelete: NoAction, onUpdate: NoAction, map: "fk_returnproduct_variation")
+}
+
+model importfile {
+  importId   Int       @id @default(autoincrement())
+  EmployeeID Int
+  fileName   String?   @db.VarChar(255)
+  fileType   String?   @db.VarChar(50)
+  importDate DateTime? @default(now()) @db.Timestamp(6)
+  status     String?   @db.VarChar(50)
+  errorCount Int?      @default(0)
+  remarks    String?
+  filePath   String?   @db.VarChar(500)
+  employees  employees @relation(fields: [EmployeeID], references: [EmployeeID], map: "fk_importfile_employee")
 }

@@ -9,34 +9,12 @@ import Login from '@/components/login/login';
 import DeleteConfirmation from '@/components/form-popup/delete';
 import { Employee, isStockKeeper } from '@/types/user';
 import { getCurrentUser, logoutUser } from '@/lib/auth';
-import { fetchStocks, createStockIn, createStockOut, deleteStock, fetchProducts, fetchSuppliers, fetchVariationsByProductId,  } from '@/lib/services/stockService';
+import { fetchStocks, createStockIn, createStockOut, deleteStock, fetchProducts, fetchSuppliers, fetchVariationsByProductId, importStockFromCSV, exportStockToCSV } from '@/lib/services/stockService';
 import { Stock as StockType } from '@/types/stock';
-import {  ArrowUpCircle,ArrowDownCircle, Trash2 } from 'lucide-react';
-
-
-// // Stock interfaces
-// interface Stock {
-//   stockId: number;
-//   productId: number;
-//   variationId: number | null;
-//   quantityAvailable: number ;
-//   reorderLevel: number;
-//   lastUpdatedDate: string;
-//   location: string | null;
-//   // Display fields
-//   productName?: string;
-//   productSku?: string;
-//   brandName?: string;
-//   categoryName?: string;
-//   variationName?: string;
-//   variationColor?: string;
-//   variationSize?: string;
-//   variationCapacity?: string;
-// }
+import { ArrowUpCircle, ArrowDownCircle, Trash2, Upload, Download } from 'lucide-react';
 
 // Stock interfaces
 interface Stock extends StockType {
- 
   // Display fields
   productName?: string;
   productSku?: string;
@@ -142,6 +120,33 @@ const StockPage: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [stockToDelete, setStockToDelete] = useState<Stock | null>(null);
 
+  // Import form states
+  const [isImportFormOpen, setIsImportFormOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{
+    totalRows: number;
+    successCount: number;
+    errorCount: number;
+    errors: string[] | null;
+  } | null>(null);
+
+  // Export form states
+  const [isExportFormOpen, setIsExportFormOpen] = useState(false);
+  const [exportOptions, setExportOptions] = useState<{
+    exportAll: boolean;
+    includeHeaders: boolean;
+    dateRange: {
+      start: string;
+      end: string;
+    } | null;
+  }>({
+    exportAll: true,
+    includeHeaders: true,
+    dateRange: null
+  });
+  const [isExporting, setIsExporting] = useState(false);
+
   // Check authentication
   useEffect(() => {
     const checkAuth = async () => {
@@ -191,29 +196,23 @@ const StockPage: React.FC = () => {
         // Map products correctly
         setProducts(productsData.map((p: any) => ({
           productId: p.productId,
-          productName: p.productName || p.ProductName, // Handle different field names
+          productName: p.productName || p.ProductName,
           variations: p.variations || []
         })));
         
-        // Map suppliers correctly  
-        // setSuppliers(suppliersData.map((s: any) => ({
-        //   supplierId: s.supplierId || s.SupplierID,
-        //   supplierName: s.supplierName || s.SupplierName
-        // })));
-
         console.log(' Raw suppliers data:', suppliersData);
 
         // Map suppliers correctly  
-    const mappedSuppliers = suppliersData.map((s: any) => {
-      console.log(' Processing supplier:', s);
-      return {
-        supplierId: s.supplierId || s.SupplierID,
-        supplierName: s.supplierName || s.SupplierName
-      };
-    });
-    
-    console.log(' Mapped suppliers:', mappedSuppliers);
-    setSuppliers(mappedSuppliers);
+        const mappedSuppliers = suppliersData.map((s: any) => {
+          console.log(' Processing supplier:', s);
+          return {
+            supplierId: s.supplierId || s.SupplierID,
+            supplierName: s.supplierName || s.SupplierName
+          };
+        });
+        
+        console.log(' Mapped suppliers:', mappedSuppliers);
+        setSuppliers(mappedSuppliers);
         
       } catch (err) {
         console.error('Error loading data:', err);
@@ -222,50 +221,6 @@ const StockPage: React.FC = () => {
         setLoading(false);
       }
     };
-
-
-    // Add this debugging in the useEffect where you load suppliers
-// const loadData = async () => {
-//   try {
-//     setLoading(true);
-//     setError(null);
-    
-//     // Load stocks from API
-//     const stockData = await fetchStocks({
-//       page: 1,
-//       limit: 100
-//     });
-    
-//     // Load products and suppliers for the forms
-//     const [productsData, suppliersData] = await Promise.all([
-//       fetchProducts(),
-//       fetchSuppliers()
-//     ]);
-    
-//     setStocks(stockData.items);
-    
-//     // Debug suppliers data
-//     console.log(' Raw suppliers data:', suppliersData);
-    
-//     // Map suppliers correctly  
-//     const mappedSuppliers = suppliersData.map((s: any) => {
-//       console.log(' Processing supplier:', s);
-//       return {
-//         supplierId: s.supplierId || s.SupplierID,
-//         supplierName: s.supplierName || s.SupplierName
-//       };
-//     });
-    
-//     console.log(' Mapped suppliers:', mappedSuppliers);
-//     setSuppliers(mappedSuppliers);
-    
-//   } catch (err) {
-//     console.error('Error loading data:', err);
-//     setError(err instanceof Error ? err.message : 'Failed to load data');
-//   } finally {
-//     setLoading(false);
-//   }
-// };
 
     loadData();
   }, [isLoggedIn]);
@@ -371,6 +326,138 @@ const StockPage: React.FC = () => {
     }
   };
 
+  // Import handlers
+  const handleImportClick = () => {
+    setIsImportFormOpen(true);
+    setSelectedFile(null);
+    setImportResult(null);
+  };
+
+  const handleCloseImportForm = () => {
+    if (isImporting) return;
+    setIsImportFormOpen(false);
+    setSelectedFile(null);
+    setImportResult(null);
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (!file.name.endsWith('.csv')) {
+        alert('Please select a CSV file');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        alert('File size must be less than 10MB');
+        return;
+      }
+      setSelectedFile(file);
+      setImportResult(null);
+    }
+  };
+
+  const handleImportSubmit = async () => {
+    if (!selectedFile) {
+      alert('Please select a CSV file');
+      return;
+    }
+
+    try {
+      setIsImporting(true);
+      setImportResult(null);
+
+      const result = await importStockFromCSV(selectedFile);
+      setImportResult(result);
+
+      if (result.errorCount === 0) {
+        alert(` Successfully imported ${result.successCount} stock records!`);
+        await refreshStocks();
+        setTimeout(() => {
+          handleCloseImportForm();
+        }, 2000);
+      } else {
+        alert(` Import completed with ${result.errorCount} errors. ${result.successCount} records imported successfully.`);
+        await refreshStocks();
+      }
+    } catch (error) {
+      console.error('Import error:', error);
+      alert(`Failed to import stock: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  // Export handlers
+  const handleExportClick = () => {
+    setIsExportFormOpen(true);
+    setExportOptions({
+      exportAll: true,
+      includeHeaders: true,
+      dateRange: null
+    });
+  };
+
+  const handleCloseExportForm = () => {
+    if (isExporting) return;
+    setIsExportFormOpen(false);
+  };
+
+  const handleExportSubmit = async () => {
+    try {
+      setIsExporting(true);
+
+      let stocksToExport: Stock[] = [];
+
+      if (exportOptions.exportAll) {
+        // Fetch all stocks (not just the current page)
+        const allStocksData = await fetchStocks({
+          page: 1,
+          limit: 10000 // Large limit to get all stocks
+        });
+        stocksToExport = allStocksData.items;
+      } else {
+        // Export only currently displayed stocks
+        stocksToExport = stocks;
+      }
+
+      // Apply date filter if specified
+      if (exportOptions.dateRange && exportOptions.dateRange.start && exportOptions.dateRange.end) {
+        const startDate = new Date(exportOptions.dateRange.start);
+        const endDate = new Date(exportOptions.dateRange.end);
+        endDate.setHours(23, 59, 59, 999); // Include entire end date
+
+        stocksToExport = stocksToExport.filter(stock => {
+          if (!stock.lastUpdatedDate) return false;
+          const stockDate = new Date(stock.lastUpdatedDate);
+          return stockDate >= startDate && stockDate <= endDate;
+        });
+      }
+
+      if (stocksToExport.length === 0) {
+        alert('No stock records found to export');
+        return;
+      }
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().split('T')[0];
+      const filename = `stock_export_${timestamp}.csv`;
+
+      // Export to CSV
+      await exportStockToCSV(stocksToExport, filename);
+
+      alert(` Successfully exported ${stocksToExport.length} stock records!`);
+      
+      setTimeout(() => {
+        handleCloseExportForm();
+      }, 1000);
+    } catch (error) {
+      console.error('Export error:', error);
+      alert(`Failed to export stock: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   // Function to get row class name based on stock levels
   const getStockRowClassName = (stock: Stock): string => {
     const quantity = stock.quantityAvailable ?? 0;
@@ -381,7 +468,6 @@ const StockPage: React.FC = () => {
     }
     return '';
   };
-
 
   // Define table columns
   const columns: TableColumn[] = [
@@ -412,29 +498,16 @@ const StockPage: React.FC = () => {
       render: (value: string, row: Stock) => (
         <div>
           <span className="font-medium text-gray-900">{value || 'N/A'}</span>
-          {/* {row.productSku && (
-            <div className="text-sm text-gray-500">SKU: {row.productSku}</div>
-          )} */}
         </div>
       )
     },
-    // {
-    //   key: 'quantityAvailable',
-    //   label: 'Quantity Available',
-    //   sortable: true,
-    //   render: (value: number , row: Stock) => (
-    //     <span className={`font-medium ${value <= row.reorderLevel ? 'text-red-600' : 'text-gray-600'}`}>
-    //       {value}
-    //     </span>
-    //   )
-    // },
     {
       key: 'quantityAvailable',
       label: 'Quantity Available',
       sortable: true,
       render: (value: number | null, row: Stock) => {
         const quantity = value ?? 0;
-        const reorderLevel = row.reorderLevel ?? 0; // Handle null reorderLevel
+        const reorderLevel = row.reorderLevel ?? 0;
 
         return (
           <span className={`font-medium ${quantity <= reorderLevel ? 'text-red-600' : 'text-gray-600'}`}>
@@ -443,7 +516,6 @@ const StockPage: React.FC = () => {
         );
       }
     },
-    
     {
       key: 'reorderLevel',
       label: 'Reorder Level',
@@ -481,20 +553,12 @@ const StockPage: React.FC = () => {
     }
     
     return [
-      // {
-      //   label: 'Stock-IN',
-      //   onClick: (stock: Stock) => {
-      //     handleStockInClick(stock);
-      //   },
-      //   variant: 'primary'
-      // },
       {
         label: (
-    <span className="flex items-center gap-2">
-      <ArrowDownCircle size={16} />
-      
-    </span>
-  ),
+          <span className="flex items-center gap-2">
+            <ArrowDownCircle size={16} />
+          </span>
+        ),
         onClick: () => {
           handleStockInClick();
         },
@@ -502,11 +566,10 @@ const StockPage: React.FC = () => {
       },
       {
         label: (
-    <span className="flex items-center gap-2">
-      <ArrowUpCircle size={19} />
-      
-    </span>
-  ),
+          <span className="flex items-center gap-2">
+            <ArrowUpCircle size={19} />
+          </span>
+        ),
         onClick: () => {
           handleStockOutClick();
         },
@@ -514,11 +577,10 @@ const StockPage: React.FC = () => {
       },
       {
         label: (
-                <span className="flex items-center gap-2">
-                  <Trash2 size={16} />
-                  
-                </span>
-              ),
+          <span className="flex items-center gap-2">
+            <Trash2 size={16} />
+          </span>
+        ),
         onClick: (stock: Stock) => {
           if (isDeleting === stock.stockId) {
             return;
@@ -538,7 +600,7 @@ const StockPage: React.FC = () => {
       grnNumber: 'Auto-generated',
       receivedDate: '',
       stockKeeper: currentUser?.UserName || '[User]',
-      supplierId: 0, // changed that 0 into null
+      supplierId: 0,
       remarks: '',
       items: selectedStock ? [{
         id: '1',
@@ -579,7 +641,6 @@ const StockPage: React.FC = () => {
       }));
     };
 
-    // Update the updateItem function to handle product changes
     const updateItem = async (id: string, field: keyof StockInItem, value: any) => {
       setFormData(prev => ({
         ...prev,
@@ -587,20 +648,16 @@ const StockPage: React.FC = () => {
           if (item.id === id) {
             const updatedItem = { ...item, [field]: value };
             
-            // If product changed, reset variation and load new variations
             if (field === 'productId' && value !== item.productId) {
               updatedItem.variationId = null;
               
-              // Load variations for the new product
               if (value && value > 0) {
                 loadVariationsForItem(id, value);
               } else {
-                // Clear variations if no product selected
                 setItemVariations(prev => ({ ...prev, [id]: [] }));
               }
             }
             
-            // Calculate subtotal if quantity or cost changed
             if (field === 'quantityReceived' || field === 'unitCost') {
               updatedItem.subtotal = updatedItem.quantityReceived * updatedItem.unitCost;
             }
@@ -612,7 +669,6 @@ const StockPage: React.FC = () => {
       }));
     };
 
-    // Function to load variations for a specific item
     const loadVariationsForItem = async (itemId: string, productId: number) => {
       try {
         setLoadingVariations(prev => ({ ...prev, [itemId]: true }));
@@ -642,7 +698,6 @@ const StockPage: React.FC = () => {
         items: prev.items.filter(item => item.id !== id)
       }));
       
-      // Clean up variations state
       setItemVariations(prev => {
         const newState = { ...prev };
         delete newState[id];
@@ -656,7 +711,6 @@ const StockPage: React.FC = () => {
       });
     };
 
-    // Load initial variations if selectedStock has a product
     useEffect(() => {
       if (selectedStock && selectedStock.productId) {
         const initialItem = formData.items[0];
@@ -670,174 +724,82 @@ const StockPage: React.FC = () => {
       return formData.items.reduce((total, item) => total + item.subtotal, 0);
     };
 
-  //   const handleSubmit = async () => {
-  //     try {
-  //       setIsSubmitting(true);
+    const handleSubmit = async () => {
+      try {
+        setIsSubmitting(true);
 
-  //       console.log(' Form data before validation:', formData);
+        console.log(' Form data before validation:', formData);
+        console.log(' Available suppliers:', suppliers);
         
-  //       // Validate form
-  //       if (!formData.supplierId || formData.supplierId <= 0 || !formData.receivedDate) {
-  //         alert('Please fill in all required fields');
-  //         return;
-  //       }
+        if (!formData.supplierId || formData.supplierId <= 0) {
+          alert('Please select a valid supplier');
+          return;
+        }
 
-  //        if (formData.items.length === 0 || formData.items.some(item => 
-  //           !item.productId || item.productId <= 0 || 
-  //           !item.quantityReceived || item.quantityReceived <= 0 || 
-  //           !item.unitCost || item.unitCost <= 0)) {
-  //           alert('Please add valid items to the stock-in (all items must have Product, Quantity > 0, and Unit Cost > 0)');
-  //       return;
-  //       }
+        const selectedSupplier = suppliers.find(s => 
+          (s.supplierId) === formData.supplierId
+        );
+        
+        if (!selectedSupplier) {
+          alert('Selected supplier is invalid. Please select a supplier from the list.');
+          return;
+        }
 
-  //       console.log(' Validation passed, creating stock-in...');
+        if (!formData.receivedDate) {
+          alert('Please select a received date');
+          return;
+        }
 
-  //       // Submit stock-in
-  //     //   await createStockIn({
-  //     //     supplierId: formData.supplierId,
-  //     //     receivedDate: formData.receivedDate,
-  //     //     remarks: formData.remarks,
-  //     //     items: formData.items.map(item => ({
-  //     //       productId: item.productId,
-  //     //       variationId: item.variationId,
-  //     //       quantityReceived: item.quantityReceived,
-  //     //       unitCost: item.unitCost,
-  //     //       location: item.location
-  //     //     }))
-  //     //   });
+        if (formData.items.length === 0) {
+          alert('Please add at least one item');
+          return;
+        }
 
-  //     //   alert('Stock-In saved successfully!');
-  //     //   await refreshStocks();
-  //     //   onClose();
-  //     // } catch (error) {
-  //     //   console.error('Stock-in error:', error);
-  //     //   alert(`Failed to save Stock-In: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  //     // } finally {
-  //     //   setIsSubmitting(false);
-  //     // }
+        for (const item of formData.items) {
+          if (!item.productId || item.productId <= 0) {
+            alert('Please select a product for all items');
+            return;
+          }
+          if (!item.quantityReceived || item.quantityReceived <= 0) {
+            alert('Please enter a valid quantity for all items');
+            return;
+          }
+          if (!item.unitCost || item.unitCost <= 0) {
+            alert('Please enter a valid unit cost for all items');
+            return;
+          }
+        }
 
+        console.log(' Validation passed, creating stock-in...');
 
-  //     // Add this inside the StockInForm component, just before the return statement
-  //       console.log(' DEBUG - Current form state:', {
-  //         supplierId: formData.supplierId,
-  //         supplierIdType: typeof formData.supplierId,
-  //         receivedDate: formData.receivedDate,
-  //         suppliers: suppliers.length,
-  //         firstSupplier: suppliers[0]
-  //       });
+        const stockInData = {
+          supplierId: parseInt(formData.supplierId.toString()), 
+          stockKeeperId: currentUser!.EmployeeID,
+          receivedDate: formData.receivedDate,
+          remarks: formData.remarks || '',
+          items: formData.items.map(item => ({
+            productId: parseInt(item.productId.toString()),
+            variationId: item.variationId ? parseInt(item.variationId.toString()) : undefined,
+            quantityReceived: parseInt(item.quantityReceived.toString()),
+            unitCost: parseFloat(item.unitCost.toString()),
+            location: item.location || undefined
+          }))
+        };
 
-  //     const stockInData = {
-  //     supplierId: formData.supplierId,
-  //     receivedDate: formData.receivedDate,
-  //     remarks: formData.remarks,
-  //     items: formData.items.map(item => ({
-  //       productId: item.productId,
-  //       variationId: item.variationId || null, // Ensure null for undefined variations
-  //       quantityReceived: item.quantityReceived,
-  //       unitCost: item.unitCost,
-  //       location: item.location || '' // Ensure empty string instead of undefined
-  //     }))
-  //   };
+        console.log(' Sending stock-in data:', stockInData);
 
-  //   console.log(' Sending stock-in data:', stockInData); // Add debugging
+        await createStockIn(stockInData);
 
-  //   await createStockIn(stockInData);
-
-  //   alert('Stock-In saved successfully!');
-  //   await refreshStocks();
-  //   onClose();
-  // } catch (error) {
-  //   console.error(' Stock-in error:', error);
-  //   alert(`Failed to save Stock-In: ${error instanceof Error ? error.message : 'Unknown error'}`);// stock in error
-  // } finally {
-  //   setIsSubmitting(false);
-  // }
-    
-  //   };
-
-
-  // Update the handleSubmit function to better validate supplier data
-const handleSubmit = async () => {
-  try {
-    setIsSubmitting(true);
-
-    console.log(' Form data before validation:', formData);
-    console.log(' Available suppliers:', suppliers);
-    
-    // Enhanced supplier validation
-    if (!formData.supplierId || formData.supplierId <= 0) {
-      alert('Please select a valid supplier');
-      return;
-    }
-
-    // Verify the supplier exists in our list
-    const selectedSupplier = suppliers.find(s => 
-      (s.supplierId ) === formData.supplierId
-    );
-    
-    if (!selectedSupplier) {
-      alert('Selected supplier is invalid. Please select a supplier from the list.');
-      return;
-    }
-
-    if (!formData.receivedDate) {
-      alert('Please select a received date');
-      return;
-    }
-
-    if (formData.items.length === 0) {
-      alert('Please add at least one item');
-      return;
-    }
-
-    // Validate all items
-    for (const item of formData.items) {
-      if (!item.productId || item.productId <= 0) {
-        alert('Please select a product for all items');
-        return;
+        alert('Stock-In saved successfully!');
+        await refreshStocks();
+        onClose();
+      } catch (error) {
+        console.error(' Stock-in error:', error);
+        alert(`Failed to save Stock-In: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      } finally {
+        setIsSubmitting(false);
       }
-      if (!item.quantityReceived || item.quantityReceived <= 0) {
-        alert('Please enter a valid quantity for all items');
-        return;
-      }
-      if (!item.unitCost || item.unitCost <= 0) {
-        alert('Please enter a valid unit cost for all items');
-        return;
-      }
-    }
-
-    console.log(' Validation passed, creating stock-in...');
-
-    const stockInData = {
-      supplierId: parseInt(formData.supplierId.toString()), 
-      stockKeeperId: currentUser!.EmployeeID, // added stockKeeperId to payload
-      receivedDate: formData.receivedDate,
-      remarks: formData.remarks || '',
-      items: formData.items.map(item => ({
-        productId: parseInt(item.productId.toString()),
-        variationId: item.variationId ? parseInt(item.variationId.toString()) : undefined,
-        quantityReceived: parseInt(item.quantityReceived.toString()),
-        unitCost: parseFloat(item.unitCost.toString()),
-        location: item.location || undefined
-      }))
     };
-
-    console.log(' Sending stock-in data:', stockInData);
-
-    await createStockIn(stockInData);
-
-    alert('Stock-In saved successfully!');
-    await refreshStocks();
-    onClose();
-  } catch (error) {
-    console.error(' Stock-in error:', error);
-    alert(`Failed to save Stock-In: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
-
-
 
     return (
       <div className="bg-white p-8 max-w-6xl mx-auto">
@@ -874,66 +836,40 @@ const handleSubmit = async () => {
               disabled
             />
           </div>
-          <div >
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Supplier *</label>
-          
             <select
               value={formData.supplierId || ''}
               onChange={(e) => {
-              const value = e.target.value;
-              const supplierId = value ? parseInt(value, 10) : 0;
-              console.log(' Supplier selected:', { value, supplierId, type: typeof supplierId }); // Add debugging
-              setFormData(prev => ({ 
-              ...prev, 
-              supplierId: supplierId 
-            }));
-            }}
-           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
+                const value = e.target.value;
+                const supplierId = value ? parseInt(value, 10) : 0;
+                console.log('🔍 Supplier selected:', { value, supplierId, type: typeof supplierId });
+                setFormData(prev => ({ 
+                  ...prev, 
+                  supplierId: supplierId 
+                }));
+              }}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
             >
               <option value="">Select Supplier</option>
-              {/* {suppliers.map(supplier => (
-                <option key={supplier.supplierId} value={supplier.supplierId}>
-                  {supplier.supplierName}(ID: {supplier.supplierId})
-                </option>
-              ))} */}
-
               {suppliers.map(supplier => {
-      // Ensure we have valid data
-      const id = supplier.supplierId ;
-      const name = supplier.supplierName ;
-      
-      if (!id || !name) {
-        console.warn('Invalid supplier data:', supplier);
-        return null;
-      }
-      
-      return (
-        <option key={id} value={id}>
-          {name} (ID: {id})
-        </option>
-      );
-    })}
+                const id = supplier.supplierId;
+                const name = supplier.supplierName;
+                
+                if (!id || !name) {
+                  console.warn('⚠️ Invalid supplier data:', supplier);
+                  return null;
+                }
+                
+                return (
+                  <option key={id} value={id}>
+                    {name} (ID: {id})
+                  </option>
+                );
+              })}
             </select>
           </div>
-
-             {/* <div key={item.id} className="grid grid-cols-7 gap-4 mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Supplier *</label>
-          
-            <select
-              value={item.supplierId || ''}
-              onChange={(e) => updatedItem(item.id, 'supplierId', parseInt(e.target.value) || 0)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-            >
-              <option value="">Select Supplier</option>
-              {suppliers.map(supplier => (
-                <option key={supplier.supplierId} value={supplier.supplierId}>
-                  {supplier.supplierName}(ID: {supplier.supplierId})
-                </option>
-              ))}
-            </select>
-          </div> */}
 
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">Remarks</label>
@@ -975,7 +911,6 @@ const handleSubmit = async () => {
             
             return (
               <div key={item.id} className="grid grid-cols-7 gap-4 mb-4">
-                {/* Product Selection */}
                 <select
                   value={item.productId || ''}
                   onChange={(e) => updateItem(item.id, 'productId', parseInt(e.target.value) || 0)}
@@ -990,7 +925,6 @@ const handleSubmit = async () => {
                   ))}
                 </select>
                 
-                {/* Variation Selection */}
                 <select
                   value={item.variationId || ''}
                   onChange={(e) => updateItem(item.id, 'variationId', e.target.value ? parseInt(e.target.value) : null)}
@@ -1012,7 +946,6 @@ const handleSubmit = async () => {
                   ))}
                 </select>
                 
-                {/* Quantity Received */}
                 <input
                   type="number"
                   placeholder="Quantity"
@@ -1023,7 +956,6 @@ const handleSubmit = async () => {
                   min="1"
                 />
                 
-                {/* Unit Cost */}
                 <input
                   type="number"
                   step="0.01"
@@ -1035,7 +967,6 @@ const handleSubmit = async () => {
                   min="0.01"
                 />
                 
-                {/* Location */}
                 <input
                   type="text"
                   placeholder="Location"
@@ -1044,7 +975,6 @@ const handleSubmit = async () => {
                   className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 
-                {/* Subtotal */}
                 <input
                   type="text"
                   value={item.subtotal.toFixed(2)}
@@ -1052,7 +982,6 @@ const handleSubmit = async () => {
                   disabled
                 />
 
-                {/* Remove Button */}
                 <button
                   onClick={() => removeItem(item.id)}
                   className="text-red-600 hover:text-red-800 text-sm px-2 py-1 border border-red-300 rounded-md hover:bg-red-50"
@@ -1096,9 +1025,7 @@ const handleSubmit = async () => {
                 location: '',
                 subtotal: 0
               }]
-            })
-            
-          }
+            })}
             className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
           >
             Clear
@@ -1117,7 +1044,7 @@ const handleSubmit = async () => {
   // Stock Out Form Component with Updated Variation Loading
   const StockOutForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const [formData, setFormData] = useState<StockOutFormData>({
-      ginNumber: 'Auo-generated',
+      ginNumber: 'Auto-generated',
       issueDate: '',
       issuedTo: '',
       issueReason: '',
@@ -1142,7 +1069,6 @@ const handleSubmit = async () => {
       }]
     });
 
-    // Add state for managing variations for each item
     const [itemVariations, setItemVariations] = useState<{ [itemId: string]: ProductVariation[] }>({});
     const [loadingVariations, setLoadingVariations] = useState<{ [itemId: string]: boolean }>({});
 
@@ -1162,7 +1088,6 @@ const handleSubmit = async () => {
       }));
     };
 
-    // Update the updateItem function to handle product changes
     const updateItem = async (id: string, field: keyof StockOutItem, value: any) => {
       setFormData(prev => ({
         ...prev,
@@ -1170,20 +1095,16 @@ const handleSubmit = async () => {
           if (item.id === id) {
             const updatedItem = { ...item, [field]: value };
             
-            // If product changed, reset variation and load new variations
             if (field === 'productId' && value !== item.productId) {
               updatedItem.variationId = null;
               
-              // Load variations for the new product
               if (value && value > 0) {
                 loadVariationsForItem(id, value);
               } else {
-                // Clear variations if no product selected
                 setItemVariations(prev => ({ ...prev, [id]: [] }));
               }
             }
             
-            // Calculate subtotal if quantity or cost changed
             if (field === 'quantityIssued' || field === 'unitCost') {
               updatedItem.subtotal = updatedItem.quantityIssued * updatedItem.unitCost;
             }
@@ -1195,7 +1116,6 @@ const handleSubmit = async () => {
       }));
     };
 
-    // Function to load variations for a specific item
     const loadVariationsForItem = async (itemId: string, productId: number) => {
       try {
         setLoadingVariations(prev => ({ ...prev, [itemId]: true }));
@@ -1225,7 +1145,6 @@ const handleSubmit = async () => {
         items: prev.items.filter(item => item.id !== id)
       }));
       
-      // Clean up variations state
       setItemVariations(prev => {
         const newState = { ...prev };
         delete newState[id];
@@ -1239,7 +1158,6 @@ const handleSubmit = async () => {
       });
     };
 
-    // Load initial variations if selectedStock has a product
     useEffect(() => {
       if (selectedStock && selectedStock.productId) {
         const initialItem = formData.items[0];
@@ -1257,7 +1175,6 @@ const handleSubmit = async () => {
       try {
         setIsSubmitting(true);
         
-        // Validate form
         if (!formData.issuedTo || !formData.issueReason || !formData.issueDate) {
           alert('Please fill in all required fields');
           return;
@@ -1269,7 +1186,6 @@ const handleSubmit = async () => {
           return;
         }
 
-        // Submit stock-out
         await createStockOut({
           stockKeeperId: currentUser!.EmployeeID,
           issuedTo: formData.issuedTo,
@@ -1393,7 +1309,6 @@ const handleSubmit = async () => {
             
             return (
               <div key={item.id} className="grid grid-cols-7 gap-4 mb-4">
-                {/* Product Selection */}
                 <select
                   value={item.productId || ''}
                   onChange={(e) => updateItem(item.id, 'productId', parseInt(e.target.value) || 0)}
@@ -1408,7 +1323,6 @@ const handleSubmit = async () => {
                   ))}
                 </select>
                 
-                {/* Variation Selection */}
                 <select
                   value={item.variationId || ''}
                   onChange={(e) => updateItem(item.id, 'variationId', e.target.value ? parseInt(e.target.value) : null)}
@@ -1430,7 +1344,6 @@ const handleSubmit = async () => {
                   ))}
                 </select>
                 
-                {/* Quantity Issued */}
                 <input
                   type="number"
                   placeholder="Quantity"
@@ -1441,7 +1354,6 @@ const handleSubmit = async () => {
                   min="1"
                 />
                 
-                {/* Unit Cost */}
                 <input
                   type="number"
                   step="0.01"
@@ -1453,7 +1365,6 @@ const handleSubmit = async () => {
                   min="0.01"
                 />
                 
-                {/* Location */}
                 <input
                   type="text"
                   placeholder="Location"
@@ -1462,7 +1373,6 @@ const handleSubmit = async () => {
                   className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 
-                {/* Subtotal */}
                 <input
                   type="text"
                   value={item.subtotal.toFixed(2)}
@@ -1470,7 +1380,6 @@ const handleSubmit = async () => {
                   disabled
                 />
 
-                {/* Remove Button */}
                 <button
                   onClick={() => removeItem(item.id)}
                   className="text-red-600 hover:text-red-800 text-sm px-2 py-1 border border-red-300 rounded-md hover:bg-red-50"
@@ -1530,6 +1439,255 @@ const handleSubmit = async () => {
       </div>
     );
   };
+
+  // Import Form Component
+  const ImportForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+    return (
+      <div className="bg-white p-8 max-w-4xl mx-auto">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-semibold text-gray-700">Import Stock from CSV</h2>
+          <p className="mt-2 text-sm text-gray-500">
+            Upload a CSV file to bulk import stock records
+          </p>
+        </div>
+
+        {/* CSV Format Instructions */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <h3 className="font-semibold text-blue-900 mb-2">CSV Format Requirements:</h3>
+          <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+            <li><strong>Required columns:</strong> productId, quantityAvailable</li>
+            <li><strong>Optional columns:</strong> variationId, reorderLevel, location</li>
+            <li>First row must contain column headers</li>
+            <li>File size limit: 10MB</li>
+          </ul>
+          <div className="mt-3 text-xs text-blue-700">
+            <strong>Example:</strong>
+            <pre className="mt-1 bg-white p-2 rounded border">
+                {`productId,quantityAvailable,variationId,reorderLevel,location
+                1,100,1,10,Warehouse A
+                2,50,,20,Warehouse B`}
+            </pre>
+          </div>
+        </div>
+
+        {/* File Upload */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Select CSV File *
+          </label>
+          <input
+            type="file"
+            accept=".csv"
+            onChange={handleFileSelect}
+            disabled={isImporting}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          {selectedFile && (
+            <div className="mt-2 text-sm text-gray-600">
+              Selected: <span className="font-medium">{selectedFile.name}</span> 
+              ({(selectedFile.size / 1024).toFixed(2)} KB)
+            </div>
+          )}
+        </div>
+
+        {/* Import Results */}
+        {importResult && (
+          <div className={`mb-6 p-4 rounded-lg ${
+            importResult.errorCount === 0 
+              ? 'bg-green-50 border border-green-200' 
+              : 'bg-yellow-50 border border-yellow-200'
+          }`}>
+            <h3 className="font-semibold mb-2">
+              {importResult.errorCount === 0 ? ' Import Successful' : ' Import Completed with Errors'}
+            </h3>
+            <div className="text-sm space-y-1">
+              <div>Total Rows: {importResult.totalRows}</div>
+              <div className="text-green-700">Successful: {importResult.successCount}</div>
+              {importResult.errorCount > 0 && (
+                <div className="text-red-700">Errors: {importResult.errorCount}</div>
+              )}
+            </div>
+            
+            {importResult.errors && importResult.errors.length > 0 && (
+              <div className="mt-3 max-h-40 overflow-y-auto">
+                <h4 className="font-medium text-sm mb-1">Error Details:</h4>
+                <ul className="text-xs text-red-700 space-y-1 list-disc list-inside">
+                  {importResult.errors.slice(0, 10).map((error, idx) => (
+                    <li key={idx}>{error}</li>
+                  ))}
+                  {importResult.errors.length > 10 && (
+                    <li>... and {importResult.errors.length - 10} more errors</li>
+                  )}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex justify-end space-x-4">
+          <button
+            onClick={handleImportSubmit}
+            disabled={!selectedFile || isImporting}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isImporting ? 'Importing...' : 'Import Stock'}
+          </button>
+          <button
+            onClick={onClose}
+            disabled={isImporting}
+            className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50"
+          >
+            {importResult ? 'Close' : 'Cancel'}
+          </button>
+        </div>
+      </div>
+    );
+  };
+// Export Form Component
+  const ExportForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+    return (
+      <div className="bg-white p-8 max-w-4xl mx-auto">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-semibold text-gray-700">Export Stock to CSV</h2>
+          <p className="mt-2 text-sm text-gray-500">
+            Export stock records to a CSV file for external use
+          </p>
+        </div>
+
+        {/* Export Options */}
+        <div className="space-y-6 mb-6">
+          {/* Export Scope */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <h3 className="font-semibold text-gray-900 mb-3">Export Scope</h3>
+            <div className="space-y-2">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="exportScope"
+                  checked={exportOptions.exportAll}
+                  onChange={() => setExportOptions(prev => ({ ...prev, exportAll: true }))}
+                  disabled={isExporting}
+                  className="mr-2"
+                />
+                <span className="text-sm text-gray-700">Export all stock records</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="exportScope"
+                  checked={!exportOptions.exportAll}
+                  onChange={() => setExportOptions(prev => ({ ...prev, exportAll: false }))}
+                  disabled={isExporting}
+                  className="mr-2"
+                />
+                <span className="text-sm text-gray-700">Export currently displayed stocks only ({stocks.length} records)</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Date Range Filter (Optional) */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <h3 className="font-semibold text-gray-900 mb-3">Date Range Filter (Optional)</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  value={exportOptions.dateRange?.start || ''}
+                  onChange={(e) => setExportOptions(prev => ({
+                    ...prev,
+                    dateRange: {
+                      start: e.target.value,
+                      end: prev.dateRange?.end || ''
+                    }
+                  }))}
+                  disabled={isExporting}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  value={exportOptions.dateRange?.end || ''}
+                  onChange={(e) => setExportOptions(prev => ({
+                    ...prev,
+                    dateRange: {
+                      start: prev.dateRange?.start || '',
+                      end: e.target.value
+                    }
+                  }))}
+                  disabled={isExporting}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+            <button
+              onClick={() => setExportOptions(prev => ({ ...prev, dateRange: null }))}
+              disabled={isExporting}
+              className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+            >
+              Clear date filter
+            </button>
+          </div>
+
+          {/* Export Options */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <h3 className="font-semibold text-gray-900 mb-3">CSV Options</h3>
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={exportOptions.includeHeaders}
+                onChange={(e) => setExportOptions(prev => ({ ...prev, includeHeaders: e.target.checked }))}
+                disabled={isExporting}
+                className="mr-2"
+              />
+              <span className="text-sm text-gray-700">Include column headers</span>
+            </label>
+          </div>
+
+          {/* Export Preview */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 className="font-semibold text-blue-900 mb-2">Export Preview</h3>
+            <div className="text-sm text-blue-800 space-y-1">
+              <div>Records to export: <strong>{exportOptions.exportAll ? 'All stocks' : stocks.length}</strong></div>
+              {exportOptions.dateRange?.start && exportOptions.dateRange?.end && (
+                <div>
+                  Date range: <strong>{exportOptions.dateRange.start}</strong> to <strong>{exportOptions.dateRange.end}</strong>
+                </div>
+              )}
+              <div>File format: <strong>CSV (Comma-separated values)</strong></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-end space-x-4">
+          <button
+            onClick={handleExportSubmit}
+            disabled={isExporting}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-clue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isExporting ? 'Exporting...' : 'Export to CSV'}
+          </button>
+          <button
+            onClick={onClose}
+            disabled={isExporting}
+            className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+
 
   // Show loading spinner during auth check
   if (isAuthLoading) {
@@ -1594,17 +1752,25 @@ const handleSubmit = async () => {
                 </div>
                 <div className="flex items-center space-x-4">
                   <button
+                    onClick={handleImportClick}
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  >
+                    <Upload size={20} className="mr-2" />
+                    Import
+                  </button>
+                  <button
+                    onClick={handleExportClick}
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  >
+                    <Download size={20} className="mr-2" />
+                    Export
+                  </button>
+                  <button
                     onClick={() => handleStockInClick()}
                     className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                   >
                     Create Stock
                   </button>
-                  {/* <button
-                    onClick={() => handleStockOutClick()}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  >
-                    Create Stock Out
-                  </button> */}
                 </div>
               </div>
             </div>
@@ -1630,10 +1796,6 @@ const handleSubmit = async () => {
             <div className="bg-white rounded-lg shadow">
               <Table
                 data={stocks}
-                // data={stocks.map(stock => ({
-                //   ...stock,
-                //   'data-low-stock': (stock.quantityAvailable ?? 0) <= (stock.reorderLevel ?? 0)
-                // }))}
                 columns={columns}
                 actions={actions}
                 itemsPerPage={10}
@@ -1691,6 +1853,56 @@ const handleSubmit = async () => {
                 </button>
 
                 <StockOutForm onClose={handleCloseStockOutForm} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Form Popup */}
+      {isImportFormOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={handleCloseImportForm}></div>
+          
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+              <div className="relative bg-white rounded-lg shadow-xl">
+                <button
+                  onClick={handleCloseImportForm}
+                  disabled={isImporting}
+                  className="absolute right-4 top-4 z-10 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+
+                <ImportForm onClose={handleCloseImportForm} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Export Form Popup */}
+      {isExportFormOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={handleCloseExportForm}></div>
+          
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+              <div className="relative bg-white rounded-lg shadow-xl">
+                <button
+                  onClick={handleCloseExportForm}
+                  disabled={isExporting}
+                  className="absolute right-4 top-4 z-10 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+
+                <ExportForm onClose={handleCloseExportForm} />
               </div>
             </div>
           </div>

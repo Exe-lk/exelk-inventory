@@ -1,8 +1,6 @@
-
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
-import { verifyAccessToken } from '@/lib/jwt'
-import { getAuthTokenFromCookies } from '@/lib/cookies'
+import { createServerClient } from '@/lib/supabase/server'
 
 interface GRN {
   grnId: number
@@ -17,14 +15,21 @@ interface GRN {
   stockId: number | null
 }
 
-// Helper function to extract employee ID from token
-function getEmployeeIdFromToken(accessToken: string): number {
+// Helper function to extract employee ID from Supabase session
+async function getEmployeeIdFromSession(request: NextRequest): Promise<number | null> {
   try {
-    const payload = verifyAccessToken(accessToken);
-    return payload.userId || 1;
+    const supabase = await createServerClient()
+    const { data: { session }, error } = await supabase.auth.getSession()
+    
+    if (error || !session) {
+      return null
+    }
+    
+    const employeeId = session.user.user_metadata?.employee_id
+    return employeeId ? parseInt(employeeId.toString()) : null
   } catch (error) {
-    console.error('Error extracting employee ID from token:', error);
-    return 1;
+    console.error('Error extracting employee ID from session:', error)
+    return null
   }
 }
 
@@ -111,10 +116,12 @@ export async function GET(request: NextRequest) {
   console.log(' GRN GET request started with enhanced search');
   
   try {
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
-      console.log(' No access token found');
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    
+    if (sessionError || !session) {
+      console.log(' No valid session found');
       return NextResponse.json(
         { 
           status: 'error',
@@ -126,21 +133,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    try {
-      verifyAccessToken(accessToken)
-      console.log(' Access token verified');
-    } catch (error) {
-      console.log(' Invalid access token:', error);
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid access token',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    console.log(' Session verified');
 
     const { searchParams } = new URL(request.url)
     
@@ -534,9 +527,11 @@ export async function POST(request: NextRequest) {
   console.log(' GRN POST request started');
   
   try {
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
@@ -548,22 +543,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let employeeId: number;
-    try {
-      verifyAccessToken(accessToken)
-      employeeId = getEmployeeIdFromToken(accessToken)
-      console.log(' Access token verified, employee ID:', employeeId);
-    } catch (error) {
+    const employeeId = await getEmployeeIdFromSession(request)
+    
+    if (!employeeId) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 401,
-          message: 'Invalid access token',
+          message: 'Invalid session - employee ID not found',
           timestamp: new Date().toISOString()
         },
         { status: 401 }
       )
     }
+
+    console.log(' Access token verified, employee ID:', employeeId);
 
     const body = await request.json()
     
@@ -954,9 +948,11 @@ export async function PUT(request: NextRequest) {
   console.log(' GRN PUT request started');
   
   try {
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
@@ -968,22 +964,21 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    let employeeId: number;
-    try {
-      verifyAccessToken(accessToken)
-      employeeId = getEmployeeIdFromToken(accessToken)
-      console.log(' Access token verified, employee ID:', employeeId);
-    } catch (error) {
+    const employeeId = await getEmployeeIdFromSession(request)
+    
+    if (!employeeId) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 401,
-          message: 'Invalid access token',
+          message: 'Invalid session - employee ID not found',
           timestamp: new Date().toISOString()
         },
         { status: 401 }
       )
     }
+
+    console.log(' Access token verified, employee ID:', employeeId);
 
     const { searchParams } = new URL(request.url)
     const grnIdParam = searchParams.get('id')
@@ -1225,9 +1220,11 @@ export async function DELETE(request: NextRequest) {
   console.log(' GRN DELETE request started');
   
   try {
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
@@ -1239,20 +1236,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    try {
-      verifyAccessToken(accessToken)
-      console.log(' Access token verified');
-    } catch (error) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid access token',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    console.log(' Session verified');
 
     const { searchParams } = new URL(request.url)
     const grnIdParam = searchParams.get('id')

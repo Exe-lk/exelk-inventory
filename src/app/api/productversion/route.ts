@@ -1,30 +1,43 @@
+
 // import { NextRequest, NextResponse } from 'next/server'
-// import { createServerClient } from '@/lib/supabase/server'
+// import { prisma } from '@/lib/prisma/client'
 // import { verifyAccessToken } from '@/lib/jwt'
 // import { getAuthTokenFromCookies } from '@/lib/cookies'
+
+// interface ProductVersion {
+//   versionId: number
+//   productId: number
+//   versionNumber: string
+//   releaseDate: Date
+//   isActive: boolean
+//   createdAt: Date
+//   createdBy: number
+//   updatedAt: Date
+//   updatedBy: number
+//   deletedAt: Date | null
+//   deletedBy: number | null
+// }
 
 // // Helper function to extract employee ID from token
 // function getEmployeeIdFromToken(accessToken: string): number {
 //   try {
 //     const payload = verifyAccessToken(accessToken);
-//     // Assuming the token payload contains userId which is the EmployeeID
-//     return payload.userId || 1; // fallback to 1 if not found
+//     return payload.userId || 1;
 //   } catch (error) {
 //     console.error('Error extracting employee ID from token:', error);
-//     return 1; // fallback employee ID
+//     return 1;
 //   }
 // }
 
-
-
-
-
 // // GET - Retrieve product versions with pagination, sorting, search, and filtering
 // export async function GET(request: NextRequest) {
+//   console.log(' Product Version GET request started');
+  
 //   try {
 //     // Verify authentication
 //     const accessToken = getAuthTokenFromCookies(request)
 //     if (!accessToken) {
+//       console.log(' No access token found');
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
@@ -38,7 +51,9 @@
 
 //     try {
 //       verifyAccessToken(accessToken)
+//       console.log(' Access token verified');
 //     } catch (error) {
+//       console.log(' Invalid access token:', error);
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
@@ -50,7 +65,6 @@
 //       )
 //     }
 
-//     const supabase = createServerClient()
 //     const { searchParams } = new URL(request.url)
 
 //     // Parse query parameters
@@ -62,105 +76,131 @@
 //     const productId = searchParams.get('productId')
 //     const isActive = searchParams.get('isActive')
 
+//     console.log(' Query parameters:', { page, limit, sortBy, sortOrder, search, productId, isActive });
+
 //     // Calculate offset for pagination
 //     const offset = (page - 1) * limit
 
-//     // Build query - use camelCase column names
-//     let query = supabase
-//       .from('productversion')
-//       .select(`
-//         versionId,
-//         productId,
-//         versionNumber,
-//         releaseDate,
-//         isActive,
-//         createdAt,
-//         createdBy,
-//         updatedAt,
-//         updatedBy,
-//         deletedAt,
-//         deletedBy
-//       `, { count: 'exact' })
+//     // Build where clause
+//     const where: any = {
+//       deletedAt: null // Only get non-deleted product versions
+//     }
 
 //     // Apply search filter
 //     if (search) {
-//       query = query.ilike('versionNumber', `%${search}%`)
+//       where.versionNumber = { contains: search, mode: 'insensitive' }
 //     }
 
 //     // Apply filters
 //     if (productId) {
-//       query = query.eq('productId', parseInt(productId))
+//       where.productId = parseInt(productId)
 //     }
 
 //     if (isActive !== null && isActive !== undefined && isActive !== '') {
-//       query = query.eq('isActive', isActive === 'true')
+//       where.isActive = isActive === 'true'
 //     }
 
-//     // Apply sorting
-//     const dbSortBy = sortBy === 'versionNumber' ? 'versionNumber' : 
-//                      sortBy === 'versionId' ? 'versionId' :
-//                      sortBy === 'productId' ? 'productId' :
-//                      sortBy === 'releaseDate' ? 'releaseDate' :
-//                      sortBy === 'isActive' ? 'isActive' :
-//                      sortBy === 'createdAt' ? 'createdAt' : 'versionNumber'
+//     // Build orderBy
+//     const orderBy: any = {}
+//     const validSortColumns = ['versionNumber', 'versionId', 'productId', 'releaseDate', 'isActive', 'createdAt']
+//     const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'versionNumber'
+//     orderBy[sortColumn] = sortOrder === 'asc' ? 'asc' : 'desc'
 
-//     query = query.order(dbSortBy, { ascending: sortOrder === 'asc' })
+//     console.log(' Where clause:', JSON.stringify(where, null, 2));
+//     console.log(' Order by:', orderBy);
 
-//     // Apply pagination
-//     query = query.range(offset, offset + limit - 1)
+//     try {
+//       console.log('🔌 Testing database connection...');
+//       await prisma.$connect();
+//       console.log(' Database connected successfully');
 
-//     const { data: productVersions, error, count } = await query
+//       // Get total count for pagination
+//       console.log(' Getting total count...');
+//       const totalCount = await prisma.productversion.count({ where });
+//       console.log(` Total count: ${totalCount}`);
 
-//     if (error) {
-//       console.error('Error fetching product versions:', error)
+//       // Get product versions with pagination
+//       console.log(' Fetching product versions...');
+//       const productVersions: ProductVersion[] = await prisma.productversion.findMany({
+//         where,
+//         orderBy,
+//         skip: offset,
+//         take: limit,
+//         select: {
+//           versionId: true,
+//           productId: true,
+//           versionNumber: true,
+//           releaseDate: true,
+//           isActive: true,
+//           createdAt: true,
+//           createdBy: true,
+//           updatedAt: true,
+//           updatedBy: true,
+//           deletedAt: true,
+//           deletedBy: true,
+//         }
+//       }) as ProductVersion[];
+
+//       console.log(` Found ${productVersions.length} product versions`);
+
+//       // Transform data to match response format
+//       const transformedProductVersions = productVersions.map((version: any) => ({
+//         versionId: version.versionId,
+//         productId: version.productId,
+//         versionNumber: version.versionNumber,
+//         releaseDate: version.releaseDate,
+//         isActive: version.isActive,
+//         createdAt: version.createdAt,
+//         createdBy: version.createdBy || 1,
+//         updatedAt: version.updatedAt,
+//         updatedBy: version.updatedBy,
+//         deletedAt: version.deletedAt,
+//         deletedBy: version.deletedBy
+//       }));
+
+//       console.log(' Product versions transformed successfully');
+
+//       return NextResponse.json(
+//         {
+//           status: 'success',
+//           code: 200,
+//           message: 'Product versions retrieved successfully',
+//           timestamp: new Date().toISOString(),
+//           data: {
+//             items: transformedProductVersions,
+//             pagination: {
+//               totalItems: totalCount,
+//               page,
+//               limit,
+//               totalPages: Math.ceil(totalCount / limit)
+//             }
+//           }
+//         },
+//         { status: 200 }
+//       )
+
+//     } catch (dbError) {
+//       console.error(' Database error:', dbError);
+//       console.error(' Error details:', {
+//         name: dbError instanceof Error ? dbError.name : 'Unknown',
+//         message: dbError instanceof Error ? dbError.message : 'Unknown error',
+//         stack: dbError instanceof Error ? dbError.stack : 'No stack trace'
+//       });
+      
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 500,
-//           message: 'Failed to retrieve product versions',
+//           message: 'Failed to retrieve product versions - Database error',
 //           timestamp: new Date().toISOString(),
-//           details: error.message
+//           details: dbError instanceof Error ? dbError.message : 'Unknown database error'
 //         },
 //         { status: 500 }
 //       )
 //     }
 
-//     // Transform data to match response format
-//     const transformedProductVersions = productVersions?.map(version => ({
-//       versionId: version.versionId,
-//       productId: version.productId,
-//       versionNumber: version.versionNumber,
-//       releaseDate: version.releaseDate,
-//       isActive: version.isActive,
-//       createdAt: version.createdAt,
-//       createdBy: version.createdBy || 1,
-//       updatedAt: version.updatedAt,
-//       updatedBy: version.updatedBy || 1,
-//       deletedAt: version.deletedAt,
-//       deletedBy: version.deletedBy
-//     })) || []
-
-//     return NextResponse.json(
-//       {
-//         status: 'success',
-//         code: 200,
-//         message: 'Product versions retrieved successfully',
-//         timestamp: new Date().toISOString(),
-//         data: {
-//           items: transformedProductVersions,
-//           pagination: {
-//             totalItems: count || 0,
-//             page,
-//             limit,
-//             totalPages: Math.ceil((count || 0) / limit)
-//           }
-//         }
-//       },
-//       { status: 200 }
-//     )
-
 //   } catch (error) {
-//     console.error('Product versions GET error:', error)
+//     console.error(' Product versions GET error:', error);
 //     return NextResponse.json(
 //       { 
 //         status: 'error',
@@ -170,6 +210,8 @@
 //       },
 //       { status: 500 }
 //     )
+//   } finally {
+//     await prisma.$disconnect();
 //   }
 // }
 
@@ -195,7 +237,6 @@
 //     let employeeId: number;
 //     try {
 //       verifyAccessToken(accessToken)
-//       // Extract employee ID from token
 //       employeeId = getEmployeeIdFromToken(accessToken)
 //     } catch (error) {
 //       return NextResponse.json(
@@ -209,11 +250,14 @@
 //       )
 //     }
 
-//     const supabase = createServerClient()
 //     const body = await request.json()
     
 //     // Validate required fields
 //     const { productId, versionNumber, releaseDate, isActive } = body
+    
+//     console.log(' Received data:', { productId, versionNumber, releaseDate, isActive });
+//     console.log(' Employee ID from token:', employeeId);
+
 //     if (!productId || !versionNumber || !releaseDate) {
 //       return NextResponse.json(
 //         { 
@@ -226,98 +270,102 @@
 //       )
 //     }
 
-//     // Check if version number already exists for this product
-//     const { data: existingVersion, error: checkError } = await supabase
-//       .from('productversion')
-//       .select('versionId')
-//       .eq('productId', productId)
-//       .eq('versionNumber', versionNumber)
-//       .maybeSingle()
+//     try {
+//       // Check if version number already exists for this product (only non-deleted)
+//       const existingVersion = await prisma.productversion.findFirst({
+//         where: {
+//           productId: parseInt(productId),
+//           versionNumber,
+//           deletedAt: null
+//         }
+//       })
 
-//     if (checkError) {
-//       console.error('Error checking existing version:', checkError);
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 500,
-//           message: 'Failed to check existing version',
-//           error: checkError.message,
-//           timestamp: new Date().toISOString()
+//       if (existingVersion) {
+//         return NextResponse.json(
+//           { 
+//             status: 'error',
+//             code: 409,
+//             message: 'Version number already exists for this product',
+//             timestamp: new Date().toISOString()
+//           },
+//           { status: 409 }
+//         )
+//       }
+
+//       // Check if product exists
+//       const existingProduct = await prisma.product.findFirst({
+//         where: {
+//           productId: parseInt(productId),
+//           deletedAt: null
+//         }
+//       })
+
+//       if (!existingProduct) {
+//         return NextResponse.json(
+//           { 
+//             status: 'error',
+//             code: 400,
+//             message: 'Invalid product ID',
+//             timestamp: new Date().toISOString()
+//           },
+//           { status: 400 }
+//         )
+//       }
+
+//       // Create new product version
+//       const version = await prisma.productversion.create({
+//         data: {
+//           productId: parseInt(productId),
+//           versionNumber,
+//           releaseDate: new Date(releaseDate),
+//           isActive: isActive !== undefined ? isActive : true,
+//           createdBy: employeeId,
+//           updatedBy: employeeId
 //         },
-//         { status: 500 }
-//       )
-//     }
+//         select: {
+//           versionId: true,
+//           productId: true,
+//           versionNumber: true,
+//           releaseDate: true,
+//           isActive: true,
+//           createdAt: true,
+//           createdBy: true,
+//           updatedAt: true,
+//           updatedBy: true,
+//           deletedAt: true,
+//           deletedBy: true,
+//         }
+//       })
 
-//     if (existingVersion) {
+//       console.log(' Product version created:', version);
+
 //       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 409,
-//           message: 'Version number already exists for this product',
-//           timestamp: new Date().toISOString()
+//         {
+//           status: 'success',
+//           code: 201,
+//           message: 'Product version created successfully',
+//           timestamp: new Date().toISOString(),
+//           data: version
 //         },
-//         { status: 409 }
+//         { status: 201 }
 //       )
-//     }
 
-//     // Prepare product version data with logged-in employee ID
-//     const currentTimestamp = new Date().toISOString();
-//     const versionData = {
-//       productId,
-//       versionNumber,
-//       releaseDate,
-//       isActive: isActive !== undefined ? isActive : true,
-//       createdAt: currentTimestamp,
-//       createdBy: employeeId,
-//       updatedAt: currentTimestamp,
-//       updatedBy: employeeId
-//     }
-    
-//     const { data: version, error } = await supabase
-//       .from('productversion')
-//       .insert([versionData])
-//       .select(`
-//         versionId,
-//         productId,
-//         versionNumber,
-//         releaseDate,
-//         isActive,
-//         createdAt,
-//         createdBy,
-//         updatedAt,
-//         updatedBy,
-//         deletedAt,
-//         deletedBy
-//       `)
-//       .single()
-
-//     if (error) {
-//       console.error('Error creating product version:', error)
+//     } catch (dbError) {
+//       console.error(' Database error:', dbError)
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 500,
 //           message: 'Failed to create product version',
 //           timestamp: new Date().toISOString(),
-//           details: error.message
+//           details: dbError instanceof Error ? dbError.message : 'Unknown database error'
 //         },
 //         { status: 500 }
 //       )
 //     }
 
-//     return NextResponse.json(
-//       {
-//         status: 'success',
-//         code: 201,
-//         message: 'Product version created successfully',
-//         timestamp: new Date().toISOString(),
-//         data: version
-//       },
-//       { status: 201 }
-//     )
-
 //   } catch (error) {
-//     console.error('Product versions POST error:', error)
+//     console.error(' Product versions POST error:', error)
 //     return NextResponse.json(
 //       { 
 //         status: 'error',
@@ -329,7 +377,6 @@
 //     )
 //   }
 // }
-
 
 
 // // PUT - Update product version
@@ -352,7 +399,6 @@
 //     let employeeId: number;
 //     try {
 //       verifyAccessToken(accessToken)
-//       // Extract employee ID from token
 //       employeeId = getEmployeeIdFromToken(accessToken)
 //     } catch (error) {
 //       return NextResponse.json(
@@ -366,9 +412,10 @@
 //       )
 //     }
 
-//     const supabase = createServerClient()
 //     const body = await request.json()
 //     const { versionId, ...updateData } = body
+
+//     console.log(' Update - Employee ID from token:', employeeId);
     
 //     if (!versionId) {
 //       return NextResponse.json(
@@ -382,127 +429,133 @@
 //       )
 //     }
 
-//     // Check if version exists first
-//     const { data: existingVersionCheck, error: existsError } = await supabase
-//       .from('productversion')
-//       .select('versionId')
-//       .eq('versionId', versionId)
-//       .maybeSingle()
+//     try {
+//       // Check if version exists and is not deleted
+//       const existingVersion = await prisma.productversion.findFirst({
+//         where: {
+//           versionId: parseInt(versionId),
+//           deletedAt: null
+//         }
+//       })
 
-//     if (existsError) {
-//       console.error('Error checking version existence:', existsError);
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 500,
-//           message: 'Failed to check version existence',
-//           error: existsError.message,
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 500 }
-//       )
-//     }
-
-//     if (!existingVersionCheck) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 404,
-//           message: 'Product version not found',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 404 }
-//       )
-//     }
-
-//     // Check if version number already exists for the product (excluding current version)
-//     if (updateData.versionNumber && updateData.productId) {
-//       const { data: duplicateVersion } = await supabase
-//         .from('productversion')
-//         .select('versionId')
-//         .eq('productId', updateData.productId)
-//         .eq('versionNumber', updateData.versionNumber)
-//         .neq('versionId', versionId)
-//         .maybeSingle()
-
-//       if (duplicateVersion) {
+//       if (!existingVersion) {
 //         return NextResponse.json(
 //           { 
 //             status: 'error',
-//             code: 409,
-//             message: 'Version number already exists for this product',
+//             code: 404,
+//             message: 'Product version not found',
 //             timestamp: new Date().toISOString()
 //           },
-//           { status: 409 }
+//           { status: 404 }
 //         )
 //       }
-//     }
 
-//     // Add update timestamp and logged-in employee ID
-//     const updateDataWithTimestamp = {
-//       ...updateData,
-//       updatedAt: new Date().toISOString(),
-//       updatedBy: employeeId
-//     }
-    
-//     const { data: version, error } = await supabase
-//       .from('productversion')
-//       .update(updateDataWithTimestamp)
-//       .eq('versionId', versionId)
-//       .select(`
-//         versionId,
-//         productId,
-//         versionNumber,
-//         releaseDate,
-//         isActive,
-//         createdAt,
-//         createdBy,
-//         updatedAt,
-//         updatedBy,
-//         deletedAt,
-//         deletedBy
-//       `)
-//       .single()
+//       // Check if version number already exists for the product (excluding current version and deleted ones)
+//       if (updateData.versionNumber && updateData.productId) {
+//         const duplicateVersion = await prisma.productversion.findFirst({
+//           where: {
+//             productId: parseInt(updateData.productId),
+//             versionNumber: updateData.versionNumber,
+//             versionId: { not: parseInt(versionId) },
+//             deletedAt: null
+//           }
+//         })
 
-//     if (error) {
-//       console.error('Error updating product version:', error)
+//         if (duplicateVersion) {
+//           return NextResponse.json(
+//             { 
+//               status: 'error',
+//               code: 409,
+//               message: 'Version number already exists for this product',
+//               timestamp: new Date().toISOString()
+//             },
+//             { status: 409 }
+//           )
+//         }
+//       }
+
+//       // If productId is being updated, check if it exists
+//       if (updateData.productId) {
+//         const existingProduct = await prisma.product.findFirst({
+//           where: {
+//             productId: parseInt(updateData.productId),
+//             deletedAt: null
+//           }
+//         })
+
+//         if (!existingProduct) {
+//           return NextResponse.json(
+//             { 
+//               status: 'error',
+//               code: 400,
+//               message: 'Invalid product ID',
+//               timestamp: new Date().toISOString()
+//             },
+//             { status: 400 }
+//           )
+//         }
+//       }
+
+//       // Prepare update data
+//       const prismaUpdateData: any = {
+//         updatedBy: employeeId
+//       }
+
+//       if (updateData.productId !== undefined) prismaUpdateData.productId = parseInt(updateData.productId)
+//       if (updateData.versionNumber !== undefined) prismaUpdateData.versionNumber = updateData.versionNumber
+//       if (updateData.releaseDate !== undefined) prismaUpdateData.releaseDate = new Date(updateData.releaseDate)
+//       if (updateData.isActive !== undefined) prismaUpdateData.isActive = updateData.isActive
+
+//       console.log(' Update data:', prismaUpdateData);
+
+//       // Update product version
+//       const version = await prisma.productversion.update({
+//         where: {
+//           versionId: parseInt(versionId)
+//         },
+//         data: prismaUpdateData,
+//         select: {
+//           versionId: true,
+//           productId: true,
+//           versionNumber: true,
+//           releaseDate: true,
+//           isActive: true,
+//           createdAt: true,
+//           createdBy: true,
+//           updatedAt: true,
+//           updatedBy: true,
+//           deletedAt: true,
+//           deletedBy: true,
+//         }
+//       })
+
+//       return NextResponse.json(
+//         {
+//           status: 'success',
+//           code: 200,
+//           message: 'Product version updated successfully',
+//           timestamp: new Date().toISOString(),
+//           data: version
+//         },
+//         { status: 200 }
+//       )
+
+//     } catch (dbError) {
+//       console.error(' Database error:', dbError)
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 500,
 //           message: 'Failed to update product version',
 //           timestamp: new Date().toISOString(),
-//           details: error.message
+//           details: dbError instanceof Error ? dbError.message : 'Unknown database error'
 //         },
 //         { status: 500 }
 //       )
 //     }
 
-//     if (!version) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 404,
-//           message: 'Product version not found after update',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 404 }
-//       )
-//     }
-
-//     return NextResponse.json(
-//       {
-//         status: 'success',
-//         code: 200,
-//         message: 'Product version updated successfully',
-//         timestamp: new Date().toISOString(),
-//         data: version
-//       },
-//       { status: 200 }
-//     )
-
 //   } catch (error) {
-//     console.error('Product versions PUT error:', error)
+//     console.error(' Product versions PUT error:', error)
 //     return NextResponse.json(
 //       { 
 //         status: 'error',
@@ -516,7 +569,7 @@
 // }
 
 
-// // DELETE - Delete product version
+// // DELETE - Delete product version (soft delete)
 // export async function DELETE(request: NextRequest) {
 //   try {
 //     // Verify authentication
@@ -536,7 +589,6 @@
 //     let employeeId: number;
 //     try {
 //       verifyAccessToken(accessToken)
-//       // Extract employee ID from token for potential soft delete tracking
 //       employeeId = getEmployeeIdFromToken(accessToken)
 //     } catch (error) {
 //       return NextResponse.json(
@@ -565,86 +617,85 @@
 //       )
 //     }
 
-//     const supabase = createServerClient()
+//     try {
+//       // Check if version exists and is not already deleted
+//       const existingVersion = await prisma.productversion.findFirst({
+//         where: {
+//           versionId: parseInt(versionId),
+//           deletedAt: null
+//         }
+//       })
 
-//     // Check if version exists
-//     const { data: existingVersion, error: fetchError } = await supabase
-//       .from('productversion')
-//       .select('versionId')
-//       .eq('versionId', versionId)
-//       .maybeSingle()
+//       if (!existingVersion) {
+//         return NextResponse.json(
+//           { 
+//             status: 'error',
+//             code: 404,
+//             message: 'Product version not found',
+//             timestamp: new Date().toISOString()
+//           },
+//           { status: 404 }
+//         )
+//       }
 
-//     if (fetchError) {
-//       console.error('Error checking existing version:', fetchError);
+//       // Check if version is being used by any product variations
+//       const variationsUsingVersion = await prisma.productvariation.findFirst({
+//         where: {
+//           versionId: parseInt(versionId),
+//           deletedAt: null
+//         }
+//       })
+
+//       if (variationsUsingVersion) {
+//         return NextResponse.json(
+//           { 
+//             status: 'error',
+//             code: 400,
+//             message: 'Cannot delete product version that is being used by product variations',
+//             timestamp: new Date().toISOString()
+//           },
+//           { status: 400 }
+//         )
+//       }
+
+//       // Soft delete the product version
+//       await prisma.productversion.update({
+//         where: {
+//           versionId: parseInt(versionId)
+//         },
+//         data: {
+//           deletedAt: new Date(),
+//           deletedBy: employeeId,
+//           isActive: false
+//         }
+//       })
+
 //       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 500,
-//           message: 'Failed to check version existence',
-//           error: fetchError.message,
+//         {
+//           status: 'success',
+//           code: 200,
+//           message: 'Product version deleted successfully',
 //           timestamp: new Date().toISOString()
 //         },
-//         { status: 500 }
+//         { status: 200 }
 //       )
-//     }
 
-//     if (!existingVersion) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 404,
-//           message: 'Product version not found',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 404 }
-//       )
-//     }
-
-//     // Optional: Check if version is being used by any products/items
-//     // Add your business logic here to check dependencies
-
-//     // If you want to implement soft delete instead of hard delete, use this:
-//     // const { error } = await supabase
-//     //   .from('productversion')
-//     //   .update({
-//     //     deletedAt: new Date().toISOString(),
-//     //     deletedBy: employeeId,
-//     //     isActive: false
-//     //   })
-//     //   .eq('versionId', versionId)
-
-//     // Hard delete (current implementation)
-//     const { error } = await supabase
-//       .from('productversion')
-//       .delete()
-//       .eq('versionId', versionId)
-
-//     if (error) {
-//       console.error('Error deleting product version:', error)
+//     } catch (dbError) {
+//       console.error(' Database error:', dbError)
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
 //           code: 500,
 //           message: 'Failed to delete product version',
 //           timestamp: new Date().toISOString(),
-//           details: error.message
+//           details: dbError instanceof Error ? dbError.message : 'Unknown database error'
 //         },
 //         { status: 500 }
 //       )
 //     }
 
-//     return NextResponse.json(
-//       {
-//         status: 'success',
-//         code: 200,
-//         message: 'Product version deleted successfully',
-//         timestamp: new Date().toISOString()
-//       },
-//       { status: 200 }
-//     )
-
 //   } catch (error) {
-//     console.error('Product versions DELETE error:', error)
+//     console.error(' Product versions DELETE error:', error)
 //     return NextResponse.json(
 //       { 
 //         status: 'error',
@@ -663,10 +714,10 @@
 
 
 
+
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
-import { verifyAccessToken } from '@/lib/jwt'
-import { getAuthTokenFromCookies } from '@/lib/cookies'
+import { createServerClient } from '@/lib/supabase/server'
 
 interface ProductVersion {
   versionId: number
@@ -682,14 +733,21 @@ interface ProductVersion {
   deletedBy: number | null
 }
 
-// Helper function to extract employee ID from token
-function getEmployeeIdFromToken(accessToken: string): number {
+// Helper function to extract employee ID from Supabase session
+async function getEmployeeIdFromSession(request: NextRequest): Promise<number | null> {
   try {
-    const payload = verifyAccessToken(accessToken);
-    return payload.userId || 1;
+    const supabase = await createServerClient()
+    const { data: { session }, error } = await supabase.auth.getSession()
+    
+    if (error || !session) {
+      return null
+    }
+    
+    const employeeId = session.user.user_metadata?.employee_id
+    return employeeId ? parseInt(employeeId.toString()) : null
   } catch (error) {
-    console.error('Error extracting employee ID from token:', error);
-    return 1;
+    console.error('Error extracting employee ID from session:', error)
+    return null
   }
 }
 
@@ -698,10 +756,12 @@ export async function GET(request: NextRequest) {
   console.log(' Product Version GET request started');
   
   try {
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
-      console.log(' No access token found');
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    
+    if (sessionError || !session) {
+      console.log(' No valid session found');
       return NextResponse.json(
         { 
           status: 'error',
@@ -713,21 +773,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    try {
-      verifyAccessToken(accessToken)
-      console.log(' Access token verified');
-    } catch (error) {
-      console.log(' Invalid access token:', error);
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid access token',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    console.log(' Session verified');
 
     const { searchParams } = new URL(request.url)
 
@@ -879,14 +925,14 @@ export async function GET(request: NextRequest) {
   }
 }
 
-
-
 // POST - Create new product version
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
@@ -898,16 +944,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let employeeId: number;
-    try {
-      verifyAccessToken(accessToken)
-      employeeId = getEmployeeIdFromToken(accessToken)
-    } catch (error) {
+    const employeeId = await getEmployeeIdFromSession(request)
+    
+    if (!employeeId) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 401,
-          message: 'Invalid access token',
+          message: 'Invalid session - employee ID not found',
           timestamp: new Date().toISOString()
         },
         { status: 401 }
@@ -920,7 +964,7 @@ export async function POST(request: NextRequest) {
     const { productId, versionNumber, releaseDate, isActive } = body
     
     console.log(' Received data:', { productId, versionNumber, releaseDate, isActive });
-    console.log(' Employee ID from token:', employeeId);
+    console.log(' Employee ID from session:', employeeId);
 
     if (!productId || !versionNumber || !releaseDate) {
       return NextResponse.json(
@@ -1042,13 +1086,14 @@ export async function POST(request: NextRequest) {
   }
 }
 
-
 // PUT - Update product version
 export async function PUT(request: NextRequest) {
   try {
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
@@ -1060,16 +1105,14 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    let employeeId: number;
-    try {
-      verifyAccessToken(accessToken)
-      employeeId = getEmployeeIdFromToken(accessToken)
-    } catch (error) {
+    const employeeId = await getEmployeeIdFromSession(request)
+    
+    if (!employeeId) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 401,
-          message: 'Invalid access token',
+          message: 'Invalid session - employee ID not found',
           timestamp: new Date().toISOString()
         },
         { status: 401 }
@@ -1079,7 +1122,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { versionId, ...updateData } = body
 
-    console.log(' Update - Employee ID from token:', employeeId);
+    console.log(' Update - Employee ID from session:', employeeId);
     
     if (!versionId) {
       return NextResponse.json(
@@ -1232,13 +1275,14 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-
 // DELETE - Delete product version (soft delete)
 export async function DELETE(request: NextRequest) {
   try {
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
@@ -1250,16 +1294,14 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    let employeeId: number;
-    try {
-      verifyAccessToken(accessToken)
-      employeeId = getEmployeeIdFromToken(accessToken)
-    } catch (error) {
+    const employeeId = await getEmployeeIdFromSession(request)
+    
+    if (!employeeId) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 401,
-          message: 'Invalid access token',
+          message: 'Invalid session - employee ID not found',
           timestamp: new Date().toISOString()
         },
         { status: 401 }
@@ -1372,6 +1414,7 @@ export async function DELETE(request: NextRequest) {
   }
 }
 
+// ... existing swagger documentation ...
 
 
 

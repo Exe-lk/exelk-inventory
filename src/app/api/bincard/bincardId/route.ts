@@ -1,10 +1,6 @@
-
-
-
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
-import { verifyAccessToken } from '@/lib/jwt'
-import { getAuthTokenFromCookies } from '@/lib/cookies'
+import { createServerClient } from '@/lib/supabase/server'
 
 /**
  * @swagger
@@ -30,9 +26,11 @@ export async function GET(request: NextRequest) {
   console.log(' Single BinCard GET request started');
   
   try {
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
@@ -44,20 +42,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    try {
-      verifyAccessToken(accessToken)
-      console.log(' Access token verified');
-    } catch (error) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid access token',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    console.log(' Access token verified');
 
     // Get ID from query parameters instead of path parameters
     const { searchParams } = new URL(request.url)

@@ -1,16 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
-import { verifyAccessToken } from '@/lib/jwt'
-import { getAuthTokenFromCookies } from '@/lib/cookies'
+import { createServerClient } from '@/lib/supabase/server'
 
-// Helper function to extract employee ID from token
-function getEmployeeIdFromToken(accessToken: string): number {
+// Helper function to extract employee ID from Supabase session
+async function getEmployeeIdFromSession(request: NextRequest): Promise<number | null> {
   try {
-    const payload = verifyAccessToken(accessToken);
-    return payload.userId || 1;
+    const supabase = await createServerClient()
+    const { data: { session }, error } = await supabase.auth.getSession()
+    
+    if (error || !session) {
+      return null
+    }
+    
+    const employeeId = session.user.user_metadata?.employee_id
+    return employeeId ? parseInt(employeeId.toString()) : null
   } catch (error) {
-    console.error('Error extracting employee ID from token:', error);
-    return 1;
+    console.error('Error extracting employee ID from session:', error)
+    return null
   }
 }
 
@@ -89,9 +95,11 @@ export async function GET(request: NextRequest) {
   console.log(' Stock GET request started');
   
   try {
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
@@ -103,20 +111,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    try {
-      verifyAccessToken(accessToken)
-      console.log(' Access token verified');
-    } catch (error) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid access token',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    console.log(' Access token verified');
 
     const { searchParams } = new URL(request.url)
 
@@ -354,7 +349,7 @@ export async function GET(request: NextRequest) {
  *                         quantityReceived:
  *                           type: integer
  *                         unitCost:
- *  *                           type: number
+ *                           type: number
  *                         location:
  *                           type: string
  *               - type: object
@@ -396,9 +391,11 @@ export async function POST(request: NextRequest) {
   console.log(' Stock POST request started');
   
   try {
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
@@ -410,22 +407,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let employeeId: number;
-    try {
-      verifyAccessToken(accessToken)
-      employeeId = getEmployeeIdFromToken(accessToken)
-      console.log(' Access token verified, employee ID:', employeeId);
-    } catch (error) {
+    const employeeId = await getEmployeeIdFromSession(request)
+    if (!employeeId) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 401,
-          message: 'Invalid access token',
+          message: 'Invalid access token - employee ID not found',
           timestamp: new Date().toISOString()
         },
         { status: 401 }
       )
     }
+
+    console.log(' Access token verified, employee ID:', employeeId);
 
     const body = await request.json()
     console.log(' Request body:', body);
@@ -463,512 +458,6 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-
-// Handle Stock-In operation
-// async function handleStockIn(body: any, employeeId: number) {
-//   const { supplierId, receivedDate, remarks, items } = body
-
-//   // Validation
-//   if (!supplierId || !receivedDate || !items || !Array.isArray(items) || items.length === 0) {
-//     return NextResponse.json(
-//       { 
-//         status: 'error',
-//         code: 400,
-//         message: 'Missing required fields: supplierId, receivedDate, items',
-//         timestamp: new Date().toISOString()
-//       },
-//       { status: 400 }
-//     )
-//   }
-
-//   try {
-//     const result = await prisma.$transaction(async (tx) => {
-//       // Verify supplier exists
-//       const supplier = await tx.supplier.findUnique({
-//         where: { 
-//           supplierId: parseInt(supplierId),
-//           deletedAt: null
-//         }
-//       });
-
-//       if (!supplier) {
-//         throw new Error(`Supplier with ID ${supplierId} not found`);
-//       }
-
-//       // Generate GRN number
-//       const grnNumber = generateGrnNumber()
-
-//       // Calculate total amount
-//       const totalAmount = items.reduce((sum: number, item: any) => 
-//         sum + (item.quantityReceived * item.unitCost), 0)
-
-//       // Create GRN
-//       const grn = await tx.grn.create({
-//         data: {
-//           grnNumber,
-//           supplierId: parseInt(supplierId),
-//           employeeId,
-//           receivedDate: new Date(receivedDate),
-//           totalAmount,
-//           remarks: remarks || null,
-//           createdDate: new Date(),
-//           updatedDate: new Date()
-//         }
-//       })
-
-//       // Process each item
-//       const grnDetails = []
-//       const stockUpdates = []
-//       const binCardEntries = []
-//       const transactionLogEntries = []
-
-//       for (const item of items) {
-//         // Validate item
-//         if (!item.productId || !item.quantityReceived || item.quantityReceived <= 0 || !item.unitCost) {
-//           throw new Error('Each item must have productId, quantityReceived, and unitCost are required');
-//         }
-
-//         // Verify product exists
-//         const product = await tx.product.findUnique({
-//           where: { 
-//             productId: item.productId,
-//             deletedAt: null
-//           }
-//         });
-
-//         if (!product) {
-//           throw new Error(`Product with ID ${item.productId} not found`);
-//         }
-
-//          // Verify variation exists if provided
-//         if (item.variationId) {
-//           const variation = await tx.productvariation.findUnique({
-//             where: { variationId: item.variationId }
-//           });
-
-//           if (!variation) {
-//             throw new Error(`Product variation with ID ${item.variationId} not found`);
-//           }
-//         }
-
-//         //2. Create GRN detail
-//         const grnDetail = await tx.grndetails.create({
-//           data: {
-//             grnId: grn.grnId,
-//             productId: item.productId,
-//             quantityReceived: item.quantityReceived,
-//             unitCost: item.unitCost,
-//             subTotal: item.quantityReceived * item.unitCost,
-//             location: item.location || null
-//           }
-//         })
-//         grnDetails.push(grnDetail)
-
-//         //3. Find existing stock
-//         const existingStock = await tx.stock.findFirst({
-//           where: {
-//             productId: item.productId,
-//             variationId: item.variationId || null
-//           }
-//         })
-
-//         let stockUpdate
-//         let newBalance = 0
-
-//         if (existingStock) {
-//           // Update existing stock
-//           const quantityBefore = existingStock.quantityAvailable || 0
-//           const quantityAfter = quantityBefore + item.quantityReceived
-//           newBalance = quantityAfter
-
-//           await tx.stock.update({
-//             where: { stockId: existingStock.stockId },
-//             data: {
-//               quantityAvailable: quantityAfter,
-//               lastUpdatedDate: new Date(),
-//               location: item.location || existingStock.location
-//             }
-//           })
-
-//           stockUpdate = {
-//             stockId: existingStock.stockId,
-//             productId: item.productId,
-//             variationId: item.variationId || null,
-//             quantityBefore,
-//             quantityAfter
-//           }
-//         } else {
-//           // Create new stock entry
-//           const newStock = await tx.stock.create({
-//             data: {
-//               productId: item.productId,
-//               variationId: item.variationId || null,
-//               quantityAvailable: item.quantityReceived,
-//               reorderLevel: 10, // Default reorder level
-//               lastUpdatedDate: new Date(),
-//               location: item.location || null
-//             }
-//           })
-
-//           stockUpdate = {
-//             stockId: newStock.stockId,
-//             productId: item.productId,
-//             variationId: item.variationId || null,
-//             quantityBefore: 0,
-//             quantityAfter: item.quantityReceived
-//           }
-//         }
-//         stockUpdates.push(stockUpdate)
-
-//         // 4. Create Bin Card entry
-//         const binCardEntry = await tx.bincard.create({
-//           data: {
-//             variationId: item.variationId || null,
-//             transactionDate: new Date(receivedDate),
-//             transactionType: 'GRN',
-//             referenceId: grn.grnId,
-//             quantityIn: item.quantityReceived,
-//             quantityOut: null,
-//             balance: stockUpdate.quantityAfter,
-//             employeeId: employeeId,
-//             remarks: `GRN: ${grnNumber} - Stock In`
-//           }
-//         })
-//         binCardEntries.push(binCardEntry)
-
-
-//         // 5. Create Transaction Log entry
-//         const transactionLogEntry = await tx.transactionlog.create({
-//           data: {
-//             employeeId: employeeId,
-//             actionType: 'STOCK_IN',
-//             entityName: 'STOCK',
-//             referenceId: grn.grnId,
-//             actionDate: new Date(),
-//             oldValue: JSON.stringify({
-//               productId: item.productId,
-//               variationId: item.variationId || null,
-//               previousQuantity: stockUpdate.quantityBefore
-//             }),
-//             newValue: JSON.stringify({
-//               productId: item.productId,
-//               variationId: item.variationId || null,
-//               newQuantity: stockUpdate.quantityAfter,
-//               quantityAdded: item.quantityReceived,
-//               grnNumber: grnNumber,
-//               grnId: grn.grnId
-//             })
-//           }
-//         })
-//         transactionLogEntries.push(transactionLogEntry)
-      
-//       }
-
-//       return { grn, grnDetails, stockUpdates, binCardEntries, transactionLogEntries }
-//     })
-
-//     return NextResponse.json(
-//       {
-//         status: 'success',
-//         code: 201,
-//         message: 'Stock-in completed successfully',
-//         timestamp: new Date().toISOString(),
-//         data: {
-//           grnId: result.grn.grnId,
-//           grnNumber: result.grn.grnNumber,
-//           totalAmount: parseFloat(result.grn.totalAmount?.toString() || '0'),
-//           createdDate: result.grn.createdDate?.toISOString(),
-//           details: result.grnDetails.map(detail => ({
-//             grnDetailId: detail.grnDetailId,
-//             productId: detail.productId,
-//             quantityReceived: detail.quantityReceived,
-//             unitCost: parseFloat(detail.unitCost?.toString() || '0'),
-//             subTotal: parseFloat(detail.subTotal?.toString() || '0')
-//           })),
-//           stockUpdates: result.stockUpdates,
-//            binCardEntries: result.binCardEntries.map(entry => ({
-//             binCardId: entry.bincardId,
-//             variationId: entry.variationId,
-//             transactionType: entry.transactionType,
-//             quantityIn: entry.quantityIn,
-//             balance: entry.balance
-//           })),
-//           transactionLogCount: result.transactionLogEntries.length
-//         }
-//       },
-//       { status: 201 }
-//     )
-
-//   } catch (error) {
-//     console.error(' Stock-in error:', error)
-//     return NextResponse.json(
-//       { 
-//         status: 'error',
-//         code: 500,
-//         message: error instanceof Error ? error.message : 'Failed to process stock-in',
-//         timestamp: new Date().toISOString()
-//       },
-//       { status: 500 }
-//     )
-//   }
-// }
-
-
-// Handle Stock-In operation
-// async function handleStockIn(body: any, employeeId: number) {
-//   const { supplierId, receivedDate, remarks, items } = body
-
-//   // Validation
-//   if (!supplierId || !receivedDate || !items || !Array.isArray(items) || items.length === 0) {
-//     return NextResponse.json(
-//       { 
-//         status: 'error',
-//         code: 400,
-//         message: 'Missing required fields: supplierId, receivedDate, items',
-//         timestamp: new Date().toISOString()
-//       },
-//       { status: 400 }
-//     )
-//   }
-
-//   try {
-//     const result = await prisma.$transaction(async (tx) => {
-//       // Verify supplier exists
-//       const supplier = await tx.supplier.findUnique({
-//         where: { 
-//           supplierId: parseInt(supplierId),
-//           deletedAt: null
-//         }
-//       });
-
-//       if (!supplier) {
-//         throw new Error(`Supplier with ID ${supplierId} not found`);
-//       }
-
-//       // Pre-validate all items before processing
-//       for (const item of items) {
-//         if (!item.productId || !item.quantityReceived || item.quantityReceived <= 0 || !item.unitCost) {
-//           throw new Error('Each item must have productId, quantityReceived, and unitCost');
-//         }
-
-//         // Verify product exists
-//         const product = await tx.product.findUnique({
-//           where: { 
-//             productId: item.productId,
-//             deletedAt: null
-//           }
-//         });
-
-//         if (!product) {
-//           throw new Error(`Product with ID ${item.productId} not found`);
-//         }
-
-//         // Verify variation exists if provided
-//         if (item.variationId) {
-//           const variation = await tx.productvariation.findUnique({
-//             where: { variationId: item.variationId }
-//           });
-
-//           if (!variation) {
-//             throw new Error(`Product variation with ID ${item.variationId} not found`);
-//           }
-//         }
-//       }
-
-//       // Generate GRN number
-//       const grnNumber = generateGrnNumber()
-
-//       // Calculate total amount
-//       const totalAmount = items.reduce((sum: number, item: any) => 
-//         sum + (item.quantityReceived * item.unitCost), 0)
-
-//       // Create GRN
-//       const grn = await tx.grn.create({
-//         data: {
-//           grnNumber,
-//           supplierId: parseInt(supplierId),
-//           employeeId,
-//           receivedDate: new Date(receivedDate),
-//           totalAmount,
-//           remarks: remarks || null,
-//           createdDate: new Date(),
-//           updatedDate: new Date()
-//         }
-//       })
-
-//       // Process each item
-//       const grnDetails = []
-//       const stockUpdates = []
-//       const binCardEntries = []
-//       const transactionLogEntries = []
-
-//       for (const item of items) {
-//         // Create GRN detail
-//         const grnDetail = await tx.grndetails.create({
-//           data: {
-//             grnId: grn.grnId,
-//             productId: item.productId,
-//             quantityReceived: item.quantityReceived,
-//             unitCost: item.unitCost,
-//             subTotal: item.quantityReceived * item.unitCost,
-//             location: item.location || null
-//           }
-//         })
-//         grnDetails.push(grnDetail)
-
-//         // Find existing stock using the same transaction
-//         const existingStock = await tx.stock.findFirst({
-//           where: {
-//             productId: item.productId,
-//             variationId: item.variationId || null
-//           }
-//         })
-
-//         let stockUpdate
-//         let stockId
-
-//         if (existingStock) {
-//           // Update existing stock
-//           const quantityBefore = existingStock.quantityAvailable || 0
-//           const quantityAfter = quantityBefore + item.quantityReceived
-
-//           const updatedStock = await tx.stock.update({
-//             where: { stockId: existingStock.stockId },
-//             data: {
-//               quantityAvailable: quantityAfter,
-//               lastUpdatedDate: new Date(),
-//               location: item.location || existingStock.location
-//             }
-//           })
-
-//           stockId = existingStock.stockId
-//           stockUpdate = {
-//             stockId: existingStock.stockId,
-//             productId: item.productId,
-//             variationId: item.variationId || null,
-//             quantityBefore,
-//             quantityAfter
-//           }
-//         } else {
-//           // Create new stock entry
-//           const newStock = await tx.stock.create({
-//             data: {
-//               productId: item.productId,
-//               variationId: item.variationId || null,
-//               quantityAvailable: item.quantityReceived,
-//               reorderLevel: 10, // Default reorder level
-//               lastUpdatedDate: new Date(),
-//               location: item.location || null
-//             }
-//           })
-
-//           stockId = newStock.stockId
-//           stockUpdate = {
-//             stockId: newStock.stockId,
-//             productId: item.productId,
-//             variationId: item.variationId || null,
-//             quantityBefore: 0,
-//             quantityAfter: item.quantityReceived
-//           }
-//         }
-//         stockUpdates.push(stockUpdate)
-
-//         // Create Bin Card entry
-//         const binCardEntry = await tx.bincard.create({
-//           data: {
-//             variationId: item.variationId || null,
-//             transactionDate: new Date(receivedDate),
-//             transactionType: 'GRN',
-//             referenceId: grn.grnId,
-//             quantityIn: item.quantityReceived,
-//             quantityOut: null,
-//             balance: stockUpdate.quantityAfter,
-//             employeeId: employeeId,
-//             remarks: `GRN: ${grnNumber} - Stock In`
-//           }
-//         })
-//         binCardEntries.push(binCardEntry)
-
-//         // Create Transaction Log entry
-//         const transactionLogEntry = await tx.transactionlog.create({
-//           data: {
-//             employeeId: employeeId,
-//             actionType: 'STOCK_IN',
-//             entityName: 'STOCK',
-//             referenceId: grn.grnId,
-//             actionDate: new Date(),
-//             oldValue: JSON.stringify({
-//               productId: item.productId,
-//               variationId: item.variationId || null,
-//               previousQuantity: stockUpdate.quantityBefore
-//             }),
-//             newValue: JSON.stringify({
-//               productId: item.productId,
-//               variationId: item.variationId || null,
-//               newQuantity: stockUpdate.quantityAfter,
-//               quantityAdded: item.quantityReceived,
-//               grnNumber: grnNumber,
-//               grnId: grn.grnId
-//             })
-//           }
-//         })
-//         transactionLogEntries.push(transactionLogEntry)
-//       }
-
-//       return { grn, grnDetails, stockUpdates, binCardEntries, transactionLogEntries }
-//     }, {
-//       maxWait: 5000, // Maximum time to wait for a transaction slot (ms)
-//       timeout: 10000, // Maximum time the transaction can run (ms)
-//     })
-
-//     return NextResponse.json(
-//       {
-//         status: 'success',
-//         code: 201,
-//         message: 'Stock-in completed successfully',
-//         timestamp: new Date().toISOString(),
-//         data: {
-//           grnId: result.grn.grnId,
-//           grnNumber: result.grn.grnNumber,
-//           totalAmount: parseFloat(result.grn.totalAmount?.toString() || '0'),
-//           createdDate: result.grn.createdDate?.toISOString(),
-//           details: result.grnDetails.map(detail => ({
-//             grnDetailId: detail.grnDetailId,
-//             productId: detail.productId,
-//             quantityReceived: detail.quantityReceived,
-//             unitCost: parseFloat(detail.unitCost?.toString() || '0'),
-//             subTotal: parseFloat(detail.subTotal?.toString() || '0')
-//           })),
-//           stockUpdates: result.stockUpdates,
-//           binCardEntries: result.binCardEntries.map(entry => ({
-//             binCardId: entry.bincardId,
-//             variationId: entry.variationId,
-//             transactionType: entry.transactionType,
-//             quantityIn: entry.quantityIn,
-//             balance: entry.balance
-//           })),
-//           transactionLogCount: result.transactionLogEntries.length
-//         }
-//       },
-//       { status: 201 }
-//     )
-
-//   } catch (error) {
-//     console.error(' Stock-in error:', error)
-//     return NextResponse.json(
-//       { 
-//         status: 'error',
-//         code: 500,
-//         message: error instanceof Error ? error.message : 'Failed to process stock-in',
-//         timestamp: new Date().toISOString()
-//       },
-//       { status: 500 }
-//     )
-//   }
-// }
-
-
-
 
 // Handle Stock-In operation
 async function handleStockIn(body: any, employeeId: number) {
@@ -1326,8 +815,6 @@ async function handleStockIn(body: any, employeeId: number) {
     )
   }
 }
-
-
 
 // Handle Stock-Out operation
 async function handleStockOut(body: any, employeeId: number) {

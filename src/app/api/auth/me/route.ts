@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
 import { verifyAccessToken } from '@/lib/jwt'
 import { getAuthTokenFromCookies } from '@/lib/cookies'
+import { prisma } from '@/lib/prisma/client'
+import { getRoleName } from '@/lib/auth-helpers'
 
 /**
  * @swagger
@@ -92,30 +94,97 @@ import { getAuthTokenFromCookies } from '@/lib/cookies'
  *                   example: "User not found"
  */
 
+// export async function GET(request: NextRequest) {
+//   try {
+//     const accessToken = getAuthTokenFromCookies(request)
+
+//     if (!accessToken) {
+//       return NextResponse.json(
+//         { success: false, message: 'Access token not found' },
+//         { status: 401 }
+//       )
+//     }
+
+//     // Verify access token
+//     const payload = verifyAccessToken(accessToken)
+
+//     const supabase = createServerClient()
+
+//     // Get user from database
+//     const { data: employee, error } = await supabase
+//       .from('employees')
+//       .select('EmployeeID, Email, Phone, UserName, RoleID, CreatedBy, CreatedDate')
+//       .eq('EmployeeID', payload.userId)
+//       .single()
+
+//     if (error || !employee) {
+//       return NextResponse.json(
+//         { success: false, message: 'User not found' },
+//         { status: 404 }
+//       )
+//     }
+
+//     return NextResponse.json(
+//       {
+//         success: true,
+//         data: {
+//           user: employee,
+//           role: payload.role
+//         }
+//       },
+//       { status: 200 }
+//     )
+
+//   } catch (error) {
+//     console.error('Get current user error:', error)
+//     return NextResponse.json(
+//       { success: false, message: 'Invalid or expired token' },
+//       { status: 401 }
+//     )
+//   }
+// }
+
+
+
 export async function GET(request: NextRequest) {
   try {
-    const accessToken = getAuthTokenFromCookies(request)
+    const supabase = await createServerClient()
 
-    if (!accessToken) {
+    // Get session from Supabase
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
       return NextResponse.json(
         { success: false, message: 'Access token not found' },
         { status: 401 }
       )
     }
 
-    // Verify access token
-    const payload = verifyAccessToken(accessToken)
+    // Get employee ID from session metadata
+    const employeeId = session.user.user_metadata?.employee_id
 
-    const supabase = createServerClient()
+    if (!employeeId) {
+      return NextResponse.json(
+        { success: false, message: 'User metadata not found' },
+        { status: 401 }
+      )
+    }
 
-    // Get user from database
-    const { data: employee, error } = await supabase
-      .from('employees')
-      .select('EmployeeID, Email, Phone, UserName, RoleID, CreatedBy, CreatedDate')
-      .eq('EmployeeID', payload.userId)
-      .single()
+    // Get employee from database using Prisma
+    const employee = await prisma.employees.findUnique({
+      where: { EmployeeID: parseInt(employeeId) },
+      select: {
+        EmployeeID: true,
+        Email: true,
+        Phone: true,
+        UserName: true,
+        RoleID: true,
+        CreatedBy: true,
+        CreatedDate: true
+      }
+    })
 
-    if (error || !employee) {
+    if (!employee) {
       return NextResponse.json(
         { success: false, message: 'User not found' },
         { status: 404 }
@@ -127,7 +196,7 @@ export async function GET(request: NextRequest) {
         success: true,
         data: {
           user: employee,
-          role: payload.role
+          role: getRoleName(employee.RoleID)
         }
       },
       { status: 200 }
@@ -141,4 +210,3 @@ export async function GET(request: NextRequest) {
     )
   }
 }
-

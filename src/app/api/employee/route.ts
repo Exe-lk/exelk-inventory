@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/prisma/client'
 import { Employee } from '@/types/user'
 
 /**
@@ -10,6 +11,8 @@ import { Employee } from '@/types/user'
  *       - Employees
  *     summary: Get all employees
  *     description: Retrieve all employees from the system
+ *     security:
+ *       - cookieAuth: []
  *     responses:
  *       200:
  *         description: Employees retrieved successfully
@@ -22,6 +25,8 @@ import { Employee } from '@/types/user'
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Employee'
+ *       401:
+ *         description: Unauthorized
  *       500:
  *         description: Internal server error
  *         content:
@@ -37,22 +42,31 @@ import { Employee } from '@/types/user'
  */
 
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerClient()
-    
-    const { data: employees, error } = await supabase
-      .from('employees')
-      .select('*')
-      .order('EmployeeID', { ascending: true })
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
-    if (error) {
-      console.error('Error fetching employees:', error)
+    if (sessionError || !session) {
       return NextResponse.json(
-        { error: 'Failed to fetch employees', details: error.message },
-        { status: 500 }
+        { error: 'Access token not found' },
+        { status: 401 }
       )
     }
+
+    const employees = await prisma.employees.findMany({
+      orderBy: { EmployeeID: 'asc' },
+      select: {
+        EmployeeID: true,
+        Email: true,
+        UserName: true,
+        Phone: true,
+        RoleID: true,
+        CreatedBy: true,
+        CreatedDate: true
+      }
+    })
 
     return NextResponse.json({ employees: employees || [] })
   } catch (error) {
@@ -72,6 +86,8 @@ export async function GET() {
  *       - Employees
  *     summary: Create a new employee
  *     description: Create a new employee in the system
+ *     security:
+ *       - cookieAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -121,31 +137,34 @@ export async function GET() {
  *                   $ref: '#/components/schemas/Employee'
  *       400:
  *         description: Bad request - Missing required fields
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: "Missing required fields: Email, UserName, Password, RoleID"
+ *       401:
+ *         description: Unauthorized
  *       500:
  *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: "Failed to create employee"
- *                 details:
- *                   type: string
  */
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerClient()
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
+      return NextResponse.json(
+        { error: 'Access token not found' },
+        { status: 401 }
+      )
+    }
+
+    // Get employee ID from session metadata
+    const employeeId = session.user.user_metadata?.employee_id
+    if (!employeeId) {
+      return NextResponse.json(
+        { error: 'User metadata not found' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     
     // Validate required fields
@@ -159,28 +178,28 @@ export async function POST(request: NextRequest) {
 
     const employeeData = {
       ...body,
-      CreatedDate: new Date().toISOString()
+      CreatedBy: parseInt(employeeId),
+      CreatedDate: new Date()
     }
     
-    const { data: employee, error } = await supabase
-      .from('employees')
-      .insert([employeeData])
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error creating employee:', error)
-      return NextResponse.json(
-        { error: 'Failed to create employee', details: error.message },
-        { status: 500 }
-      )
-    }
+    const employee = await prisma.employees.create({
+      data: employeeData,
+      select: {
+        EmployeeID: true,
+        Email: true,
+        UserName: true,
+        Phone: true,
+        RoleID: true,
+        CreatedBy: true,
+        CreatedDate: true
+      }
+    })
 
     return NextResponse.json({ employee }, { status: 201 })
   } catch (error) {
     console.error('Unexpected error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
@@ -194,6 +213,8 @@ export async function POST(request: NextRequest) {
  *       - Employees
  *     summary: Update an employee
  *     description: Update an existing employee in the system
+ *     security:
+ *       - cookieAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -227,50 +248,29 @@ export async function POST(request: NextRequest) {
  *     responses:
  *       200:
  *         description: Employee updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 employee:
- *                   $ref: '#/components/schemas/Employee'
  *       400:
  *         description: Bad request - Missing employee ID
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: "EmployeeID is required"
+ *       401:
+ *         description: Unauthorized
  *       404:
  *         description: Employee not found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: "Employee not found"
  *       500:
  *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: "Failed to update employee"
- *                 details:
- *                   type: string
  */
 
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = createServerClient()
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
+      return NextResponse.json(
+        { error: 'Access token not found' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     const { EmployeeID, ...updateData } = body
     
@@ -281,20 +281,19 @@ export async function PUT(request: NextRequest) {
       )
     }
     
-    const { data: employee, error } = await supabase
-      .from('employees')
-      .update(updateData)
-      .eq('EmployeeID', EmployeeID)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error updating employee:', error)
-      return NextResponse.json(
-        { error: 'Failed to update employee', details: error.message },
-        { status: 500 }
-      )
-    }
+    const employee = await prisma.employees.update({
+      where: { EmployeeID: parseInt(EmployeeID) },
+      data: updateData,
+      select: {
+        EmployeeID: true,
+        Email: true,
+        UserName: true,
+        Phone: true,
+        RoleID: true,
+        CreatedBy: true,
+        CreatedDate: true
+      }
+    })
 
     if (!employee) {
       return NextResponse.json(
@@ -306,8 +305,14 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ employee })
   } catch (error) {
     console.error('Unexpected error:', error)
+    if (error instanceof Error && error.message.includes('Record to update not found')) {
+      return NextResponse.json(
+        { error: 'Employee not found' },
+        { status: 404 }
+      )
+    }
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
@@ -321,6 +326,8 @@ export async function PUT(request: NextRequest) {
  *       - Employees
  *     summary: Delete an employee
  *     description: Delete an employee from the system
+ *     security:
+ *       - cookieAuth: []
  *     parameters:
  *       - in: query
  *         name: id
@@ -332,54 +339,29 @@ export async function PUT(request: NextRequest) {
  *     responses:
  *       200:
  *         description: Employee deleted successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: "Employee deleted successfully"
  *       400:
  *         description: Bad request - Missing employee ID
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: "Employee ID is required"
+ *       401:
+ *         description: Unauthorized
  *       404:
  *         description: Employee not found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: "Employee not found"
  *       500:
  *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: "Failed to delete employee"
- *                 details:
- *                   type: string
  */
 
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = createServerClient()
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
+      return NextResponse.json(
+        { error: 'Access token not found' },
+        { status: 401 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const employeeId = searchParams.get('id')
 
@@ -391,37 +373,33 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if employee exists
-    const { data: existingEmployee, error: fetchError } = await supabase
-      .from('employees')
-      .select('EmployeeID')
-      .eq('EmployeeID', employeeId)
-      .single()
+    const existingEmployee = await prisma.employees.findUnique({
+      where: { EmployeeID: parseInt(employeeId) },
+      select: { EmployeeID: true }
+    })
 
-    if (fetchError || !existingEmployee) {
+    if (!existingEmployee) {
       return NextResponse.json(
         { error: 'Employee not found' },
         { status: 404 }
       )
     }
     
-    const { error } = await supabase
-      .from('employees')
-      .delete()
-      .eq('EmployeeID', employeeId)
-
-    if (error) {
-      console.error('Error deleting employee:', error)
-      return NextResponse.json(
-        { error: 'Failed to delete employee', details: error.message },
-        { status: 500 }
-      )
-    }
+    await prisma.employees.delete({
+      where: { EmployeeID: parseInt(employeeId) }
+    })
 
     return NextResponse.json({ success: true, message: 'Employee deleted successfully' })
   } catch (error) {
     console.error('Unexpected error:', error)
+    if (error instanceof Error && error.message.includes('Record to delete does not exist')) {
+      return NextResponse.json(
+        { error: 'Employee not found' },
+        { status: 404 }
+      )
+    }
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

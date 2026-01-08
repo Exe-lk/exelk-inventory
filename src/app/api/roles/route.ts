@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
 
 /**
@@ -9,6 +9,8 @@ import { createServerClient } from '@/lib/supabase/server'
  *       - Roles
  *     summary: Get all roles
  *     description: Retrieve all roles from the system
+ *     security:
+ *       - cookieAuth: []
  *     responses:
  *       200:
  *         description: Roles retrieved successfully
@@ -38,24 +40,24 @@ import { createServerClient } from '@/lib/supabase/server'
  *                         type: string
  *                         description: Role permissions
  *                         example: "full_access"
+ *       401:
+ *         description: Unauthorized
  *       500:
  *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: "Failed to fetch roles"
- *                 details:
- *                   type: string
- *                   example: "Database connection error"
  */
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerClient()
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
+      return NextResponse.json(
+        { error: 'Unauthorized', details: 'Access token not found' },
+        { status: 401 }
+      )
+    }
     
     const { data: roles, error } = await supabase
       .from('roles')

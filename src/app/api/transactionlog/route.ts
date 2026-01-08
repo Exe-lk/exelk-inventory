@@ -1,18 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
-import { verifyAccessToken } from '@/lib/jwt'
-import { getAuthTokenFromCookies } from '@/lib/cookies'
-
-// Helper function to extract employee ID from token
-function getEmployeeIdFromToken(accessToken: string): number {
-  try {
-    const payload = verifyAccessToken(accessToken);
-    return payload.userId || 1;
-  } catch (error) {
-    console.error('Error extracting employee ID from token:', error);
-    return 1;
-  }
-}
+import { createServerClient } from '@/lib/supabase/server'
 
 /**
  * @swagger
@@ -83,9 +71,11 @@ export async function GET(request: NextRequest) {
   console.log(' Transaction Logs GET request started');
   
   try {
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
@@ -97,20 +87,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    try {
-      verifyAccessToken(accessToken)
-      console.log(' Access token verified');
-    } catch (error) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid access token',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    console.log(' Access token verified');
 
     const { searchParams } = new URL(request.url)
 

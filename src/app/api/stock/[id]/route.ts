@@ -1,517 +1,6 @@
-// import { NextRequest, NextResponse } from 'next/server'
-// import { prisma } from '@/lib/prisma/client'
-// import { verifyAccessToken } from '@/lib/jwt'
-// import { getAuthTokenFromCookies } from '@/lib/cookies'
-
-// // Helper function to extract employee ID from token
-// function getEmployeeIdFromToken(accessToken: string): number {
-//   try {
-//     const payload = verifyAccessToken(accessToken);
-//     return payload.userId || 1;
-//   } catch (error) {
-//     console.error('Error extracting employee ID from token:', error);
-//     return 1;
-//   }
-// }
-
-// /**
-//  * @swagger
-//  * /api/stocks/{id}:
-//  *   get:
-//  *     tags:
-//  *       - Stocks
-//  *     summary: Get single stock
-//  *     description: Retrieve a single stock record by ID
-//  *     security:
-//  *       - cookieAuth: []
-//  *     parameters:
-//  *       - in: path
-//  *         name: id
-//  *         required: true
-//  *         schema:
-//  *           type: integer
-//  *         description: Stock ID
-//  *     responses:
-//  *       200:
-//  *         description: Stock retrieved successfully
-//  *       401:
-//  *         description: Unauthorized
-//  *       404:
-//  *         description: Stock not found
-//  *       500:
-//  *         description: Internal server error
-//  */
-
-// // GET - Get single stock by ID
-// export async function GET(
-//   request: NextRequest,
-//   { params }: { params: { id: string } }
-// ) {
-//   console.log('🚀 Single Stock GET request started for ID:', params.id);
-  
-//   try {
-//     // Verify authentication
-//     const accessToken = getAuthTokenFromCookies(request)
-//     if (!accessToken) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 401,
-//           message: 'Access token not found',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 401 }
-//       )
-//     }
-
-//     try {
-//       verifyAccessToken(accessToken)
-//     } catch (error) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 401,
-//           message: 'Invalid access token',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 401 }
-//       )
-//     }
-
-//     const stockId = parseInt(params.id)
-//     if (isNaN(stockId)) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 400,
-//           message: 'Invalid stock ID',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 400 }
-//       )
-//     }
-
-//     try {
-//       // Get stock by ID
-//       const stock = await prisma.stock.findUnique({
-//         where: { stockId },
-//         select: {
-//           stockId: true,
-//           productId: true,
-//           quantityAvailable: true,
-//           reorderLevel: true,
-//           lastUpdatedDate: true,
-//           variationId: true,
-//           location: true,
-//         }
-//       });
-
-//       if (!stock) {
-//         return NextResponse.json(
-//           { 
-//             status: 'error',
-//             code: 404,
-//             message: 'Stock not found',
-//             timestamp: new Date().toISOString()
-//           },
-//           { status: 404 }
-//         )
-//       }
-
-//       // Transform response
-//       const transformedStock = {
-//         stockID: stock.stockId,
-//         productID: stock.productId,
-//         variationID: stock.variationId,
-//         locationID: null, // Not available in current schema
-//         quantityAvailable: stock.quantityAvailable || 0,
-//         reorderLevel: stock.reorderLevel || 0,
-//         lastUpdatedDate: stock.lastUpdatedDate?.toISOString(),
-//         location: stock.location
-//       };
-
-//       return NextResponse.json(
-//         {
-//           status: 'success',
-//           code: 200,
-//           message: 'Stock retrieved successfully',
-//           timestamp: new Date().toISOString(),
-//           data: transformedStock
-//         },
-//         { status: 200 }
-//       )
-
-//     } catch (dbError) {
-//       console.error('❌ Database error:', dbError);
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 500,
-//           message: 'Failed to retrieve stock',
-//           timestamp: new Date().toISOString(),
-//           details: dbError instanceof Error ? dbError.message : 'Unknown database error'
-//         },
-//         { status: 500 }
-//       )
-//     }
-
-//   } catch (error) {
-//     console.error('❌ Stock GET error:', error);
-//     return NextResponse.json(
-//       { 
-//         status: 'error',
-//         code: 500,
-//         message: 'Internal server error',
-//         timestamp: new Date().toISOString()
-//       },
-//       { status: 500 }
-//     )
-//   }
-// }
-
-// /**
-//  * @swagger
-//  * /api/stocks/{id}:
-//  *   put:
-//  *     tags:
-//  *       - Stocks
-//  *     summary: Update stock
-//  *     description: Update a stock record
-//  *     security:
-//  *       - cookieAuth: []
-//  *     parameters:
-//  *       - in: path
-//  *         name: id
-//  *         required: true
-//  *         schema:
-//  *           type: integer
-//  *         description: Stock ID
-//  *     requestBody:
-//  *       required: true
-//  *       content:
-//  *         application/json:
-//  *           schema:
-//  *             type: object
-//  *             properties:
-//  *               productID:
-//  *                 type: integer
-//  *               variationID:
-//  *                 type: integer
-//  *               quantityAvailable:
-//  *                 type: integer
-//  *               reorderLevel:
-//  *                 type: integer
-//  *               location:
-//  *                 type: string
-//  *     responses:
-//  *       200:
-//  *         description: Stock updated successfully
-//  *       400:
-//  *         description: Bad request
-//  *       401:
-//  *         description: Unauthorized
-//  *       404:
-//  *         description: Stock not found
-//  *       500:
-//  *         description: Internal server error
-//  */
-
-// // PUT - Update stock
-// export async function PUT(
-//   request: NextRequest,
-//   { params }: { params: { id: string } }
-// ) {
-//   console.log('🚀 Stock PUT request started for ID:', params.id);
-  
-//   try {
-//     // Verify authentication
-//     const accessToken = getAuthTokenFromCookies(request)
-//     if (!accessToken) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 401,
-//           message: 'Access token not found',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 401 }
-//       )
-//     }
-
-//     try {
-//       verifyAccessToken(accessToken)
-//     } catch (error) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 401,
-//           message: 'Invalid access token',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 401 }
-//       )
-//     }
-
-//     const stockId = parseInt(params.id)
-//     if (isNaN(stockId)) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 400,
-//           message: 'Invalid stock ID',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 400 }
-//       )
-//     }
-
-//     const body = await request.json()
-//     console.log('📝 Update request body:', body);
-
-//     try {
-//       // Check if stock exists
-//       const existingStock = await prisma.stock.findUnique({
-//         where: { stockId }
-//       });
-
-//       if (!existingStock) {
-//         return NextResponse.json(
-//           { 
-//             status: 'error',
-//             code: 404,
-//             message: 'Stock not found',
-//             timestamp: new Date().toISOString()
-//           },
-//           { status: 404 }
-//         )
-//       }
-
-//       // Prepare update data
-//       const updateData: any = {
-//         lastUpdatedDate: new Date()
-//       };
-
-//       if (body.productID !== undefined) updateData.productId = body.productID;
-//       if (body.variationID !== undefined) updateData.variationId = body.variationID;
-//       if (body.quantityAvailable !== undefined) updateData.quantityAvailable = body.quantityAvailable;
-//       if (body.reorderLevel !== undefined) updateData.reorderLevel = body.reorderLevel;
-//       if (body.location !== undefined) updateData.location = body.location;
-
-//       // Update stock
-//       const updatedStock = await prisma.stock.update({
-//         where: { stockId },
-//         data: updateData,
-//         select: {
-//           stockId: true,
-//           productId: true,
-//           quantityAvailable: true,
-//           reorderLevel: true,
-//           lastUpdatedDate: true,
-//           variationId: true,
-//           location: true,
-//         }
-//       });
-
-//       // Transform response
-//       const transformedStock = {
-//         stockID: updatedStock.stockId,
-//         productID: updatedStock.productId,
-//         variationID: updatedStock.variationId,
-//         locationID: null,
-//         quantityAvailable: updatedStock.quantityAvailable || 0,
-//         reorderLevel: updatedStock.reorderLevel || 0,
-//         lastUpdatedDate: updatedStock.lastUpdatedDate?.toISOString(),
-//         location: updatedStock.location
-//       };
-
-//       return NextResponse.json(
-//         {
-//           status: 'success',
-//           code: 200,
-//           message: 'Stock updated successfully',
-//           timestamp: new Date().toISOString(),
-//           data: transformedStock
-//         },
-//         { status: 200 }
-//       )
-
-//     } catch (dbError) {
-//       console.error('❌ Database error:', dbError);
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 500,
-//           message: 'Failed to update stock',
-//           timestamp: new Date().toISOString(),
-//           details: dbError instanceof Error ? dbError.message : 'Unknown database error'
-//         },
-//         { status: 500 }
-//       )
-//     }
-
-//   } catch (error) {
-//     console.error('❌ Stock PUT error:', error);
-//     return NextResponse.json(
-//       { 
-//         status: 'error',
-//         code: 500,
-//         message: 'Internal server error',
-//         timestamp: new Date().toISOString()
-//       },
-//       { status: 500 }
-//     )
-//   }
-// }
-
-// /**
-//  * @swagger
-//  * /api/stocks/{id}:
-//  *   delete:
-//  *     tags:
-//  *       - Stocks
-//  *     summary: Delete stock
-//  *     description: Delete a stock record
-//  *     security:
-//  *       - cookieAuth: []
-//  *     parameters:
-//  *       - in: path
-//  *         name: id
-//  *         required: true
-//  *         schema:
-//  *           type: integer
-//  *         description: Stock ID
-//  *     responses:
-//  *       200:
-//  *         description: Stock deleted successfully
-//  *       401:
-//  *         description: Unauthorized
-//  *       404:
-//  *         description: Stock not found
-//  *       500:
-//  *         description: Internal server error
-//  */
-
-// // DELETE - Delete stock
-// export async function DELETE(
-//   request: NextRequest,
-//   { params }: { params: { id: string } }
-// ) {
-//   console.log('🚀 Stock DELETE request started for ID:', params.id);
-  
-//   try {
-//     // Verify authentication
-//     const accessToken = getAuthTokenFromCookies(request)
-//     if (!accessToken) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 401,
-//           message: 'Access token not found',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 401 }
-//       )
-//     }
-
-//     try {
-//       verifyAccessToken(accessToken)
-//     } catch (error) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 401,
-//           message: 'Invalid access token',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 401 }
-//       )
-//     }
-
-//     const stockId = parseInt(params.id)
-//     if (isNaN(stockId)) {
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 400,
-//           message: 'Invalid stock ID',
-//           timestamp: new Date().toISOString()
-//         },
-//         { status: 400 }
-//       )
-//     }
-
-//     try {
-//       // Check if stock exists
-//       const existingStock = await prisma.stock.findUnique({
-//         where: { stockId }
-//       });
-
-//       if (!existingStock) {
-//         return NextResponse.json(
-//           { 
-//             status: 'error',
-//             code: 404,
-//             message: 'Stock not found',
-//             timestamp: new Date().toISOString()
-//           },
-//           { status: 404 }
-//         )
-//       }
-
-//       // Delete stock
-//       await prisma.stock.delete({
-//         where: { stockId }
-//       });
-
-//       return NextResponse.json(
-//         {
-//           status: 'success',
-//           code: 200,
-//           message: 'Stock deleted successfully',
-//           timestamp: new Date().toISOString(),
-//           data: null
-//         },
-//         { status: 200 }
-//       )
-
-//     } catch (dbError) {
-//       console.error(' Database error:', dbError);
-//       return NextResponse.json(
-//         { 
-//           status: 'error',
-//           code: 500,
-//           message: 'Failed to delete stock',
-//           timestamp: new Date().toISOString(),
-//           details: dbError instanceof Error ? dbError.message : 'Unknown database error'
-//         },
-//         { status: 500 }
-//       )
-//     }
-
-//   } catch (error) {
-//     console.error(' Stock DELETE error:', error);
-//     return NextResponse.json(
-//       { 
-//         status: 'error',
-//         code: 500,
-//         message: 'Internal server error',
-//         timestamp: new Date().toISOString()
-//       },
-//       { status: 500 }
-//     )
-//   }
-// }
-
-
-
-
-
-
-
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
-import { verifyAccessToken } from '@/lib/jwt'
-import { getAuthTokenFromCookies } from '@/lib/cookies'
+import { createServerClient } from '@/lib/supabase/server'
 
 /**
  * @swagger
@@ -537,9 +26,12 @@ export async function GET(
   
   try {
     const resolvedParams = await params;
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
@@ -551,20 +43,7 @@ export async function GET(
       )
     }
 
-    try {
-      verifyAccessToken(accessToken)
-      console.log(' Access token verified');
-    } catch (error) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid access token',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    console.log(' Access token verified');
 
     const stockId = parseInt(resolvedParams.id)
     if (isNaN(stockId)) {
@@ -640,7 +119,6 @@ export async function GET(
       variationCapacity: stock.productvariation?.capacity
     }
 
-
     return NextResponse.json(
       {
         status: 'success',
@@ -666,19 +144,20 @@ export async function GET(
   }
 }
 
-
-
 export async function PUT(
   request: NextRequest,
-  { params }: { params:  Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   console.log(' Stock PUT request started');
   
   try {
     const resolvedParams = await params;
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
@@ -690,23 +169,34 @@ export async function PUT(
       )
     }
 
-    let employeeId: number;
-    try {
-      verifyAccessToken(accessToken)
-      const payload = verifyAccessToken(accessToken);
-      employeeId = payload.userId || 1;
-      console.log(' Access token verified');
-    } catch (error) {
+    // Get employee ID from session
+    const employeeId = session.user.user_metadata?.employee_id
+    if (!employeeId) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 401,
-          message: 'Invalid access token',
+          message: 'Invalid access token - employee ID not found',
           timestamp: new Date().toISOString()
         },
         { status: 401 }
       )
     }
+
+    const parsedEmployeeId = parseInt(employeeId.toString())
+    if (isNaN(parsedEmployeeId)) {
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 401,
+          message: 'Invalid employee ID in token',
+          timestamp: new Date().toISOString()
+        },
+        { status: 401 }
+      )
+    }
+
+    console.log(' Access token verified, employee ID:', parsedEmployeeId);
 
     const stockId = parseInt(resolvedParams.id)
     if (isNaN(stockId)) {
@@ -787,7 +277,7 @@ export async function PUT(
       // Create transaction log for stock update
       await tx.transactionlog.create({
         data: {
-          employeeId: employeeId,
+          employeeId: parsedEmployeeId,
           actionType: 'UPDATE',
           entityName: 'STOCK',
           referenceId: stockId,
@@ -858,9 +348,6 @@ export async function PUT(
   }
 }
 
-
-
-
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -870,9 +357,11 @@ export async function DELETE(
   try {
     const resolvedParams = await params;
 
-    // Verify authentication
-    const accessToken = getAuthTokenFromCookies(request)
-    if (!accessToken) {
+    // Verify authentication using Supabase
+    const supabase = await createServerClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    if (sessionError || !session) {
       return NextResponse.json(
         { 
           status: 'error',
@@ -884,23 +373,34 @@ export async function DELETE(
       )
     }
 
-    let employeeId: number;
-    try {
-      verifyAccessToken(accessToken)
-      const payload = verifyAccessToken(accessToken);
-      employeeId = payload.userId || 1;
-      console.log(' Access token verified');
-    } catch (error) {
+    // Get employee ID from session
+    const employeeId = session.user.user_metadata?.employee_id
+    if (!employeeId) {
       return NextResponse.json(
         { 
           status: 'error',
           code: 401,
-          message: 'Invalid access token',
+          message: 'Invalid access token - employee ID not found',
           timestamp: new Date().toISOString()
         },
         { status: 401 }
       )
     }
+
+    const parsedEmployeeId = parseInt(employeeId.toString())
+    if (isNaN(parsedEmployeeId)) {
+      return NextResponse.json(
+        { 
+          status: 'error',
+          code: 401,
+          message: 'Invalid employee ID in token',
+          timestamp: new Date().toISOString()
+        },
+        { status: 401 }
+      )
+    }
+
+    console.log(' Access token verified, employee ID:', parsedEmployeeId);
 
     const stockId = parseInt(resolvedParams.id)
     if (isNaN(stockId)) {
@@ -936,7 +436,7 @@ export async function DELETE(
       // Create transaction log before deletion
       await tx.transactionlog.create({
         data: {
-          employeeId: employeeId,
+          employeeId: parsedEmployeeId,
           actionType: 'DELETE',
           entityName: 'STOCK',
           referenceId: stockId,
@@ -969,7 +469,7 @@ export async function DELETE(
       },
       { status: 200 }
     )
-    } catch (error) {
+  } catch (error) {
     console.error(' Stock DELETE error:', error)
     return NextResponse.json(
       { 

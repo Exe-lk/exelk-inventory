@@ -59,8 +59,68 @@ export interface StockOutResponse {
   transactionLogCount: number
 }
 
+const CACHE_DURATION = 5 * 60 * 1000;
+
 // Fetch all products for form dropdowns
+// export async function fetchProducts(): Promise<any[]> {
+//   try {
+//     console.log(' Fetching products for form');
+    
+//     const response = await fetch('/api/product', {
+//       method: 'GET',
+//       credentials: 'include',
+//       headers: {
+//         'Content-Type': 'application/json'
+//       }
+//     });
+    
+//     if (!response.ok) {
+//       const errorData = await response.json();
+//       console.error(' Fetch products error response:', errorData);
+//       throw new Error(errorData.message || 'Failed to fetch products');
+//     }
+    
+//     const result = await response.json();
+//     console.log(' Products API Response:', result);
+    
+//     if (result.status === 'success' && result.data && result.data.items) {
+//       return result.data.items;
+//     } else {
+//       throw new Error(result.message || 'Invalid response format');
+//     }
+//   } catch (error) {
+//     console.error(' Error fetching products:', error);
+//     throw error;
+//   }
+// }
+
+
+// Add cache duration constant at the top of the file (after imports, before functions)
+ // 5 minutes
+
+// ... existing code ...
+
 export async function fetchProducts(): Promise<any[]> {
+  const cacheKey = 'products_cache';
+  
+  // Check for cached data
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < CACHE_DURATION) {
+        console.log(' Using cached products data');
+        return data;
+      } else {
+        // Cache expired, remove it
+        sessionStorage.removeItem(cacheKey);
+      }
+    }
+  } catch (error) {
+    // If cache read fails (e.g., storage disabled), continue to fetch
+    console.warn(' Failed to read products cache:', error);
+  }
+  
   try {
     console.log(' Fetching products for form');
     
@@ -82,15 +142,43 @@ export async function fetchProducts(): Promise<any[]> {
     console.log(' Products API Response:', result);
     
     if (result.status === 'success' && result.data && result.data.items) {
+      // Cache the successful response
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify({
+          data: result.data.items,
+          timestamp: Date.now()
+        }));
+        console.log(' Products data cached successfully');
+      } catch (cacheError) {
+        // If caching fails (e.g., storage full), continue without caching
+        console.warn(' Failed to cache products data:', cacheError);
+      }
+      
       return result.data.items;
     } else {
       throw new Error(result.message || 'Invalid response format');
     }
   } catch (error) {
     console.error(' Error fetching products:', error);
+    
+    // If fetch fails, try to return stale cache as fallback
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const { data } = JSON.parse(cached);
+        console.log(' Using stale cache due to fetch error');
+        return data;
+      }
+    } catch (fallbackError) {
+      // Ignore fallback errors
+    }
+    
     throw error;
   }
 }
+
+
+
 
 // Fetch all suppliers for form dropdowns
 // export async function fetchSuppliers(): Promise<any[]> {
@@ -125,7 +213,95 @@ export async function fetchProducts(): Promise<any[]> {
 //   }
 // }
 
+// export async function fetchSuppliers(): Promise<any[]> {
+//   try {
+//     console.log(' Fetching suppliers for form');
+    
+//     const response = await fetch('/api/supplier', {
+//       method: 'GET',
+//       credentials: 'include',
+//       headers: {
+//         'Content-Type': 'application/json'
+//       }
+//     });
+    
+//     if (!response.ok) {
+//       const errorData = await response.json();
+//       console.error(' Fetch suppliers error response:', errorData);
+//       throw new Error(errorData.message || 'Failed to fetch suppliers');
+//     }
+    
+//     const result = await response.json();
+//     console.log(' Suppliers API Response:', result);
+    
+//     if (result.status === 'success' && result.data && result.data.items) {
+//       // Add debugging to see the actual data structure
+//       console.log(' First supplier in response:', result.data.items[0]);
+      
+//       return result.data.items.map((supplier: any) => {
+//         // Debug the mapping process
+//         console.log(' Mapping supplier:', supplier);
+        
+//         // Handle different possible field names
+//         const mappedSupplier = {
+//           supplierId:  supplier.supplierID || supplier.SupplierID || supplier.supplierId,
+//           supplierName: supplier.supplierName || supplier.SupplierName || supplier.supplierName
+//         };
+        
+//         console.log(' Mapped to:', mappedSupplier);
+//         return mappedSupplier;
+//       });
+
+//       // return result.data.items.map((supplier: any) => {
+//       //   // Debug the mapping process
+        
+
+//       //   supplierID:  supplier.SupplierID,
+//       //   supplierName: supplier.supplierName 
+        
+//       //   // Handle different possible field names
+        
+        
+       
+        
+//       // });
+
+      
+
+
+//     } else {
+//       throw new Error(result.message || 'Invalid response format');
+//     }
+//   } catch (error) {
+//     console.error(' Error fetching suppliers:', error);
+//     throw error;
+//   }
+// }
+
+
+
+
 export async function fetchSuppliers(): Promise<any[]> {
+  const cacheKey = 'suppliers_cache';
+  
+  // Check for cached data
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < CACHE_DURATION) {
+        console.log(' Using cached suppliers data');
+        return data;
+      } else {
+        // Cache expired, remove it
+        sessionStorage.removeItem(cacheKey);
+      }
+    }
+  } catch (error) {
+    // If cache read fails (e.g., storage disabled), continue to fetch
+    console.warn(' Failed to read suppliers cache:', error);
+  }
+  
   try {
     console.log(' Fetching suppliers for form');
     
@@ -150,45 +326,55 @@ export async function fetchSuppliers(): Promise<any[]> {
       // Add debugging to see the actual data structure
       console.log(' First supplier in response:', result.data.items[0]);
       
-      return result.data.items.map((supplier: any) => {
+      const mappedSuppliers = result.data.items.map((supplier: any) => {
         // Debug the mapping process
         console.log(' Mapping supplier:', supplier);
         
         // Handle different possible field names
         const mappedSupplier = {
-          supplierId:  supplier.supplierID || supplier.SupplierID || supplier.supplierId,
+          supplierId: supplier.supplierID || supplier.SupplierID || supplier.supplierId,
           supplierName: supplier.supplierName || supplier.SupplierName || supplier.supplierName
         };
         
         console.log(' Mapped to:', mappedSupplier);
         return mappedSupplier;
       });
-
-      // return result.data.items.map((supplier: any) => {
-      //   // Debug the mapping process
-        
-
-      //   supplierID:  supplier.SupplierID,
-      //   supplierName: supplier.supplierName 
-        
-      //   // Handle different possible field names
-        
-        
-       
-        
-      // });
-
       
-
-
+      // Cache the successful response
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify({
+          data: mappedSuppliers,
+          timestamp: Date.now()
+        }));
+        console.log(' Suppliers data cached successfully');
+      } catch (cacheError) {
+        // If caching fails (e.g., storage full), continue without caching
+        console.warn(' Failed to cache suppliers data:', cacheError);
+      }
+      
+      return mappedSuppliers;
     } else {
       throw new Error(result.message || 'Invalid response format');
     }
   } catch (error) {
     console.error(' Error fetching suppliers:', error);
+    
+    // If fetch fails, try to return stale cache as fallback
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const { data } = JSON.parse(cached);
+        console.log(' Using stale cache due to fetch error');
+        return data;
+      }
+    } catch (fallbackError) {
+      // Ignore fallback errors
+    }
+    
     throw error;
   }
 }
+
 
 
 // Fetch variations by version ID (NEW FUNCTION)

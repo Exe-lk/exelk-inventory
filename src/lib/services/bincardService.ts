@@ -324,72 +324,72 @@ export class BinCardService {
   /**
    * Create new bin card entry
    */
-  static async createBinCard(data: CreateBinCardRequest): Promise<BinCard> {
-    // Validate input
-    const validation = this.validateCreateBinCardRequest(data)
-    if (!validation.isValid) {
-      throw new Error(`Validation failed: ${validation.errors.map(e => e.message).join(', ')}`)
-    }
+  // static async createBinCard(data: CreateBinCardRequest): Promise<BinCard> {
+  //   // Validate input
+  //   const validation = this.validateCreateBinCardRequest(data)
+  //   if (!validation.isValid) {
+  //     throw new Error(`Validation failed: ${validation.errors.map(e => e.message).join(', ')}`)
+  //   }
 
-    try {
-      const result = await prisma.$transaction(async (tx) => {
-        // Verify variation exists
-        const variation = await tx.productvariation.findUnique({
-          where: { variationId: data.variationId }
-        });
+  //   try {
+  //     const result = await prisma.$transaction(async (tx) => {
+  //       // Verify variation exists
+  //       const variation = await tx.productvariation.findUnique({
+  //         where: { variationId: data.variationId }
+  //       });
 
-        if (!variation) {
-          throw new Error(`Product variation with ID ${data.variationId} not found`);
-        }
+  //       if (!variation) {
+  //         throw new Error(`Product variation with ID ${data.variationId} not found`);
+  //       }
 
-        // Verify employee exists
-        const employee = await tx.employees.findUnique({
-          where: { EmployeeID: data.stockKeeperId }
-        });
+  //       // Verify employee exists
+  //       const employee = await tx.employees.findUnique({
+  //         where: { EmployeeID: data.stockKeeperId }
+  //       });
 
-        if (!employee) {
-          throw new Error(`Employee with ID ${data.stockKeeperId} not found`);
-        }
+  //       if (!employee) {
+  //         throw new Error(`Employee with ID ${data.stockKeeperId} not found`);
+  //       }
 
-        // Create bin card entry
-        const binCard = await tx.bincard.create({
-          data: {
-            variationId: data.variationId,
-            transactionDate: new Date(data.transactionDate),
-            transactionType: data.transactionType,
-            referenceId: data.referenceId || null,
-            quantityIn: data.quantityIn || null,
-            quantityOut: data.quantityOut || null,
-            balance: data.balance,
-            employeeId: data.stockKeeperId,
-            remarks: data.remarks || null
-          }
-        })
+  //       // Create bin card entry
+  //       const binCard = await tx.bincard.create({
+  //         data: {
+  //           variationId: data.variationId,
+  //           transactionDate: new Date(data.transactionDate),
+  //           transactionType: data.transactionType,
+  //           referenceId: data.referenceId || null,
+  //           quantityIn: data.quantityIn || null,
+  //           quantityOut: data.quantityOut || null,
+  //           balance: data.balance,
+  //           employeeId: data.stockKeeperId,
+  //           remarks: data.remarks || null
+  //         }
+  //       })
 
-        return binCard
-      })
+  //       return binCard
+  //     })
 
-      // Transform to response format
-      const transformedBinCard: BinCard = {
-        binCardId: result.bincardId,
-        variationId: result.variationId,
-        transactionDate: result.transactionDate?.toISOString().split('T')[0] || '',
-        transactionType: (result.transactionType as 'GRN' | 'GIN') || 'GRN',
-        referenceId: result.referenceId,
-        quantityIn: result.quantityIn || 0,
-        quantityOut: result.quantityOut || 0,
-        balance: result.balance || 0,
-        stockKeeperId: result.employeeId,
-        remarks: result.remarks
-      }
+  //     // Transform to response format
+  //     const transformedBinCard: BinCard = {
+  //       binCardId: result.bincardId,
+  //       variationId: result.variationId,
+  //       transactionDate: result.transactionDate?.toISOString().split('T')[0] || '',
+  //       transactionType: (result.transactionType as 'GRN' | 'GIN') || 'GRN',
+  //       referenceId: result.referenceId,
+  //       quantityIn: result.quantityIn || 0,
+  //       quantityOut: result.quantityOut || 0,
+  //       balance: result.balance || 0,
+  //       stockKeeperId: result.employeeId,
+  //       remarks: result.remarks
+  //     }
 
-      return transformedBinCard
+  //     return transformedBinCard
 
-    } catch (error) {
-      console.error('Error creating bin card:', error)
-      throw error instanceof Error ? error : new Error('Failed to create bin card')
-    }
-  }
+  //   } catch (error) {
+  //     console.error('Error creating bin card:', error)
+  //     throw error instanceof Error ? error : new Error('Failed to create bin card')
+  //   }
+  // }
 
   /**
    * Get bin cards by variation ID
@@ -646,5 +646,290 @@ export async function exportBinCardsToCSV(
   } catch (error) {
     console.error(' Error exporting bin cards:', error);
     throw new Error('Failed to export bin cards to CSV');
+  }
+}
+
+
+
+
+// Add at the top after imports
+const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes for bincard list
+const BINCARD_DETAILS_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes for single bincard details
+
+// Add these new functions after the exportBinCardsToCSV function
+
+// Fetch bin cards with caching
+export async function fetchBinCards(params: BinCardQueryParams = {}): Promise<{
+  items: BinCardWithDetails[];
+  pagination: {
+    totalItems: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  sorting: {
+    sortBy: string;
+    sortOrder: string;
+  };
+  search: string | null;
+  filters: {
+    variationId: number | null;
+    transactionType: string | null;
+    stockKeeperId: number | null;
+  };
+}> {
+  // Create cache key based on query params
+  const cacheKey = `bincards_cache_${JSON.stringify(params)}`;
+  
+  // Check for cached data
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < CACHE_DURATION) {
+        console.log(' Using cached bincards data');
+        return data;
+      } else {
+        sessionStorage.removeItem(cacheKey);
+      }
+    }
+  } catch (error) {
+    console.warn(' Failed to read bincards cache:', error);
+  }
+  
+  try {
+    console.log(' Fetching bincards');
+    
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.set('page', params.page.toString());
+    if (params.limit) queryParams.set('limit', params.limit.toString());
+    if (params.sortBy) queryParams.set('sortBy', params.sortBy);
+    if (params.sortOrder) queryParams.set('sortOrder', params.sortOrder);
+    if (params.search) queryParams.set('search', params.search);
+    if (params.variationId) queryParams.set('variationId', params.variationId.toString());
+    if (params.transactionType) queryParams.set('transactionType', params.transactionType);
+    if (params.stockKeeperId) queryParams.set('stockKeeperId', params.stockKeeperId.toString());
+
+    const url = queryParams.toString() ? `/api/bincard?${queryParams}` : '/api/bincard';
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error(' Fetch bincards error response:', errorData);
+      
+      // Try stale cache on error
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          const { data } = JSON.parse(cached);
+          console.log(' Using stale cache due to fetch error');
+          return data;
+        }
+      } catch (fallbackError) {
+        // Ignore
+      }
+      
+      throw new Error(errorData.message || 'Failed to fetch bin cards');
+    }
+    
+    const result = await response.json();
+    
+    if (result.status === 'success' && result.data) {
+      // Cache the successful response
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify({
+          data: result.data,
+          timestamp: Date.now()
+        }));
+        console.log(' Bincards data cached successfully');
+      } catch (cacheError) {
+        console.warn(' Failed to cache bincards data:', cacheError);
+      }
+      
+      return result.data;
+    } else {
+      throw new Error(result.message || 'Invalid response format');
+    }
+  } catch (error) {
+    console.error(' Error fetching bincards:', error);
+    
+    // Try stale cache on error
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const { data } = JSON.parse(cached);
+        console.log(' Using stale cache due to fetch error');
+        return data;
+      }
+    } catch (fallbackError) {
+      // Ignore
+    }
+    
+    throw error;
+  }
+}
+
+// Fetch bin card by ID with caching
+export async function fetchBinCardById(binCardId: number): Promise<any> {
+  const cacheKey = `bincard_details_cache_${binCardId}`;
+  
+  // Check for cached data
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < BINCARD_DETAILS_CACHE_DURATION) {
+        console.log(' Using cached bincard details');
+        return data;
+      } else {
+        sessionStorage.removeItem(cacheKey);
+      }
+    }
+  } catch (error) {
+    console.warn(' Failed to read bincard details cache:', error);
+  }
+  
+  try {
+    console.log(' Fetching bincard details for ID:', binCardId);
+    
+    const response = await fetch(`/api/bincard/bincardId?id=${binCardId}`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error(' Fetch bincard by ID error response:', errorData);
+      
+      // Try stale cache on error
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          const { data } = JSON.parse(cached);
+          console.log(' Using stale cache due to fetch error');
+          return data;
+        }
+      } catch (fallbackError) {
+        // Ignore
+      }
+      
+      throw new Error(errorData.message || 'Failed to fetch bin card details');
+    }
+    
+    const result = await response.json();
+    
+    if (result.status === 'success' && result.data) {
+      // Cache the successful response
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify({
+          data: result.data,
+          timestamp: Date.now()
+        }));
+        console.log(' Bincard details cached successfully');
+      } catch (cacheError) {
+        console.warn(' Failed to cache bincard details:', cacheError);
+      }
+      
+      return result.data;
+    } else {
+      throw new Error(result.message || 'Invalid response format');
+    }
+  } catch (error) {
+    console.error(' Error fetching bincard by ID:', error);
+    
+    // Try stale cache on error
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const { data } = JSON.parse(cached);
+        console.log(' Using stale cache due to fetch error');
+        return data;
+      }
+    } catch (fallbackError) {
+      // Ignore
+    }
+    
+    throw error;
+  }
+}
+
+// Create bin card with cache invalidation
+export async function createBinCard(data: CreateBinCardRequest): Promise<any> {
+  try {
+    console.log(' Creating bin card with data:', data);
+    
+    const response = await fetch('/api/bincard', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error(' Create bin card error response:', errorData);
+      throw new Error(errorData.message || 'Failed to create bin card');
+    }
+    
+    const result = await response.json();
+    
+    if (result.status === 'success' && result.data) {
+      // Clear bincard caches after successful creation
+      clearBinCardCache();
+      return result.data;
+    } else {
+      throw new Error(result.message || 'Invalid response format');
+    }
+  } catch (error) {
+    console.error(' Error creating bin card:', error);
+    throw error;
+  }
+}
+
+// Cache invalidation helper functions
+export function clearBinCardCache(): void {
+  try {
+    // Clear all bincard-related caches
+    const keys = Object.keys(sessionStorage);
+    keys.forEach(key => {
+      if (key.startsWith('bincards_cache_') || key.startsWith('bincard_details_cache_')) {
+        sessionStorage.removeItem(key);
+      }
+    });
+    console.log(' Bincard caches cleared');
+  } catch (error) {
+    console.warn(' Failed to clear bincard cache:', error);
+  }
+}
+
+export function clearBinCardDetailsCache(binCardId?: number): void {
+  try {
+    if (binCardId) {
+      sessionStorage.removeItem(`bincard_details_cache_${binCardId}`);
+      console.log(` Bincard details cache cleared for ID: ${binCardId}`);
+    } else {
+      // Clear all detail caches
+      const keys = Object.keys(sessionStorage);
+      keys.forEach(key => {
+        if (key.startsWith('bincard_details_cache_')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+      console.log(' All bincard details caches cleared');
+    }
+  } catch (error) {
+    console.warn(' Failed to clear bincard details cache:', error);
   }
 }

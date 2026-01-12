@@ -137,6 +137,10 @@ model product {
   stock             stock[]
 
   @@index([productId, deletedAt], map: "idx_product_id_deleted")
+  @@index([sku, deletedAt], map: "idx_product_sku_deleted")
+  @@index([productName, deletedAt], map: "idx_product_name_deleted")
+  @@index([categoryId, brandId, deletedAt], map: "idx_product_category_brand")
+
   @@map("product")
 }
 
@@ -289,6 +293,10 @@ model bincard {
   remarks          String?
   employees        employees        @relation(fields: [employeeId], references: [EmployeeID], onDelete: NoAction, onUpdate: NoAction, map: "fk_bincard_employee")
   productvariation productvariation @relation(fields: [variationId], references: [variationId], onDelete: NoAction, onUpdate: NoAction, map: "fk_bincard_variation")
+
+  @@index([variationId, transactionDate], map: "idx_bincard_variation_date")
+  @@index([transactionType, transactionDate], map: "idx_bincard_type_date")
+  @@index([referenceId], map: "idx_bincard_reference")
 }
 
 model gin {
@@ -305,6 +313,9 @@ model gin {
   employees   employees    @relation(fields: [employeeId], references: [EmployeeID], onDelete: NoAction, onUpdate: NoAction, map: "fk_gin_employee")
   stock       stock?       @relation(fields: [stockId], references: [stockId], onDelete: NoAction, onUpdate: NoAction, map: "fk_gin_stock")
   gindetails  gindetails[]
+
+  @@index([issueDate], map: "idx_gin_date")
+  @@index([employeeId, issueDate], map: "idx_gin_employee_date")
 }
 
 model gindetails {
@@ -334,6 +345,9 @@ model grn {
   stock        stock?       @relation(fields: [stockId], references: [stockId], onDelete: NoAction, onUpdate: NoAction, map: "fk_grn_stock")
   supplier     supplier     @relation(fields: [supplierId], references: [supplierId], onDelete: NoAction, onUpdate: NoAction, map: "fk_grn_supplier")
   grndetails   grndetails[]
+
+  @@index([receivedDate], map: "idx_grn_date")
+  @@index([supplierId, receivedDate], map: "idx_grn_supplier_date")
 }
 
 model grndetails {
@@ -362,6 +376,9 @@ model stock {
   productvariation  productvariation? @relation(fields: [variationId], references: [variationId], onDelete: NoAction, onUpdate: NoAction, map: "fk_stock_variation")
 
   @@index([productId, variationId], map: "idx_stock_product_variation")
+  @@index([quantityAvailable, reorderLevel], map: "idx_stock_low_stock")
+  @@index([location], map: "idx_stock_location")
+  @@index([lastUpdatedDate], map: "idx_stock_updated")
 }
 
 model transactionlog {
@@ -389,6 +406,10 @@ model returns {
   returnproduct returnproduct[]
   employees     employees       @relation(fields: [employeeId], references: [EmployeeID], onDelete: NoAction, onUpdate: NoAction, map: "fk_return_employee")
   supplier      supplier        @relation(fields: [supplierId], references: [supplierId], onDelete: NoAction, onUpdate: NoAction, map: "fk_return_supplier")
+
+  @@index([returnStatus, approved], map: "idx_returns_status_approved")
+  @@index([returnDate], map: "idx_returns_date")
+  @@index([supplierId, returnStatus], map: "idx_returns_supplier_status")
 }
 
 model returnproduct {

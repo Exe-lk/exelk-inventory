@@ -234,14 +234,14 @@ const BASE_URL = '/api/grn/grndetails';
 // Fetch all GRN details or filter by GRN ID
 export async function fetchGrnDetails(grnId?: number): Promise<GRNDetail[]> {
   try {
-    console.log('🔗 Fetching GRN details...');
+    console.log(' Fetching GRN details...');
     
     let url = BASE_URL;
     
     // Add grnId as query parameter if provided
     if (grnId) {
       url = `${BASE_URL}?grnId=${grnId}`;
-      console.log('🔍 Filtering by GRN ID:', grnId);
+      console.log(' Filtering by GRN ID:', grnId);
     }
     
     const response = await fetch(url, {
@@ -255,7 +255,7 @@ export async function fetchGrnDetails(grnId?: number): Promise<GRNDetail[]> {
     }
     
     const result = await response.json();
-    console.log('📋 GRN Details API Response:', result);
+    console.log(' GRN Details API Response:', result);
     
     // Handle the response structure
     if (result.status === 'success' && Array.isArray(result.data)) {
@@ -269,11 +269,11 @@ export async function fetchGrnDetails(grnId?: number): Promise<GRNDetail[]> {
         location: item.location
       }));
     } else {
-      console.error('❌ Invalid response format:', result);
+      console.error(' Invalid response format:', result);
       throw new Error('Invalid response format');
     }
   } catch (error) {
-    console.error('❌ Error fetching GRN details:', error);
+    console.error(' Error fetching GRN details:', error);
     throw error;
   }
 }
@@ -284,7 +284,7 @@ export async function fetchGrnDetailsByGrnId(grnId: number): Promise<GRNDetail[]
     console.log('🔗 Fetching GRN details for GRN ID:', grnId);
     return await fetchGrnDetails(grnId);
   } catch (error) {
-    console.error('❌ Error fetching GRN details by GRN ID:', error);
+    console.error(' Error fetching GRN details by GRN ID:', error);
     throw error;
   }
 }
@@ -292,7 +292,7 @@ export async function fetchGrnDetailsByGrnId(grnId: number): Promise<GRNDetail[]
 // Fetch single GRN detail by ID
 export async function fetchGrnDetailById(detailId: number): Promise<GRNDetail> {
   try {
-    console.log('🔗 Fetching GRN detail with ID:', detailId);
+    console.log(' Fetching GRN detail with ID:', detailId);
     
     const response = await fetch(`${BASE_URL}/${detailId}`, {
       method: 'GET',
@@ -305,7 +305,7 @@ export async function fetchGrnDetailById(detailId: number): Promise<GRNDetail> {
     }
     
     const result = await response.json();
-    console.log('📋 GRN detail fetch response:', result);
+    console.log(' GRN detail fetch response:', result);
     
     if (result.status === 'success' && result.data) {
       return {
@@ -321,7 +321,7 @@ export async function fetchGrnDetailById(detailId: number): Promise<GRNDetail> {
       throw new Error(result.message || 'Invalid response format');
     }
   } catch (error) {
-    console.error('❌ Error fetching GRN detail:', error);
+    console.error(' Error fetching GRN detail:', error);
     throw error;
   }
 }
@@ -329,7 +329,7 @@ export async function fetchGrnDetailById(detailId: number): Promise<GRNDetail> {
 // Create individual GRN detail - Updated to use the new POST format
 export async function createGrnDetail(data: CreateGRNDetailRequest): Promise<GRNDetail> {
   try {
-    console.log('🔗 Creating individual GRN detail with data:', data);
+    console.log(' Creating individual GRN detail with data:', data);
     
     const apiData = {
       grnId: data.grnId,
@@ -339,7 +339,7 @@ export async function createGrnDetail(data: CreateGRNDetailRequest): Promise<GRN
       location: data.location
     };
 
-    console.log('📤 Sending GRN detail data:', apiData);
+    console.log(' Sending GRN detail data:', apiData);
 
     // Use the main /api/grn/details endpoint for individual detail creation
     const response = await fetch(BASE_URL, {
@@ -355,7 +355,7 @@ export async function createGrnDetail(data: CreateGRNDetailRequest): Promise<GRN
     }
     
     const result = await response.json();
-    console.log('✅ Create GRN detail response:', result);
+    console.log(' Create GRN detail response:', result);
     
     if (result.status === 'success' && result.data) {
       return {
@@ -371,7 +371,7 @@ export async function createGrnDetail(data: CreateGRNDetailRequest): Promise<GRN
       throw new Error(result.message || 'Invalid response format');
     }
   } catch (error) {
-    console.error('❌ Error creating GRN detail:', error);
+    console.error(' Error creating GRN detail:', error);
     throw error;
   }
 }
@@ -379,7 +379,7 @@ export async function createGrnDetail(data: CreateGRNDetailRequest): Promise<GRN
 // Create GRN detail for specific GRN - DEPRECATED, use createGrnDetail instead
 export async function createGrnDetailForGrn(grnId: number, data: Omit<CreateGRNDetailRequest, 'grnId'>): Promise<GRNDetail> {
   try {
-    console.log('🔗 Creating GRN detail for GRN:', grnId, 'with data:', data);
+    console.log(' Creating GRN detail for GRN:', grnId, 'with data:', data);
     
     // Convert to full CreateGRNDetailRequest format
     const fullData: CreateGRNDetailRequest = {
@@ -392,7 +392,7 @@ export async function createGrnDetailForGrn(grnId: number, data: Omit<CreateGRND
     
     return await createGrnDetail(fullData);
   } catch (error) {
-    console.error('❌ Error creating GRN detail for GRN:', error);
+    console.error(' Error creating GRN detail for GRN:', error);
     throw error;
   }
 }
@@ -400,7 +400,7 @@ export async function createGrnDetailForGrn(grnId: number, data: Omit<CreateGRND
 // Update GRN detail
 export async function updateGrnDetail(detailId: number, data: UpdateGRNDetailRequest): Promise<GRNDetail> {
   try {
-    console.log('🔗 Updating GRN detail:', detailId, data);
+    console.log(' Updating GRN detail:', detailId, data);
     
     const apiData = {
       ...(data.productId !== undefined && { productId: data.productId }),
@@ -409,7 +409,7 @@ export async function updateGrnDetail(detailId: number, data: UpdateGRNDetailReq
       ...(data.location !== undefined && { location: data.location })
     };
 
-    console.log('📤 Sending update data:', apiData);
+    console.log(' Sending update data:', apiData);
 
     const response = await fetch(`${BASE_URL}/${detailId}`, {
       method: 'PUT',
@@ -420,12 +420,12 @@ export async function updateGrnDetail(detailId: number, data: UpdateGRNDetailReq
     
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('❌ Update error response:', errorData);
+      console.error(' Update error response:', errorData);
       throw new Error(errorData.message || 'Failed to update GRN detail');
     }
     
     const result = await response.json();
-    console.log('✅ Update response:', result);
+    console.log(' Update response:', result);
     
     if (result.status === 'success' && result.data) {
       return {
@@ -441,7 +441,7 @@ export async function updateGrnDetail(detailId: number, data: UpdateGRNDetailReq
       throw new Error(result.message || 'Invalid response format');
     }
   } catch (error) {
-    console.error('❌ Error updating GRN detail:', error);
+    console.error(' Error updating GRN detail:', error);
     throw error;
   }
 }
@@ -458,18 +458,18 @@ export async function deleteGrnDetail(detailId: number): Promise<void> {
     
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('❌ Delete error response:', errorData);
+      console.error(' Delete error response:', errorData);
       throw new Error(errorData.message || 'Failed to delete GRN detail');
     }
     
     const result = await response.json();
-    console.log('✅ Delete response:', result);
+    console.log(' Delete response:', result);
     
     if (result.status !== 'success') {
       throw new Error(result.message || 'Failed to delete GRN detail');
     }
   } catch (error) {
-    console.error('❌ Error deleting GRN detail:', error);
+    console.error(' Error deleting GRN detail:', error);
     throw error;
   }
 }
@@ -477,7 +477,7 @@ export async function deleteGrnDetail(detailId: number): Promise<void> {
 // Batch create GRN details - Create multiple details for a GRN at once
 export async function createMultipleGrnDetails(grnId: number, details: Omit<CreateGRNDetailRequest, 'grnId'>[]): Promise<GRNDetail[]> {
   try {
-    console.log('🔗 Creating multiple GRN details for GRN:', grnId, details);
+    console.log(' Creating multiple GRN details for GRN:', grnId, details);
     
     const createdDetails: GRNDetail[] = [];
     
@@ -495,10 +495,10 @@ export async function createMultipleGrnDetails(grnId: number, details: Omit<Crea
       createdDetails.push(createdDetail);
     }
     
-    console.log('✅ Created multiple GRN details:', createdDetails.length);
+    console.log(' Created multiple GRN details:', createdDetails.length);
     return createdDetails;
   } catch (error) {
-    console.error('❌ Error creating multiple GRN details:', error);
+    console.error(' Error creating multiple GRN details:', error);
     throw error;
   }
 }
@@ -506,7 +506,7 @@ export async function createMultipleGrnDetails(grnId: number, details: Omit<Crea
 // Batch update GRN details for a specific GRN
 export async function updateMultipleGrnDetails(updates: { detailId: number; data: UpdateGRNDetailRequest }[]): Promise<GRNDetail[]> {
   try {
-    console.log('🔗 Updating multiple GRN details:', updates);
+    console.log(' Updating multiple GRN details:', updates);
     
     const updatedDetails: GRNDetail[] = [];
     
@@ -516,10 +516,10 @@ export async function updateMultipleGrnDetails(updates: { detailId: number; data
       updatedDetails.push(updatedDetail);
     }
     
-    console.log('✅ Updated multiple GRN details:', updatedDetails.length);
+    console.log(' Updated multiple GRN details:', updatedDetails.length);
     return updatedDetails;
   } catch (error) {
-    console.error('❌ Error updating multiple GRN details:', error);
+    console.error(' Error updating multiple GRN details:', error);
     throw error;
   }
 }
@@ -527,7 +527,7 @@ export async function updateMultipleGrnDetails(updates: { detailId: number; data
 // Delete all GRN details for a specific GRN
 export async function deleteAllGrnDetailsForGrn(grnId: number): Promise<void> {
   try {
-    console.log('🔗 Deleting all GRN details for GRN:', grnId);
+    console.log(' Deleting all GRN details for GRN:', grnId);
     
     // First fetch all details for this GRN
     const details = await fetchGrnDetailsByGrnId(grnId);
@@ -537,9 +537,9 @@ export async function deleteAllGrnDetailsForGrn(grnId: number): Promise<void> {
       await deleteGrnDetail(detail.grnDetailId);
     }
     
-    console.log('✅ Deleted all GRN details for GRN:', grnId);
+    console.log(' Deleted all GRN details for GRN:', grnId);
   } catch (error) {
-    console.error('❌ Error deleting all GRN details:', error);
+    console.error(' Error deleting all GRN details:', error);
     throw error;
   }
 }

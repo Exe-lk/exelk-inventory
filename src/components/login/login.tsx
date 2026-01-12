@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Eye, EyeOff } from 'lucide-react'
 import { Formik, Form, Field, ErrorMessage, FormikHelpers } from 'formik'
 import * as Yup from 'yup'
 import { loginUser } from '@/lib/auth'
@@ -32,6 +33,7 @@ const LoginSchema = Yup.object().shape({
 export default function Login({ onLogin }: LoginProps) {
   const router = useRouter()
   const [apiError, setApiError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
   const initialValues: LoginFormValues = {
     username: '',
@@ -99,6 +101,98 @@ export default function Login({ onLogin }: LoginProps) {
 
 
 
+  // const handleSubmit = async (
+  //   values: LoginFormValues, 
+  //   { setSubmitting, setStatus }: FormikHelpers<LoginFormValues>
+  // ) => {
+  //   try {
+  //     setStatus(null)
+  //     setApiError('')
+
+  //     console.log('Attempting login for:', values.username)
+      
+  //     const response = await loginUser({
+  //       username: values.username,
+  //       password: values.password
+  //     })
+
+  //     console.log('Login API response:', response)
+
+  //     if (response.success && response.data) {
+  //       // Call onLogin prop if provided
+  //       if (onLogin) {
+  //         onLogin({
+  //           EmployeeID: response.data.userId,
+  //           UserName: response.data.username,
+  //           RoleID: response.data.role === 'superAdmin' ? 1 : 
+  //                   response.data.role === 'admin' ? 2 : 
+  //                   response.data.role === 'stockKeeper' ? 3 : 4
+  //         })
+  //       }
+        
+  //       console.log('Login successful:', response.data)
+        
+  //       // Wait for cookies to be set and verify they're available
+  //       // Use a longer delay and verify cookies are set before redirecting
+  //       let attempts = 0
+  //       const maxAttempts = 10
+        
+  //       const checkCookiesAndRedirect = async () => {
+  //         attempts++
+          
+  //         // Check if cookies are set by making a test request
+  //         try {
+  //           const testResponse = await fetch('/api/auth/me', {
+  //             credentials: 'include',
+  //             method: 'GET'
+  //           })
+            
+  //           if (testResponse.ok) {
+  //             // Cookies are set, safe to redirect
+  //             console.log('Cookies verified, redirecting to /home') // end in here.....
+  //             //window.location.href = '/home'
+  //             router.replace('/home')
+  //             return
+  //           }
+  //         } catch (error) {
+  //           console.log('Cookie check attempt', attempts, 'failed:', error)
+  //         }
+          
+  //         // If cookies not ready and haven't exceeded max attempts, try again
+  //         if (attempts < maxAttempts) {
+  //           setTimeout(checkCookiesAndRedirect, 200) // Check every 200ms
+  //         } else {
+            
+  //           console.log('Max attempts reached, redirecting anyway')
+  //           window.location.href = '/home'
+  //         }
+  //       }
+        
+  //       // Start checking after initial delay
+  //       setTimeout(checkCookiesAndRedirect, 500)
+        
+  //     } else {
+  //       const errorMessage = response?.message || 'Login failed'
+  //       console.error('Login failed:', errorMessage, response)
+  //       setStatus(errorMessage)
+  //       setApiError(errorMessage)
+  //       setSubmitting(false)
+  //     }
+  //   } catch (error: any) {
+  //     console.error('Login error caught:', error)
+  //     const errorMessage = error?.message || error?.toString() || 'Login failed. Please try again.'
+  //     console.error('Error details:', {
+  //       message: errorMessage,
+  //       error: error,
+  //       stack: error?.stack
+  //     })
+  //     setStatus(errorMessage)
+  //     setApiError(errorMessage)
+  //     setSubmitting(false)
+  //   } 
+  // }
+
+
   const handleSubmit = async (
     values: LoginFormValues, 
     { setSubmitting, setStatus }: FormikHelpers<LoginFormValues>
@@ -106,16 +200,16 @@ export default function Login({ onLogin }: LoginProps) {
     try {
       setStatus(null)
       setApiError('')
-
+  
       console.log('Attempting login for:', values.username)
       
       const response = await loginUser({
         username: values.username,
         password: values.password
       })
-
+  
       console.log('Login API response:', response)
-
+  
       if (response.success && response.data) {
         // Call onLogin prop if provided
         if (onLogin) {
@@ -130,45 +224,10 @@ export default function Login({ onLogin }: LoginProps) {
         
         console.log('Login successful:', response.data)
         
-        // Wait for cookies to be set and verify they're available
-        // Use a longer delay and verify cookies are set before redirecting
-        let attempts = 0
-        const maxAttempts = 10
-        
-        const checkCookiesAndRedirect = async () => {
-          attempts++
+        // Remove all the cookie polling logic - just redirect immediately
+        // Supabase cookies are set automatically via SSR
+        router.replace('/home')
           
-          // Check if cookies are set by making a test request
-          try {
-            const testResponse = await fetch('/api/auth/me', {
-              credentials: 'include',
-              method: 'GET'
-            })
-            
-            if (testResponse.ok) {
-              // Cookies are set, safe to redirect
-              console.log('Cookies verified, redirecting to /home') // end in here.....
-              //window.location.href = '/home'
-              router.replace('/home')
-              return
-            }
-          } catch (error) {
-            console.log('Cookie check attempt', attempts, 'failed:', error)
-          }
-          
-          // If cookies not ready and haven't exceeded max attempts, try again
-          if (attempts < maxAttempts) {
-            setTimeout(checkCookiesAndRedirect, 200) // Check every 200ms
-          } else {
-            
-            console.log('Max attempts reached, redirecting anyway')
-            window.location.href = '/home'
-          }
-        }
-        
-        // Start checking after initial delay
-        setTimeout(checkCookiesAndRedirect, 500)
-        
       } else {
         const errorMessage = response?.message || 'Login failed'
         console.error('Login failed:', errorMessage, response)
@@ -192,6 +251,10 @@ export default function Login({ onLogin }: LoginProps) {
 
 
 
+  
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword)
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F6F9FF' }}>
@@ -227,15 +290,13 @@ export default function Login({ onLogin }: LoginProps) {
                   name="username"
                   type="text"
                   placeholder="username"
-                  className={`w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm ${
+                  className={`w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base text-gray-900 ${
                     errors.username && touched.username 
                       ? 'border-red-300 focus:ring-red-500' 
                       : 'border-gray-300'
                   }`}
                   style={{
                     backgroundColor: 'white',
-                    WebkitBoxShadow: '0 0 0 1000px white inset',
-                    WebkitTextFillColor: 'inherit'
                   }}
                   disabled={isSubmitting}
                 />
@@ -251,18 +312,36 @@ export default function Login({ onLogin }: LoginProps) {
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                   Password
                 </label>
-                <Field
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="password"
-                  className={`w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm ${
-                    errors.password && touched.password 
-                      ? 'border-red-300 focus:ring-red-500' 
-                      : 'border-gray-300'
-                  }`}
-                  disabled={isSubmitting}
-                />
+                <div className="relative">
+                  <Field
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="password"
+                    className={`w-full px-4 py-3 pr-12 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base text-gray-900 ${
+                      errors.password && touched.password 
+                        ? 'border-red-300 focus:ring-red-500' 
+                        : 'border-gray-300'
+                    }`}
+                    style={{
+                      backgroundColor: 'white',
+                    }}
+                    disabled={isSubmitting}
+                  />
+                  <button
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none transition-colors duration-200"
+                    disabled={isSubmitting}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
                 <ErrorMessage 
                   name="password" 
                   component="div" 

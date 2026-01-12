@@ -16,7 +16,9 @@ import {
   updateProduct, 
   deleteProduct, 
   createCompleteProduct, 
-  CreateCompleteProductRequest
+  CreateCompleteProductRequest,
+  clearProductCache,
+  clearDropdownCache
 } from '@/lib/services/productService';
 import { fetchBrands } from '@/lib/services/brandService';
 import { fetchCategories } from '@/lib/services/categoryService';
@@ -30,6 +32,7 @@ import { Supplier } from '@/types/supplier';
 import { Pencil, Eye, Trash2 } from 'lucide-react';
 import { Upload, Download } from 'lucide-react';
 import { importProductFromCSV, exportProductToCSV } from '@/lib/services/productService';
+import Tooltip from '@/components/Common/Tooltip';
 
 
 const ProductPage: React.FC = () => {
@@ -138,6 +141,41 @@ const ProductPage: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
+
+
+        try {
+          const defaultParams = {};
+          const cacheKey = `products_cache_${JSON.stringify(defaultParams)}`;
+          const cachedProducts = sessionStorage.getItem(cacheKey);
+          const cachedBrands = sessionStorage.getItem('brands_cache');
+          const cachedCategories = sessionStorage.getItem('categories_cache');
+          const cachedModels = sessionStorage.getItem('models_cache');
+          const cachedSuppliers = sessionStorage.getItem('suppliers_cache');
+          
+          // Show cached data immediately if available
+          if (cachedProducts) {
+            const { data, timestamp } = JSON.parse(cachedProducts);
+            if (data) setProducts(data);
+          }
+          if (cachedBrands) {
+            const { data, timestamp } = JSON.parse(cachedBrands);
+            if (data) setBrands(data);
+          }
+          if (cachedCategories) {
+            const { data, timestamp } = JSON.parse(cachedCategories);
+            if (data) setCategories(data);
+          }
+          if (cachedModels) {
+            const { data, timestamp } = JSON.parse(cachedModels);
+            if (data) setModels(data);
+          }
+          if (cachedSuppliers) {
+            const { data, timestamp } = JSON.parse(cachedSuppliers);
+            if (data) setSuppliers(data);
+          }
+        } catch (cacheError) {
+          console.warn('Cache read error:', cacheError);
+        }
         
         // Load all required data in parallel
         const [productsData, brandsData, categoriesData, modelsData, suppliersData] = await Promise.all([
@@ -221,12 +259,17 @@ const ProductPage: React.FC = () => {
   // Handle the actual deletion after confirmation
   const handleConfirmDelete = async () => {
     if (!productToDelete) return;
-
+  
     try {
       setIsDeleting(productToDelete.productId);
       await deleteProduct(productToDelete.productId);
       
-      setProducts(prev => prev.filter(product => product.productId !== productToDelete.productId));
+      // Clear product cache after deletion
+      const { clearProductCache } = await import('@/lib/services/productService');
+      clearProductCache();
+      
+      // Refresh data
+      await refreshData();
       
       setIsDeleteModalOpen(false);
       setProductToDelete(null);
@@ -312,10 +355,11 @@ const ProductPage: React.FC = () => {
       
       const result = await createCompleteProduct(completeProductData);
       
-      // Add the created product to the local state
-      if (result?.product) {
-        setProducts(prev => [...prev, result.product]);
-      }
+      const { clearProductCache } = await import('@/lib/services/productService');
+      clearProductCache();
+    
+      // Refresh data
+      await refreshData();
       
       setIsCreateFormOpen(false);
       alert(`Complete product created successfully! 
@@ -354,9 +398,12 @@ const ProductPage: React.FC = () => {
       };
       
       const updatedProduct = await updateProduct(selectedProduct.productId, updateData);
-      setProducts(prev => prev.map(product => 
-        product.productId === selectedProduct.productId ? updatedProduct : product
-      ));
+      // Clear product cache after update
+      const { clearProductCache } = await import('@/lib/services/productService');
+      clearProductCache();
+      
+      // Refresh data
+      await refreshData();
       
       setIsUpdateFormOpen(false);
       setSelectedProduct(null);
@@ -988,8 +1035,12 @@ const ProductPage: React.FC = () => {
   const refreshData = async () => {
     try {
       setLoading(true);
+
+      const { clearProductCache } = await import('@/lib/services/productService');
+      clearProductCache();
+    
       const [productsData, brandsData, categoriesData, modelsData, suppliersData] = await Promise.all([
-        fetchProducts(),
+        fetchProducts({ page: 1, limit: 50 }),
         fetchBrands(),
         fetchCategories(),
         fetchModels(),
@@ -1108,20 +1159,26 @@ const ProductPage: React.FC = () => {
                   </p>
                 </div>
                 <div className="flex items-center space-x-4">
+                <Tooltip content="Import product data from CSV file" position="bottom">
                   <button
                     onClick={handleImportClick}
+                     title="Import stock data from CSV file"
                     className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                   >
                     <Upload size={20} className="mr-2" />
-                    Import
+                    
                   </button>
+                </Tooltip>
+                <Tooltip content="Export product data to CSV file" position="bottom">
                   <button
                     onClick={handleExportClick}
+                    title="Export stock data to CSV file"
                     className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                   >
                     <Download size={20} className="mr-2" />
-                    Export
+                   
                   </button>
+                </Tooltip>
                   <button
                     onClick={handleViewProductVersions}
                     className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"

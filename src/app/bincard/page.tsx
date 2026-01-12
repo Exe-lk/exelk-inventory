@@ -1,5 +1,3 @@
-
-
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -13,120 +11,15 @@ import DeleteConfirmation from '@/components/form-popup/delete';
 import { Employee, isStockKeeper } from '@/types/user';
 import { BinCardWithDetails, BinCardQueryParams, CreateBinCardRequest, BinCardFilters } from '@/types/bincard';
 import { getCurrentUser, logoutUser } from '@/lib/auth';
-import { Pencil, Eye, Trash2 ,Download} from 'lucide-react';
-import { exportBinCardsToCSV } from '@/lib/services/bincardService';
-
-// Service functions for bincard
-const fetchBinCards = async (params: BinCardQueryParams = {}) => {
-  try {
-    console.log(' Fetching bin cards with params:', params);
-    
-    const queryParams = new URLSearchParams();
-    
-    if (params.page) queryParams.set('page', params.page.toString());
-    if (params.limit) queryParams.set('limit', params.limit.toString());
-    if (params.sortBy) queryParams.set('sortBy', params.sortBy);
-    if (params.sortOrder) queryParams.set('sortOrder', params.sortOrder);
-    if (params.search) queryParams.set('search', params.search);
-    if (params.variationId) queryParams.set('variationId', params.variationId.toString());
-    if (params.transactionType) queryParams.set('transactionType', params.transactionType);
-    if (params.stockKeeperId) queryParams.set('stockKeeperId', params.stockKeeperId.toString());
-
-    const url = queryParams.toString() ? `/api/bincard?${queryParams}` : '/api/bincard';
-    console.log(' Request URL:', url);
-    
-    const response = await fetch(url, {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error(' Fetch bin cards error response:', errorData);
-      throw new Error(errorData.message || 'Failed to fetch bin cards');
-    }
-    
-    const result = await response.json();
-    console.log(' Bin Cards API Response:', result);
-    
-    if (result.status === 'success' && result.data) {
-      return result.data;
-    } else {
-      throw new Error(result.message || 'Invalid response format');
-    }
-  } catch (error) {
-    console.error(' Error fetching bin cards:', error);
-    throw error;
-  }
-};
-
-const fetchBinCardById = async (binCardId: number) => {
-  try {
-    console.log(' Fetching bin card details for ID:', binCardId);
-    
-    const response = await fetch(`/api/bincard/bincardId?id=${binCardId}`, {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error(' Fetch bin card by ID error response:', errorData);
-      throw new Error(errorData.message || 'Failed to fetch bin card details');
-    }
-    
-    const result = await response.json();
-    console.log(' Bin Card Details API Response:', result);
-    
-    if (result.status === 'success' && result.data) {
-      return result.data;
-    } else {
-      throw new Error(result.message || 'Invalid response format');
-    }
-  } catch (error) {
-    console.error(' Error fetching bin card by ID:', error);
-    throw error;
-  }
-};
-
-const createBinCard = async (data: CreateBinCardRequest) => {
-  try {
-    console.log(' Creating bin card with data:', data);
-    
-    const response = await fetch('/api/bincard', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json'
-      },
-      credentials: 'include',
-      body: JSON.stringify(data),
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error(' Create bin card error response:', errorData);
-      throw new Error(errorData.message || 'Failed to create bin card');
-    }
-    
-    const result = await response.json();
-    console.log(' Create bin card response:', result);
-    
-    if (result.status === 'success' && result.data) {
-      return result.data;
-    } else {
-      throw new Error(result.message || 'Invalid response format');
-    }
-  } catch (error) {
-    console.error(' Error creating bin card:', error);
-    throw error;
-  }
-};
+import { Pencil, Eye, Trash2, Download } from 'lucide-react';
+import { 
+  fetchBinCards, 
+  fetchBinCardById, 
+  createBinCard,
+  clearBinCardCache,
+  exportBinCardsToCSV 
+} from '@/lib/services/bincardService';
+import Tooltip from '@/components/Common/Tooltip';
 
 const BinCardPage: React.FC = () => {
   const router = useRouter();
@@ -155,7 +48,6 @@ const BinCardPage: React.FC = () => {
     stockKeeperId: null
   });
   const [searchTerm, setSearchTerm] = useState('');
-  //const [sortBy, setSortBy] = useState<string>('transactionDate');
   const [sortBy, setSortBy] = useState<'bincardId' | 'variationId' | 'transactionDate' | 'transactionType' | 'referenceId' | 'quantityIn' | 'quantityOut' | 'balance' | 'employeeId'>('transactionDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
@@ -168,7 +60,7 @@ const BinCardPage: React.FC = () => {
   const [isFilterFormOpen, setIsFilterFormOpen] = useState(false);
   const [tempFilters, setTempFilters] = useState(filters);
 
-  // **NEW: View Bin Card Details states**
+  // View Bin Card Details states
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [viewBinCardDetails, setViewBinCardDetails] = useState<any>(null);
   const [viewingBinCard, setViewingBinCard] = useState<BinCardWithDetails | null>(null);
@@ -213,7 +105,7 @@ const BinCardPage: React.FC = () => {
     checkAuth();
   }, [router]);
 
-  // Fetch bin card data
+  // Fetch bin card data with caching
   useEffect(() => {
     if (!isLoggedIn) return;
 
@@ -221,6 +113,32 @@ const BinCardPage: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
+        
+        // Try to load cached data first for instant display
+        try {
+          const defaultParams: BinCardQueryParams = {
+            page: currentPage,
+            limit: 10,
+            sortBy,
+            sortOrder,
+            search: searchTerm || undefined,
+            variationId: filters.variationId || undefined,
+            transactionType: filters.transactionType as 'GRN' | 'GIN' || undefined,
+            stockKeeperId: filters.stockKeeperId || undefined
+          };
+          const cacheKey = `bincards_cache_${JSON.stringify(defaultParams)}`;
+          const cached = sessionStorage.getItem(cacheKey);
+          if (cached) {
+            const { data, timestamp } = JSON.parse(cached);
+            if (data) {
+              setBinCards(data.items);
+              setTotalPages(data.pagination.totalPages);
+              setTotalItems(data.pagination.totalItems);
+            }
+          }
+        } catch (cacheError) {
+          console.warn('Cache read error:', cacheError);
+        }
         
         const params: BinCardQueryParams = {
           page: currentPage,
@@ -252,21 +170,21 @@ const BinCardPage: React.FC = () => {
     loadData();
   }, [isLoggedIn, currentPage, sortBy, sortOrder, searchTerm, filters]);
 
-  // **NEW: Handle View Bin Card Details**
+  // Handle View Bin Card Details
   const handleViewBinCardDetails = async (binCard: BinCardWithDetails) => {
     try {
-      console.log(' Viewing bin card details for:', binCard);
+      console.log('Viewing bin card details for:', binCard);
       setViewingBinCard(binCard);
       setIsLoadingDetails(true);
       setIsViewModalOpen(true);
       
-      // Fetch complete bin card details
+      // Fetch complete bin card details (will use cache if available)
       const details = await fetchBinCardById(binCard.binCardId);
-      console.log(' Fetched bin card details:', details);
+      console.log('Fetched bin card details:', details);
       setViewBinCardDetails(details);
       
     } catch (error) {
-      console.error(' Error fetching bin card details:', error);
+      console.error('Error fetching bin card details:', error);
       alert('Failed to load bin card details. Please try again.');
       setIsViewModalOpen(false);
     } finally {
@@ -274,7 +192,7 @@ const BinCardPage: React.FC = () => {
     }
   };
 
-  // **NEW: Handle close view modal**
+  // Handle close view modal
   const handleCloseViewModal = () => {
     setIsViewModalOpen(false);
     setViewingBinCard(null);
@@ -344,21 +262,21 @@ const BinCardPage: React.FC = () => {
   };
 
   // Export handlers
-const handleExportClick = () => {
-  setIsExportFormOpen(true);
-  setExportOptions({
-    exportAll: true,
-    includeHeaders: true,
-    dateRange: null
-  });
-};
+  const handleExportClick = () => {
+    setIsExportFormOpen(true);
+    setExportOptions({
+      exportAll: true,
+      includeHeaders: true,
+      dateRange: null
+    });
+  };
 
-const handleCloseExportForm = () => {
-  if (isExporting) return;
-  setIsExportFormOpen(false);
-};
+  const handleCloseExportForm = () => {
+    if (isExporting) return;
+    setIsExportFormOpen(false);
+  };
 
-const handleExportSubmit = async () => {
+  const handleExportSubmit = async () => {
     try {
       setIsExporting(true);
 
@@ -408,13 +326,13 @@ const handleExportSubmit = async () => {
       // Export to CSV
       await exportBinCardsToCSV(binCardsToExport, filename);
 
-      alert(` Successfully exported ${binCardsToExport.length} bin card records!`);
+      alert(`Successfully exported ${binCardsToExport.length} bin card records!`);
       
       setTimeout(() => {
         handleCloseExportForm();
       }, 1000);
     } catch (error) {
-      console.error(' Export error:', error);
+      console.error('Export error:', error);
       alert(`Failed to export bin cards: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsExporting(false);
@@ -427,7 +345,7 @@ const handleExportSubmit = async () => {
     setCurrentPage(1);
   };
 
-  // Handle create bin card form submission
+  // Handle create bin card form submission with cache invalidation
   const handleCreateBinCard = async (formData: Record<string, any>) => {
     try {
       setIsSubmitting(true);
@@ -447,6 +365,9 @@ const handleExportSubmit = async () => {
       };
       
       await createBinCard(binCardData);
+      
+      // Clear cache before refreshing to ensure fresh data
+      clearBinCardCache();
       
       // Refresh data
       await refreshData();
@@ -617,9 +538,6 @@ const handleExportSubmit = async () => {
       render: (value: number, row: BinCardWithDetails) => (
         <div className="text-sm">
           <div className="font-medium text-gray-900">{value}</div>
-          {/* {row.variationName && (
-            <div className="text-gray-500">{row.variationName}</div>
-          )} */}
         </div>
       )
     },
@@ -633,12 +551,6 @@ const handleExportSubmit = async () => {
           <div className="font-medium text-gray-900">
             {value || 'N/A'}
           </div>
-          {/* {row.productSku && (
-            <div className="text-gray-500">SKU: {row.productSku}</div>
-          )}
-          {row.brandName && (
-            <div className="text-gray-500">{row.brandName}</div>
-          )} */}
         </div>
       )
     },
@@ -674,7 +586,7 @@ const handleExportSubmit = async () => {
     },
     {
       key: 'referenceId',
-      label: 'GRN/GIN Ref ID', //previously Reference ID
+      label: 'GRN/GIN Ref ID',
       sortable: true,
       filterable: true,
       render: (value: number | null) => (
@@ -696,17 +608,6 @@ const handleExportSubmit = async () => {
         </div>
       )
     }
-    // {
-    //   key: 'remarks',
-    //   label: 'Remarks',
-    //   sortable: false,
-    //   render: (value: string | null) => (
-    //     <span className="text-gray-600 text-sm">
-    //       {/* {value ? (value.length > 30 ? `${value.substring(0, 30)}...` : value) : 'N/A'} */}
-          
-    //     </span>
-    //   )
-    // }
   ];
 
   // Define action buttons - Updated to include View Details
@@ -717,51 +618,23 @@ const handleExportSubmit = async () => {
     
     return [
       {
-        label:(
-        <span className="flex items-center gap-2">
-          <Eye size={16} />
-          
-        </span>
-      ),
+        label: (
+          <span className="flex items-center gap-2">
+            <Eye size={16} />
+          </span>
+        ),
         onClick: (binCard: BinCardWithDetails) => {
           handleViewBinCardDetails(binCard);
         },
         variant: 'secondary'
-      },
-      // {
-      //   label: 'Quick View',
-      //   onClick: (binCard: BinCardWithDetails) => {
-      //     // Show detailed view
-      //     const details = `
-      //       Bin Card Details:
-
-      //       Transaction Date: ${binCard.transactionDate}
-      //       Transaction Type: ${formatTransactionType(binCard.transactionType)}
-      //       Variation ID: ${binCard.variationId}
-      //       Product: ${binCard.productName || 'N/A'}
-      //       SKU: ${binCard.productSku || 'N/A'}
-      //       Brand: ${binCard.brandName || 'N/A'}
-
-      //       Quantity In: ${binCard.quantityIn || 0}
-      //       Quantity Out: ${binCard.quantityOut || 0}
-      //       Balance: ${binCard.balance}
-      //       Reference ID: ${binCard.referenceId || 'N/A'}
-
-      //       Stock Keeper: ${binCard.stockKeeperName || 'Unknown'}
-      //       Remarks: ${binCard.remarks || 'N/A'}
-      //                 `;
-      //     alert(details);
-      //   },
-      //   variant: 'primary'
-      // }
+      }
     ];
   };
 
   const actions = getActions();
 
-
   // Export Form Component
-const ExportForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+  const ExportForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     return (
       <div className="bg-white p-8 max-w-4xl mx-auto">
         <div className="text-center mb-8">
@@ -914,10 +787,14 @@ const ExportForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     setIsCreateFormOpen(false);
   };
 
-  // Refresh data
+  // Refresh data with cache clearing
   const refreshData = async () => {
     try {
       setLoading(true);
+      
+      // Clear cache to force fresh fetch
+      clearBinCardCache();
+      
       const params: BinCardQueryParams = {
         page: currentPage,
         limit: 10,
@@ -1043,28 +920,31 @@ const ExportForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                   </p>
                 </div>
                 <div className="flex items-center space-x-4">
-                  <button
-                    onClick={handleExportClick}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  >
-                    <Download size={20} className="mr-2" />
-                    Export
-                  </button>
-                  <button
-                    onClick={refreshData}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Refresh
-                  </button>
+                  <div className="flex items-center space-x-4">
+                    <Tooltip content="Export Bin Card data to CSV file" position="bottom">
+                      <button
+                        onClick={handleExportClick}
+                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                      >
+                        <Download size={20} className="mr-2" />
+                      </button>
+                    </Tooltip>
+                    <Tooltip content="Refresh data" position="bottom">
+                      <button
+                        onClick={refreshData}
+                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                      >
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                      </button>
+                    </Tooltip>
+                  </div>
                 </div>
               </div>
 
               {/* Summary Info */}
               <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
-                
                 <div className="bg-white p-4 rounded-lg border border-gray-200">
                   <div className="text-2xl font-bold text-green-600">{binCards.filter(bc => bc.transactionType === 'GRN').length}</div>
                   <div className="text-sm text-gray-600">GRN Transactions</div>
@@ -1073,7 +953,6 @@ const ExportForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                   <div className="text-2xl font-bold text-orange-600">{binCards.filter(bc => bc.transactionType === 'GIN').length}</div>
                   <div className="text-sm text-gray-600">GIN Transactions</div>
                 </div>
-               
               </div>
 
               {/* Active Filters Display */}
@@ -1128,7 +1007,6 @@ const ExportForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 emptyMessage="No bin card records found. Create your first bin card entry to get started."
                 onCreateClick={isStockKeeper(currentUser?.RoleID || 0) ? handleCreateClick : undefined}
                 createButtonLabel="Create Bin Card Entry"
-                //onSearch={handleSearch}
                 className="border border-gray-200"
               />
             </div>
@@ -1214,7 +1092,7 @@ const ExportForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         </main>
       </div>
 
-      {/* **NEW: View Bin Card Details Modal** */}
+      {/* View Bin Card Details Modal */}
       {isViewModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={handleCloseViewModal}></div>
@@ -1318,7 +1196,6 @@ const ExportForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                         </div>
                       </div>
 
-
                       {/* Product Information */}
                       {viewBinCardDetails.product && (
                         <div className="bg-blue-50 rounded-lg p-6">
@@ -1402,8 +1279,6 @@ const ExportForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                           )}
                         </div>
                       )}
-
-                      
 
                       {/* Version Information */}
                       {viewBinCardDetails.version && (
@@ -1506,8 +1381,6 @@ const ExportForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                           </div>
                         </div>
                       )}
-
-                      
                     </div>
                   )}
                 </div>
@@ -1526,7 +1399,6 @@ const ExportForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           </div>
         </div>
       )}
-
 
       {/* Export Form Popup */}
       {isExportFormOpen && (
@@ -1589,13 +1461,8 @@ const ExportForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           </div>
         </div>
       )}
-
-      {/* Filter Modal */}
-
-          
     </div>
   );
 };
 
 export default BinCardPage;
-      

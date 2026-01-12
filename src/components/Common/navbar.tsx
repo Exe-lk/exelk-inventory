@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
-import { Moon, Sun, User, Menu, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Moon, Sun, User, Menu, X, ChevronDown } from 'lucide-react';
 import { Employee } from '@/types/user';
 
 interface NavbarProps {
@@ -13,6 +13,8 @@ interface NavbarProps {
 const Navbar: React.FC<NavbarProps> = ({ className, onMenuClick, currentUser }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
 
   // Check for saved theme preference or default to light mode
   useEffect(() => {
@@ -22,6 +24,26 @@ const Navbar: React.FC<NavbarProps> = ({ className, onMenuClick, currentUser }) 
       document.documentElement.classList.add('dark');
     }
   }, []);
+
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsProfileDropdownOpen(false);
+      }
+    };
+
+    if (isProfileDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isProfileDropdownOpen]);
 
   // Helper function to get role name from RoleID
   const getRoleName = (roleID: number): string => {
@@ -54,6 +76,11 @@ const Navbar: React.FC<NavbarProps> = ({ className, onMenuClick, currentUser }) 
   // Toggle mobile menu
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  // Toggle profile dropdown
+  const toggleProfileDropdown = () => {
+    setIsProfileDropdownOpen(!isProfileDropdownOpen);
   };
 
   return (
@@ -97,24 +124,82 @@ const Navbar: React.FC<NavbarProps> = ({ className, onMenuClick, currentUser }) 
               )}
             </button>
 
-            {/* User Profile */}
-            <div className="flex items-center space-x-3">
-              {/* User Info - Hidden on small screens */}
-              {currentUser && (
-                <div className="hidden sm:block text-right">
-                  <p className="text-sm font-medium text-gray-900">
-                    {currentUser.UserName || 'User'}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {currentUser.RoleID ? getRoleName(currentUser.RoleID) : 'No Role'}
-                  </p>
+            {/* User Profile with Dropdown */}
+            <div className="relative" ref={profileDropdownRef}>
+              <button
+                onClick={toggleProfileDropdown}
+                className="flex items-center space-x-3 p-1 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
+              >
+                {/* User Info - Hidden on small screens */}
+                {currentUser && (
+                  <div className="hidden sm:block text-right">
+                    <p className="text-sm font-medium text-gray-900">
+                      {currentUser.UserName || 'User'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {currentUser.RoleID ? getRoleName(currentUser.RoleID) : 'No Role'}
+                    </p>
+                  </div>
+                )}
+
+                {/* User Avatar */}
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-medium">
+                    {currentUser?.UserName ? currentUser.UserName[0].toUpperCase() : <User className="h-4 w-4" />}
+                  </div>
+                  <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${isProfileDropdownOpen ? 'transform rotate-180' : ''}`} />
+                </div>
+              </button>
+
+              {/* Profile Dropdown */}
+              {isProfileDropdownOpen && currentUser && (
+                <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 py-4 z-50">
+                  {/* Profile Header */}
+                  <div className="px-4 pb-4 border-b border-gray-200">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-600 text-white text-lg font-medium">
+                        {currentUser.UserName ? currentUser.UserName[0].toUpperCase() : <User className="h-6 w-6" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">
+                          {currentUser.UserName || 'User'}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {currentUser.Email || 'No email'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Profile Details */}
+                  <div className="px-4 pt-4 space-y-3">
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                        Role
+                      </p>
+                      <p className="text-sm text-gray-900">
+                        {currentUser.RoleID ? getRoleName(currentUser.RoleID) : 'No Role'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                        Email
+                      </p>
+                      <p className="text-sm text-gray-900 truncate">
+                        {currentUser.Email || 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                        Employee ID
+                      </p>
+                      <p className="text-sm text-gray-900">
+                        {String(currentUser.EmployeeID || 0).padStart(3, '0')}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
-
-              {/* User Avatar */}
-              <button className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
-                {currentUser?.UserName ? currentUser.UserName[0].toUpperCase() : <User className="h-4 w-4" />}
-              </button>
             </div>
           </div>
         </div>
@@ -126,15 +211,33 @@ const Navbar: React.FC<NavbarProps> = ({ className, onMenuClick, currentUser }) 
           <div className="px-4 py-3 space-y-3">
             {currentUser && (
               <div className="border-b border-gray-200 pb-3">
-                <p className="text-base font-medium text-gray-900">
-                  {currentUser.UserName || 'User'}
-                </p>
-                <p className="text-sm text-gray-500">
-                  {currentUser.RoleID ? getRoleName(currentUser.RoleID) : 'No Role'}
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  {currentUser.Email || 'No email'}
-                </p>
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white text-sm font-medium">
+                    {currentUser.UserName ? currentUser.UserName[0].toUpperCase() : <User className="h-5 w-5" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-base font-medium text-gray-900 truncate">
+                      {currentUser.UserName || 'User'}
+                    </p>
+                    <p className="text-sm text-gray-500 truncate">
+                      {currentUser.RoleID ? getRoleName(currentUser.RoleID) : 'No Role'}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-2 pl-13">
+                  <div>
+                    <p className="text-xs font-medium text-gray-500">Email</p>
+                    <p className="text-sm text-gray-900 truncate">
+                      {currentUser.Email || 'No email'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500">Employee ID</p>
+                    <p className="text-sm text-gray-900">
+                      {String(currentUser.EmployeeID || 0).padStart(3, '0')}
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
             

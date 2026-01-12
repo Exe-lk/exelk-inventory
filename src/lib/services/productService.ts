@@ -113,7 +113,242 @@ export interface CompleteProductResponse {
 }
 
 // Fetch brands - matching model page pattern
+// export async function fetchBrands(): Promise<Brand[]> {
+//   try {
+//     const response = await fetch('/api/brand', {
+//       method: 'GET',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       },
+//       credentials: 'include',
+//     });
+
+//     if (!response.ok) {
+//       const errorText = await response.text();
+//       console.error('Fetch brands error response:', errorText);
+      
+//       try {
+//         const errorData = JSON.parse(errorText);
+//         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+//       } catch {
+//         throw new Error(`HTTP error! status: ${response.status}`);
+//       }
+//     }
+
+//     const data = await response.json();
+    
+//     // Handle different response formats
+//     if (data.status === 'success' && data.data) {
+//       return data.data.items || data.data || [];
+//     } else {
+//       return data.items || data || [];
+//     }
+//   } catch (error) {
+//     console.error('Error fetching brands:', error);
+//     throw error instanceof Error ? error : new Error('An unexpected error occurred while fetching brands');
+//   }
+// }
+
+// // Fetch categories - matching model page pattern
+// export async function fetchCategories(): Promise<Category[]> {
+//   try {
+//     const response = await fetch('/api/category', {
+//       method: 'GET',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       },
+//       credentials: 'include',
+//     });
+
+//     if (!response.ok) {
+//       const errorText = await response.text();
+//       console.error('Fetch categories error response:', errorText);
+      
+//       try {
+//         const errorData = JSON.parse(errorText);
+//         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+//       } catch {
+//         throw new Error(`HTTP error! status: ${response.status}`);
+//       }
+//     }
+
+//     const data = await response.json();
+    
+//     // Handle different response formats
+//     if (data.status === 'success' && data.data) {
+//       return data.data.items || data.data || [];
+//     } else {
+//       return data.items || data || [];
+//     }
+//   } catch (error) {
+//     console.error('Error fetching categories:', error);
+//     throw error instanceof Error ? error : new Error('An unexpected error occurred while fetching categories');
+//   }
+// }
+
+// // Fetch models - matching model page pattern
+// export async function fetchModels(): Promise<Model[]> {
+//   try {
+//     const response = await fetch('/api/model', {
+//       method: 'GET',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       },
+//       credentials: 'include',
+//     });
+
+//     if (!response.ok) {
+//       const errorText = await response.text();
+//       console.error('Fetch models error response:', errorText);
+      
+//       try {
+//         const errorData = JSON.parse(errorText);
+//         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+//       } catch {
+//         throw new Error(`HTTP error! status: ${response.status}`);
+//       }
+//     }
+
+//     const data = await response.json();
+    
+//     // Handle different response formats
+//     if (data.status === 'success' && data.data) {
+//       return data.data.items || data.data || [];
+//     } else {
+//       return data.items || data || [];
+//     }
+//   } catch (error) {
+//     console.error('Error fetching models:', error);
+//     throw error instanceof Error ? error : new Error('An unexpected error occurred while fetching models');
+//   }
+// }
+
+// // Fetch suppliers - matching model page pattern
+// export async function fetchSuppliers(): Promise<Supplier[]> {
+//   try {
+//     const response = await fetch('/api/supplier', {
+//       method: 'GET',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       },
+//       credentials: 'include',
+//     });
+
+//     if (!response.ok) {
+//       const errorText = await response.text();
+//       console.error('Fetch suppliers error response:', errorText);
+      
+//       try {
+//         const errorData = JSON.parse(errorText);
+//         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+//       } catch {
+//         throw new Error(`HTTP error! status: ${response.status}`);
+//       }
+//     }
+
+//     const data = await response.json();
+    
+//     // Handle different response formats
+//     if (data.status === 'success' && data.data) {
+//       return data.data.items || data.data || [];
+//     } else {
+//       return data.items || data || [];
+//     }
+//   } catch (error) {
+//     console.error('Error fetching suppliers:', error);
+//     throw error instanceof Error ? error : new Error('An unexpected error occurred while fetching suppliers');
+//   }
+// }
+
+// // Fetch all products with pagination and filters
+// export async function fetchProducts(params?: {
+//   page?: number;
+//   limit?: number;
+//   sortBy?: string;
+//   sortOrder?: 'asc' | 'desc';
+//   search?: string;
+//   categoryId?: number;
+//   brandId?: number;
+//   modelId?: number;
+//   supplierId?: number;
+//   isActive?: boolean;
+// }): Promise<Product[]> {
+//   try {
+//     const searchParams = new URLSearchParams();
+    
+//     if (params?.page) searchParams.append('page', params.page.toString());
+//     if (params?.limit) searchParams.append('limit', params.limit.toString());
+//     if (params?.sortBy) searchParams.append('sortBy', params.sortBy);
+//     if (params?.sortOrder) searchParams.append('sortOrder', params.sortOrder);
+//     if (params?.search) searchParams.append('search', params.search);
+//     if (params?.categoryId) searchParams.append('categoryId', params.categoryId.toString());
+//     if (params?.brandId) searchParams.append('brandId', params.brandId.toString());
+//     if (params?.modelId) searchParams.append('modelId', params.modelId.toString());
+//     if (params?.supplierId) searchParams.append('supplierId', params.supplierId.toString());
+//     if (params?.isActive !== undefined) searchParams.append('isActive', params.isActive.toString());
+
+//     const url = `${API_BASE_URL}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+    
+//     const response = await fetch(url, {
+//       method: 'GET',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       },
+//       credentials: 'include',
+//     });
+
+//     if (!response.ok) {
+//       const errorText = await response.text();
+//       console.error('Fetch products error response:', errorText);
+      
+//       try {
+//         const errorData = JSON.parse(errorText);
+//         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+//       } catch {
+//         throw new Error(`HTTP error! status: ${response.status}`);
+//       }
+//     }
+
+//     const data: ProductResponse = await response.json();
+    
+//     if (data.status === 'success' && data.data) {
+//       return data.data.items;
+//     } else {
+//       throw new Error(data.message || 'Failed to fetch products');
+//     }
+//   } catch (error) {
+//     console.error('Error fetching products:', error);
+//     throw error instanceof Error ? error : new Error('An unexpected error occurred while fetching products');
+//   }
+// }
+
+
+// Add cache duration constant at the top (after imports, around line 8)
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes for dropdown data
+const PRODUCTS_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes for products list
+
+// ... existing code ...
+
+// Update fetchBrands function (around line 116)
 export async function fetchBrands(): Promise<Brand[]> {
+  const cacheKey = 'brands_cache';
+  
+  // Check for cached data
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < CACHE_DURATION) {
+        console.log(' Using cached brands data');
+        return data;
+      } else {
+        sessionStorage.removeItem(cacheKey);
+      }
+    }
+  } catch (error) {
+    console.warn(' Failed to read brands cache:', error);
+  }
+  
   try {
     const response = await fetch('/api/brand', {
       method: 'GET',
@@ -127,6 +362,18 @@ export async function fetchBrands(): Promise<Brand[]> {
       const errorText = await response.text();
       console.error('Fetch brands error response:', errorText);
       
+      // Try stale cache on error
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          const { data } = JSON.parse(cached);
+          console.log(' Using stale cache due to fetch error');
+          return data;
+        }
+      } catch (fallbackError) {
+        // Ignore
+      }
+      
       try {
         const errorData = JSON.parse(errorText);
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
@@ -137,20 +384,63 @@ export async function fetchBrands(): Promise<Brand[]> {
 
     const data = await response.json();
     
-    // Handle different response formats
+    let brands: Brand[] = [];
     if (data.status === 'success' && data.data) {
-      return data.data.items || data.data || [];
+      brands = data.data.items || data.data || [];
     } else {
-      return data.items || data || [];
+      brands = data.items || data || [];
     }
+    
+    // Cache the successful response
+    try {
+      sessionStorage.setItem(cacheKey, JSON.stringify({
+        data: brands,
+        timestamp: Date.now()
+      }));
+      console.log(' Brands data cached successfully');
+    } catch (cacheError) {
+      console.warn(' Failed to cache brands data:', cacheError);
+    }
+    
+    return brands;
   } catch (error) {
     console.error('Error fetching brands:', error);
+    
+    // Try stale cache on error
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const { data } = JSON.parse(cached);
+        console.log(' Using stale cache due to fetch error');
+        return data;
+      }
+    } catch (fallbackError) {
+      // Ignore
+    }
+    
     throw error instanceof Error ? error : new Error('An unexpected error occurred while fetching brands');
   }
 }
 
-// Fetch categories - matching model page pattern
+// Update fetchCategories function (around line 153) - Same pattern
 export async function fetchCategories(): Promise<Category[]> {
+  const cacheKey = 'categories_cache';
+  
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < CACHE_DURATION) {
+        console.log(' Using cached categories data');
+        return data;
+      } else {
+        sessionStorage.removeItem(cacheKey);
+      }
+    }
+  } catch (error) {
+    console.warn(' Failed to read categories cache:', error);
+  }
+  
   try {
     const response = await fetch('/api/category', {
       method: 'GET',
@@ -165,6 +455,17 @@ export async function fetchCategories(): Promise<Category[]> {
       console.error('Fetch categories error response:', errorText);
       
       try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          const { data } = JSON.parse(cached);
+          console.log(' Using stale cache due to fetch error');
+          return data;
+        }
+      } catch (fallbackError) {
+        // Ignore
+      }
+      
+      try {
         const errorData = JSON.parse(errorText);
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       } catch {
@@ -174,20 +475,61 @@ export async function fetchCategories(): Promise<Category[]> {
 
     const data = await response.json();
     
-    // Handle different response formats
+    let categories: Category[] = [];
     if (data.status === 'success' && data.data) {
-      return data.data.items || data.data || [];
+      categories = data.data.items || data.data || [];
     } else {
-      return data.items || data || [];
+      categories = data.items || data || [];
     }
+    
+    try {
+      sessionStorage.setItem(cacheKey, JSON.stringify({
+        data: categories,
+        timestamp: Date.now()
+      }));
+      console.log(' Categories data cached successfully');
+    } catch (cacheError) {
+      console.warn(' Failed to cache categories data:', cacheError);
+    }
+    
+    return categories;
   } catch (error) {
     console.error('Error fetching categories:', error);
+    
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const { data } = JSON.parse(cached);
+        console.log(' Using stale cache due to fetch error');
+        return data;
+      }
+    } catch (fallbackError) {
+      // Ignore
+    }
+    
     throw error instanceof Error ? error : new Error('An unexpected error occurred while fetching categories');
   }
 }
 
-// Fetch models - matching model page pattern
+// Update fetchModels function (around line 190) - Same pattern
 export async function fetchModels(): Promise<Model[]> {
+  const cacheKey = 'models_cache';
+  
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < CACHE_DURATION) {
+        console.log(' Using cached models data');
+        return data;
+      } else {
+        sessionStorage.removeItem(cacheKey);
+      }
+    }
+  } catch (error) {
+    console.warn(' Failed to read models cache:', error);
+  }
+  
   try {
     const response = await fetch('/api/model', {
       method: 'GET',
@@ -202,6 +544,17 @@ export async function fetchModels(): Promise<Model[]> {
       console.error('Fetch models error response:', errorText);
       
       try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          const { data } = JSON.parse(cached);
+          console.log(' Using stale cache due to fetch error');
+          return data;
+        }
+      } catch (fallbackError) {
+        // Ignore
+      }
+      
+      try {
         const errorData = JSON.parse(errorText);
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       } catch {
@@ -211,20 +564,61 @@ export async function fetchModels(): Promise<Model[]> {
 
     const data = await response.json();
     
-    // Handle different response formats
+    let models: Model[] = [];
     if (data.status === 'success' && data.data) {
-      return data.data.items || data.data || [];
+      models = data.data.items || data.data || [];
     } else {
-      return data.items || data || [];
+      models = data.items || data || [];
     }
+    
+    try {
+      sessionStorage.setItem(cacheKey, JSON.stringify({
+        data: models,
+        timestamp: Date.now()
+      }));
+      console.log(' Models data cached successfully');
+    } catch (cacheError) {
+      console.warn(' Failed to cache models data:', cacheError);
+    }
+    
+    return models;
   } catch (error) {
     console.error('Error fetching models:', error);
+    
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const { data } = JSON.parse(cached);
+        console.log(' Using stale cache due to fetch error');
+        return data;
+      }
+    } catch (fallbackError) {
+      // Ignore
+    }
+    
     throw error instanceof Error ? error : new Error('An unexpected error occurred while fetching models');
   }
 }
 
-// Fetch suppliers - matching model page pattern
+// Update fetchSuppliers function (around line 227) - Same pattern
 export async function fetchSuppliers(): Promise<Supplier[]> {
+  const cacheKey = 'suppliers_cache';
+  
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < CACHE_DURATION) {
+        console.log(' Using cached suppliers data');
+        return data;
+      } else {
+        sessionStorage.removeItem(cacheKey);
+      }
+    }
+  } catch (error) {
+    console.warn(' Failed to read suppliers cache:', error);
+  }
+  
   try {
     const response = await fetch('/api/supplier', {
       method: 'GET',
@@ -239,6 +633,17 @@ export async function fetchSuppliers(): Promise<Supplier[]> {
       console.error('Fetch suppliers error response:', errorText);
       
       try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          const { data } = JSON.parse(cached);
+          console.log(' Using stale cache due to fetch error');
+          return data;
+        }
+      } catch (fallbackError) {
+        // Ignore
+      }
+      
+      try {
         const errorData = JSON.parse(errorText);
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       } catch {
@@ -248,19 +653,43 @@ export async function fetchSuppliers(): Promise<Supplier[]> {
 
     const data = await response.json();
     
-    // Handle different response formats
+    let suppliers: Supplier[] = [];
     if (data.status === 'success' && data.data) {
-      return data.data.items || data.data || [];
+      suppliers = data.data.items || data.data || [];
     } else {
-      return data.items || data || [];
+      suppliers = data.items || data || [];
     }
+    
+    try {
+      sessionStorage.setItem(cacheKey, JSON.stringify({
+        data: suppliers,
+        timestamp: Date.now()
+      }));
+      console.log(' Suppliers data cached successfully');
+    } catch (cacheError) {
+      console.warn(' Failed to cache suppliers data:', cacheError);
+    }
+    
+    return suppliers;
   } catch (error) {
     console.error('Error fetching suppliers:', error);
+    
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const { data } = JSON.parse(cached);
+        console.log(' Using stale cache due to fetch error');
+        return data;
+      }
+    } catch (fallbackError) {
+      // Ignore
+    }
+    
     throw error instanceof Error ? error : new Error('An unexpected error occurred while fetching suppliers');
   }
 }
 
-// Fetch all products with pagination and filters
+// Update fetchProducts function (around line 264) - Add caching with query params as cache key
 export async function fetchProducts(params?: {
   page?: number;
   limit?: number;
@@ -273,6 +702,25 @@ export async function fetchProducts(params?: {
   supplierId?: number;
   isActive?: boolean;
 }): Promise<Product[]> {
+  // Create cache key based on query params
+  const cacheKey = `products_cache_${JSON.stringify(params || {})}`;
+  
+  // Check for cached data
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < PRODUCTS_CACHE_DURATION) {
+        console.log(' Using cached products data');
+        return data;
+      } else {
+        sessionStorage.removeItem(cacheKey);
+      }
+    }
+  } catch (error) {
+    console.warn(' Failed to read products cache:', error);
+  }
+  
   try {
     const searchParams = new URLSearchParams();
     
@@ -301,6 +749,18 @@ export async function fetchProducts(params?: {
       const errorText = await response.text();
       console.error('Fetch products error response:', errorText);
       
+      // Try stale cache on error
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          const { data } = JSON.parse(cached);
+          console.log(' Using stale cache due to fetch error');
+          return data;
+        }
+      } catch (fallbackError) {
+        // Ignore
+      }
+      
       try {
         const errorData = JSON.parse(errorText);
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
@@ -311,16 +771,76 @@ export async function fetchProducts(params?: {
 
     const data: ProductResponse = await response.json();
     
+    let products: Product[] = [];
     if (data.status === 'success' && data.data) {
-      return data.data.items;
+      products = data.data.items;
     } else {
       throw new Error(data.message || 'Failed to fetch products');
     }
+    
+    // Cache the successful response
+    try {
+      sessionStorage.setItem(cacheKey, JSON.stringify({
+        data: products,
+        timestamp: Date.now()
+      }));
+      console.log(' Products data cached successfully');
+    } catch (cacheError) {
+      console.warn(' Failed to cache products data:', cacheError);
+    }
+    
+    return products;
   } catch (error) {
     console.error('Error fetching products:', error);
+    
+    // Try stale cache on error
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const { data } = JSON.parse(cached);
+        console.log(' Using stale cache due to fetch error');
+        return data;
+      }
+    } catch (fallbackError) {
+      // Ignore
+    }
+    
     throw error instanceof Error ? error : new Error('An unexpected error occurred while fetching products');
   }
 }
+
+// Add cache invalidation helper functions (add after fetchProducts function)
+export function clearProductCache(): void {
+  try {
+    // Clear all product-related caches
+    const keys = Object.keys(sessionStorage);
+    keys.forEach(key => {
+      if (key.startsWith('products_cache_') || 
+          key === 'brands_cache' || 
+          key === 'categories_cache' || 
+          key === 'models_cache' || 
+          key === 'suppliers_cache') {
+        sessionStorage.removeItem(key);
+      }
+    });
+    console.log(' Product-related caches cleared');
+  } catch (error) {
+    console.warn(' Failed to clear product cache:', error);
+  }
+}
+
+export function clearDropdownCache(): void {
+  try {
+    sessionStorage.removeItem('brands_cache');
+    sessionStorage.removeItem('categories_cache');
+    sessionStorage.removeItem('models_cache');
+    sessionStorage.removeItem('suppliers_cache');
+    console.log(' Dropdown caches cleared');
+  } catch (error) {
+    console.warn(' Failed to clear dropdown cache:', error);
+  }
+}
+
 
 // Create complete product with all related data
 export async function createCompleteProduct(productData: CreateCompleteProductRequest): Promise<CompleteProductResponse['data']> {

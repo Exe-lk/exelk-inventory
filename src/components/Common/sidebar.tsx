@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { 
   Monitor, 
   UserPlus, 
@@ -37,6 +38,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onExpandedChange 
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
+  const pathname = usePathname(); // Get current pathname
 
   const menuItems = [
     {
@@ -111,6 +113,25 @@ const Sidebar: React.FC<SidebarProps> = ({
     // }
   ];
 
+  // Helper function to check if a menu item is active
+  const isActive = (href: string): boolean => {
+    // Exact match for /home to prevent false positives
+    if (href === '/home') {
+      return pathname === '/home';
+    }
+    // Exact match for other routes
+    if (pathname === href) {
+      return true;
+    }
+    // For routes that might have sub-paths (like /stock/123 or /product/456)
+    // Check if pathname starts with href followed by a slash
+    // This prevents /product matching /productvariation
+    if (pathname.startsWith(href + '/')) {
+      return true;
+    }
+    return false;
+  };
+
   const toggleSidebar = () => {
     const newExpanded = !isExpanded;
     setIsExpanded(newExpanded);
@@ -155,27 +176,34 @@ const Sidebar: React.FC<SidebarProps> = ({
         {/* Menu Items */}
         <nav className="flex-1 p-4 overflow-y-auto">
           <ul className="space-y-2">
-            {menuItems.map((item, index) => (
-              <li key={index}>
-                <a
-                  href={item.href}
-                  className="flex items-center p-3 rounded-lg hover:bg-white hover:shadow-sm transition-all duration-200 text-gray-700 hover:text-blue-600 group relative"
-                  onClick={onMobileClose}
-                >
-                  <item.icon className="w-5 h-5 flex-shrink-0" />
-                  {isExpanded && (
-                    <span className="ml-3 text-sm font-medium whitespace-nowrap">
-                      {item.label}
-                    </span>
-                  )}
-                  {!isExpanded && (
-                    <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 whitespace-nowrap">
-                      {item.label}
-                    </div>
-                  )}
-                </a>
-              </li>
-            ))}
+            {menuItems.map((item, index) => {
+              const active = isActive(item.href);
+              return (
+                <li key={index}>
+                  <a
+                    href={item.href}
+                    className={`flex items-center p-3 rounded-lg transition-all duration-200 group relative ${
+                      active
+                        ? 'bg-white shadow-sm text-blue-600 font-semibold'
+                        : 'text-gray-700 hover:bg-white hover:shadow-sm hover:text-blue-600'
+                    }`}
+                    onClick={onMobileClose}
+                  >
+                    <item.icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-blue-600' : ''}`} />
+                    {isExpanded && (
+                      <span className="ml-3 text-sm font-medium whitespace-nowrap">
+                        {item.label}
+                      </span>
+                    )}
+                    {!isExpanded && (
+                      <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 whitespace-nowrap">
+                        {item.label}
+                      </div>
+                    )}
+                  </a>
+                </li>
+              );
+            })}
           </ul>
         </nav>
 

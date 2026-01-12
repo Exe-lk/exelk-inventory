@@ -421,7 +421,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Pre-validate all details
+    // OPTIMIZATION: Validate all details with batch query instead of N queries
+    // First validate basic structure
     for (const detail of details) {
       if (!detail.variationId || !detail.quantity || detail.quantity <= 0) {
         return NextResponse.json(
@@ -434,12 +435,28 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         )
       }
+    }
 
-      // Verify variation exists
-      const variation = await prisma.productvariation.findUnique({
-        where: { variationId: detail.variationId }
-      });
+    // Collect all variation IDs
+    const variationIds = details
+      .map(d => d.variationId)
+      .filter((id): id is number => id !== undefined && id !== null);
 
+    // Fetch all variations in ONE query instead of N queries
+    const variations = await prisma.productvariation.findMany({
+      where: {
+        variationId: { in: variationIds }
+      }
+    });
+
+    // Create a map for O(1) lookup
+    const variationMap = new Map(
+      variations.map(v => [v.variationId, v])
+    );
+
+    // Now validate using the map (no database queries in loop)
+    for (const detail of details) {
+      const variation = variationMap.get(detail.variationId);
       if (!variation) {
         return NextResponse.json(
           { 
@@ -472,9 +489,12 @@ export async function POST(request: NextRequest) {
 
       console.log(` Created return: ${returnRecord.returnId}`);
 
-      // Create return products
+      // OPTIMIZATION: Use createMany for batch insert instead of individual creates
+      // However, createMany doesn't return created records, so we'll keep individual creates
+      // if we need the IDs, or use createMany and fetch afterward
+      // Since returnProducts array is populated but IDs aren't used after, we could optimize,
+      // but to maintain existing behavior, keeping individual creates for now
       const returnProducts = []
-      const transactionLogEntries = []
 
       for (const detail of details) {
         console.log(` Processing return product: Variation ${detail.variationId}, Qty: ${detail.quantity}`);
@@ -760,6 +780,57 @@ export async function PUT(request: NextRequest) {
       )
     }
 
+    // OPTIMIZATION: Pre-validate variations if details are provided (batch validation)
+    if (body.details && Array.isArray(body.details) && body.details.length > 0) {
+      // Validate basic structure first
+      for (const detail of body.details) {
+        if (!detail.variationId || !detail.quantity || detail.quantity <= 0) {
+          return NextResponse.json(
+            { 
+              status: 'error',
+              code: 400,
+              message: 'Each detail must have variationId and quantity (> 0)',
+              timestamp: new Date().toISOString()
+            },
+            { status: 400 }
+          )
+        }
+      }
+
+      // Collect all variation IDs
+      const variationIds = body.details
+        .map((d: any) => d.variationId)
+        .filter((id: any): id is number => id !== undefined && id !== null);
+
+      // Fetch all variations in ONE query instead of N queries
+      const variations = await prisma.productvariation.findMany({
+        where: {
+          variationId: { in: variationIds }
+        }
+      });
+
+      // Create a map for O(1) lookup
+      const variationMap = new Map(
+        variations.map(v => [v.variationId, v])
+      );
+
+      // Validate using the map (no database queries in loop)
+      for (const detail of body.details) {
+        const variation = variationMap.get(detail.variationId);
+        if (!variation) {
+          return NextResponse.json(
+            { 
+              status: 'error',
+              code: 404,
+              message: `Product variation with ID ${detail.variationId} not found`,
+              timestamp: new Date().toISOString()
+            },
+            { status: 404 }
+          )
+        }
+      }
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       // Prepare update data for return
       const updateData: any = {}
@@ -789,10 +860,6 @@ export async function PUT(request: NextRequest) {
         // Create new return products
         returnProducts = [];
         for (const detail of body.details) {
-          if (!detail.variationId || !detail.quantity || detail.quantity <= 0) {
-            throw new Error('Each detail must have variationId and quantity (> 0)');
-          }
-
           const returnProduct = await tx.returnproduct.create({
             data: {
               returnId: returnId,

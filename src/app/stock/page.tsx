@@ -12,6 +12,7 @@ import { getCurrentUser, logoutUser } from '@/lib/auth';
 import { fetchStocks, createStockIn, createStockOut, deleteStock, fetchProducts, fetchSuppliers, fetchVariationsByProductId, importStockFromCSV, exportStockToCSV } from '@/lib/services/stockService';
 import { Stock as StockType } from '@/types/stock';
 import { ArrowUpCircle, ArrowDownCircle, Trash2, Upload, Download } from 'lucide-react';
+import Tooltip from '@/components/Common/Tooltip';
 
 // Stock interfaces
 interface Stock extends StockType {
@@ -669,15 +670,15 @@ const StockPage: React.FC = () => {
       }));
     };
 
+    // The variation loading is already lazy, but ensure it's debounced:
     const loadVariationsForItem = async (itemId: string, productId: number) => {
+      // Add debouncing to prevent multiple rapid calls
+      if (loadingVariations[itemId]) return; // Prevent duplicate calls
+      
       try {
         setLoadingVariations(prev => ({ ...prev, [itemId]: true }));
         
-        console.log(` Loading variations for item ${itemId}, product ${productId}`);
-        
         const variations = await fetchVariationsByProductId(productId);
-        
-        console.log(` Loaded ${variations.length} variations for item ${itemId}`);
         
         setItemVariations(prev => ({
           ...prev,
@@ -685,7 +686,7 @@ const StockPage: React.FC = () => {
         }));
         
       } catch (error) {
-        console.error(` Error loading variations for item ${itemId}:`, error);
+        console.error(`Error loading variations for item ${itemId}:`, error);
         setItemVariations(prev => ({ ...prev, [itemId]: [] }));
       } finally {
         setLoadingVariations(prev => ({ ...prev, [itemId]: false }));
@@ -1751,20 +1752,24 @@ const StockPage: React.FC = () => {
                   </p>
                 </div>
                 <div className="flex items-center space-x-4">
-                  <button
-                    onClick={handleImportClick}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  >
-                    <Upload size={20} className="mr-2" />
-                    Import
-                  </button>
+                <Tooltip content="Import stock data from CSV file" position="bottom">
+                    <button
+                      onClick={handleImportClick}
+                      className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    >
+                      <Upload size={20} className="mr-2" />
+                      
+                    </button>
+                </Tooltip>
+                <Tooltip content="Export stock data to CSV file" position="bottom">
                   <button
                     onClick={handleExportClick}
                     className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                   >
                     <Download size={20} className="mr-2" />
-                    Export
+                    
                   </button>
+                </Tooltip>
                   <button
                     onClick={() => handleStockInClick()}
                     className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"

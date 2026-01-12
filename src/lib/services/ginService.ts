@@ -22,7 +22,7 @@ export interface CreateCompleteGINRequest {
 // Fetch all GIN records
 export async function fetchGins(): Promise<GIN[]> {
   try {
-    console.log('🔗 Fetching all GIN records...');
+    console.log(' Fetching all GIN records...');
     
     const response = await fetch(BASE_URL, {
       method: 'GET',
@@ -35,7 +35,7 @@ export async function fetchGins(): Promise<GIN[]> {
     }
     
     const result = await response.json();
-    console.log('📋 API Response:', result);
+    console.log(' API Response:', result);
     
     // Handle the nested response structure
     if (result.status === 'success' && result.data && result.data.items) {
@@ -52,11 +52,11 @@ export async function fetchGins(): Promise<GIN[]> {
         updatedDate: item.updatedAt
       }));
     } else {
-      console.error('❌ Invalid response format:', result);
+      console.error(' Invalid response format:', result);
       throw new Error('Invalid response format');
     }
   } catch (error) {
-    console.error('❌ Error fetching GIN records:', error);
+    console.error(' Error fetching GIN records:', error);
     throw error;
   }
 }
@@ -79,7 +79,7 @@ export async function fetchGinsWithParams(params: {
   filters: any
 }> {
   try {
-    console.log('🔗 Fetching GINs with parameters:', params);
+    console.log(' Fetching GINs with parameters:', params);
     
     const queryParams = new URLSearchParams();
     
@@ -93,7 +93,7 @@ export async function fetchGinsWithParams(params: {
     if (params.issueReason) queryParams.set('issueReason', params.issueReason);
 
     const url = queryParams.toString() ? `${BASE_URL}?${queryParams}` : BASE_URL;
-    console.log('🔗 Request URL:', url);
+    console.log(' Request URL:', url);
     
     const response = await fetch(url, {
       method: 'GET',
@@ -106,7 +106,7 @@ export async function fetchGinsWithParams(params: {
     }
     
     const result = await response.json();
-    console.log('📋 API Response with params:', result);
+    console.log(' API Response with params:', result);
     
     if (result.status === 'success' && result.data) {
       return {
@@ -131,7 +131,7 @@ export async function fetchGinsWithParams(params: {
       throw new Error('Invalid response format');
     }
   } catch (error) {
-    console.error('❌ Error fetching GIN records with params:', error);
+    console.error(' Error fetching GIN records with params:', error);
     throw error;
   }
 }
@@ -139,7 +139,7 @@ export async function fetchGinsWithParams(params: {
 // Fetch single GIN by ID - Updated to use query parameter
 export async function fetchGinById(id: number): Promise<GIN> {
   try {
-    console.log('🔗 Fetching GIN with ID:', id);
+    console.log(' Fetching GIN with ID:', id);
     
     const response = await fetch(`${BASE_URL}?id=${id}`, {
       method: 'GET',
@@ -152,7 +152,7 @@ export async function fetchGinById(id: number): Promise<GIN> {
     }
     
     const result = await response.json();
-    console.log('📋 GIN fetch response:', result);
+    console.log(' GIN fetch response:', result);
     
     if (result.status === 'success' && result.data) {
       return {
@@ -171,7 +171,7 @@ export async function fetchGinById(id: number): Promise<GIN> {
       throw new Error(result.message || 'Invalid response format');
     }
   } catch (error) {
-    console.error('❌ Error fetching GIN:', error);
+    console.error(' Error fetching GIN:', error);
     throw error;
   }
 }
@@ -179,7 +179,7 @@ export async function fetchGinById(id: number): Promise<GIN> {
 // Create simple GIN (basic fields only)
 export async function createGin(data: CreateGINRequest): Promise<GIN> {
   try {
-    console.log('🔗 Creating simple GIN with data:', data);
+    console.log(' Creating simple GIN with data:', data);
     
     const apiData = {
       ginNumber: data.ginNumber,
@@ -190,7 +190,7 @@ export async function createGin(data: CreateGINRequest): Promise<GIN> {
       stockId: data.stockId
     };
 
-    console.log('📤 Sending GIN data:', apiData);
+    console.log(' Sending GIN data:', apiData);
 
     const response = await fetch(BASE_URL, {
       method: 'POST',
@@ -205,7 +205,7 @@ export async function createGin(data: CreateGINRequest): Promise<GIN> {
     }
     
     const result = await response.json();
-    console.log('✅ Create response:', result);
+    console.log(' Create response:', result);
     
     if (result.status === 'success' && result.data) {
       return {
@@ -222,7 +222,7 @@ export async function createGin(data: CreateGINRequest): Promise<GIN> {
       throw new Error(result.message || 'Invalid response format');
     }
   } catch (error) {
-    console.error('❌ Error creating GIN:', error);
+    console.error(' Error creating GIN:', error);
     throw error;
   }
 }
@@ -234,7 +234,7 @@ export async function createCompleteGin(data: CreateCompleteGINRequest): Promise
   totalDetailsCreated: number;
 }> {
   try {
-    console.log('🔗 Creating complete GIN with data:', data);
+    console.log(' Creating complete GIN with data:', data);
     
     const apiData = {
       ginNumber: data.ginNumber,
@@ -246,7 +246,7 @@ export async function createCompleteGin(data: CreateCompleteGINRequest): Promise
       ginDetails: data.ginDetails
     };
 
-    console.log('📤 Sending complete GIN data:', JSON.stringify(apiData, null, 2));
+    console.log(' Sending complete GIN data:', JSON.stringify(apiData, null, 2));
 
     const response = await fetch(BASE_URL, {
       method: 'POST',
@@ -261,7 +261,7 @@ export async function createCompleteGin(data: CreateCompleteGINRequest): Promise
     }
     
     const result = await response.json();
-    console.log('✅ Complete GIN create response:', result);
+    console.log(' Complete GIN create response:', result);
     
     if (result.status === 'success' && result.data) {
       return {
@@ -282,7 +282,7 @@ export async function createCompleteGin(data: CreateCompleteGINRequest): Promise
       throw new Error(result.message || 'Invalid response format');
     }
   } catch (error) {
-    console.error('❌ Error creating complete GIN:', error);
+    console.error(' Error creating complete GIN:', error);
     throw error;
   }
 }
@@ -290,7 +290,7 @@ export async function createCompleteGin(data: CreateCompleteGINRequest): Promise
 // Update GIN - Updated to use query parameter
 export async function updateGin(id: number, data: UpdateGINRequest): Promise<GIN> {
   try {
-    console.log('🔗 Updating GIN:', id, data);
+    console.log(' Updating GIN:', id, data);
     
     const apiData = {
       ...(data.ginNumber !== undefined && { ginNumber: data.ginNumber }),
@@ -301,7 +301,7 @@ export async function updateGin(id: number, data: UpdateGINRequest): Promise<GIN
       ...(data.stockId !== undefined && { stockId: data.stockId })
     };
 
-    console.log('📤 Sending update data:', apiData);
+    console.log(' Sending update data:', apiData);
 
     const response = await fetch(`${BASE_URL}?id=${id}`, {
       method: 'PUT',
@@ -312,12 +312,12 @@ export async function updateGin(id: number, data: UpdateGINRequest): Promise<GIN
     
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('❌ Update error response:', errorData);
+      console.error(' Update error response:', errorData);
       throw new Error(errorData.message || 'Failed to update GIN');
     }
     
     const result = await response.json();
-    console.log('✅ Update response:', result);
+    console.log(' Update response:', result);
     
     if (result.status === 'success' && result.data) {
       return {
@@ -334,7 +334,7 @@ export async function updateGin(id: number, data: UpdateGINRequest): Promise<GIN
       throw new Error(result.message || 'Invalid response format');
     }
   } catch (error) {
-    console.error('❌ Error updating GIN:', error);
+    console.error(' Error updating GIN:', error);
     throw error;
   }
 }
@@ -342,7 +342,7 @@ export async function updateGin(id: number, data: UpdateGINRequest): Promise<GIN
 // Delete GIN - Updated to use query parameter
 export async function deleteGin(id: number): Promise<void> {
   try {
-    console.log('🔗 Deleting GIN:', id);
+    console.log(' Deleting GIN:', id);
     
     const response = await fetch(`${BASE_URL}?id=${id}`, {
       method: 'DELETE',
@@ -351,18 +351,18 @@ export async function deleteGin(id: number): Promise<void> {
     
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('❌ Delete error response:', errorData);
+      console.error(' Delete error response:', errorData);
       throw new Error(errorData.message || 'Failed to delete GIN');
     }
     
     const result = await response.json();
-    console.log('✅ Delete response:', result);
+    console.log(' Delete response:', result);
     
     if (result.status !== 'success') {
       throw new Error(result.message || 'Failed to delete GIN');
     }
   } catch (error) {
-    console.error('❌ Error deleting GIN:', error);
+    console.error(' Error deleting GIN:', error);
     throw error;
   }
 }
@@ -393,7 +393,7 @@ export async function searchGins(searchTerm: string, filters?: {
     
     return await fetchGinsWithParams(params);
   } catch (error) {
-    console.error('❌ Error searching GINs:', error);
+    console.error(' Error searching GINs:', error);
     throw error;
   }
 }
@@ -404,7 +404,7 @@ export async function getGinStatistics(): Promise<{
   recentGins: GIN[];
 }> {
   try {
-    console.log('📊 Fetching GIN statistics...');
+    console.log(' Fetching GIN statistics...');
     
     // Fetch recent GINs (last 10)
     const recentResponse = await fetchGinsWithParams({
@@ -419,7 +419,7 @@ export async function getGinStatistics(): Promise<{
       recentGins: recentResponse.items
     };
   } catch (error) {
-    console.error('❌ Error fetching GIN statistics:', error);
+    console.error(' Error fetching GIN statistics:', error);
     throw error;
   }
 }

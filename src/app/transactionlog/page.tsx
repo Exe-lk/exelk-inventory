@@ -11,6 +11,7 @@ import { TransactionLogWithDetails, TransactionLogQueryParams, TransactionLogFil
 import { getCurrentUser, logoutUser } from '@/lib/auth';
 import { exportTransactionLogsToCSV } from '@/lib/services/transactionlogService';
 import { Download } from 'lucide-react';
+import Tooltip from '@/components/Common/Tooltip';
 
 // Service function to fetch transaction logs
 const fetchTransactionLogs = async (params: TransactionLogQueryParams = {}) => {
@@ -818,22 +819,26 @@ const ExportForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 </div>
                 
                 <div className="flex items-center space-x-4">
-                  <button
-                    onClick={handleExportClick}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  >
-                    <Download size={20} className="mr-2" />
-                    Export
-                  </button>
-                  <button
-                    onClick={refreshData}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Refresh
-                  </button>
+                  <Tooltip content="Export Bin Card data to CSV file" position="bottom">
+                    <button
+                      onClick={handleExportClick}
+                      className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    >
+                      <Download size={20} className="mr-2" />
+                      
+                    </button>
+                  </Tooltip>
+                  <Tooltip content="Refresh data" position="bottom">
+                    <button
+                      onClick={refreshData}
+                      className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    >
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      
+                    </button>
+                  </Tooltip>
                 </div>
               </div>
 

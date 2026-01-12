@@ -187,44 +187,52 @@ export async function GET(request: NextRequest) {
     console.log(' Sort by:', sortColumn, sortDirection);
 
     try {
-      // Get stocks with counts - include related data
-      const [stocks, totalCount] = await Promise.all([
-        prisma.stock.findMany({
-          where,
-          orderBy: {
-            [sortColumn]: sortDirection
-          },
-          skip: offset,
-          take: limit,
-          include: {
-            product: {
-              select: {
-                productName: true,
-                sku: true,
-                brand: {
-                  select: {
-                    brandName: true
-                  }
-                },
-                category: {
-                  select: {
-                    categoryName: true
-                  }
+      
+
+    const [stocks, totalCount] = await Promise.all([
+      prisma.stock.findMany({
+        where,
+        orderBy: {
+          [sortColumn]: sortDirection
+        },
+        skip: offset,
+        take: limit,
+        select: {
+          stockId: true,
+          productId: true,
+          variationId: true,
+          quantityAvailable: true,
+          reorderLevel: true,
+          lastUpdatedDate: true,
+          location: true,
+          product: {
+            select: {
+              productName: true,
+              sku: true,
+              brand: {
+                select: {
+                  brandName: true
+                }
+              },
+              category: {
+                select: {
+                  categoryName: true
                 }
               }
-            },
-            productvariation: {
-              select: {
-                variationName: true,
-                color: true,
-                size: true,
-                capacity: true
-              }
+            }
+          },
+          productvariation: {
+            select: {
+              variationName: true,
+              color: true,
+              size: true,
+              capacity: true
             }
           }
-        }),
-        prisma.stock.count({ where })
-      ])
+        }
+      }),
+      prisma.stock.count({ where })
+    ])
 
       const totalPages = Math.ceil(totalCount / limit)
 
@@ -276,7 +284,10 @@ export async function GET(request: NextRequest) {
             }
           }
         },
-        { status: 200 }
+        { status: 200 ,
+          headers: {
+          'Cache-Control': 'private, max-age=60' // Cache for 60 seconds
+    }}
       )
 
     } catch (dbError) {
@@ -500,7 +511,8 @@ async function handleStockIn(body: any, employeeId: number) {
       )
     }
 
-    // Pre-validate all items (outside transaction)
+    // OPTIMIZATION: Validate all items with batch queries instead of N queries
+    // First validate basic structure
     for (const item of items) {
       if (!item.productId || !item.quantityReceived || item.quantityReceived <= 0 || !item.unitCost) {
         return NextResponse.json(
@@ -513,15 +525,46 @@ async function handleStockIn(body: any, employeeId: number) {
           { status: 400 }
         )
       }
+    }
 
-      // Verify product exists (outside transaction)
-      const product = await prisma.product.findUnique({
-        where: { 
-          productId: item.productId,
-          deletedAt: null
-        }
-      });
+    // Collect all product IDs and variation IDs
+    const productIds = items
+      .map(item => item.productId)
+      .filter((id): id is number => id !== undefined && id !== null);
+    
+    const variationIds = items
+      .map(item => item.variationId)
+      .filter((id): id is number => id !== undefined && id !== null);
 
+    // Fetch all products in ONE query instead of N queries
+    const products = await prisma.product.findMany({
+      where: {
+        productId: { in: productIds },
+        deletedAt: null
+      }
+    });
+
+    // Fetch all variations in ONE query instead of N queries (if any variations exist)
+    const variations = variationIds.length > 0
+      ? await prisma.productvariation.findMany({
+          where: {
+            variationId: { in: variationIds }
+          }
+        })
+      : [];
+
+    // Create maps for O(1) lookup
+    const productMap = new Map(
+      products.map(p => [p.productId, p])
+    );
+
+    const variationMap = new Map(
+      variations.map(v => [v.variationId, v])
+    );
+
+    // Now validate using the maps (no database queries in loop)
+    for (const item of items) {
+      const product = productMap.get(item.productId);
       if (!product) {
         return NextResponse.json(
           { 
@@ -534,12 +577,9 @@ async function handleStockIn(body: any, employeeId: number) {
         )
       }
 
-      // Verify variation exists if provided (outside transaction)
+      // Verify variation exists if provided
       if (item.variationId) {
-        const variation = await prisma.productvariation.findUnique({
-          where: { variationId: item.variationId }
-        });
-
+        const variation = variationMap.get(item.variationId);
         if (!variation) {
           return NextResponse.json(
             { 
@@ -581,6 +621,28 @@ async function handleStockIn(body: any, employeeId: number) {
 
       console.log(` Created GRN: ${grnNumber}`);
 
+      // OPTIMIZATION: Fetch all stocks needed for transaction in ONE query
+      // Collect all product/variation combinations
+      const stockQueries = items.map(item => ({
+        productId: item.productId,
+        variationId: item.variationId || null
+      }));
+
+      // Fetch all existing stocks in ONE query inside transaction
+      const existingStocks = await tx.stock.findMany({
+        where: {
+          OR: stockQueries.map(sq => ({
+            productId: sq.productId,
+            variationId: sq.variationId
+          }))
+        }
+      });
+
+      // Create a map for O(1) lookup
+      const stockMap = new Map(
+        existingStocks.map(s => [`${s.productId}-${s.variationId || 'null'}`, s])
+      );
+
       // Process items sequentially to avoid race conditions
       const grnDetails = []
       const stockUpdates = []
@@ -603,13 +665,9 @@ async function handleStockIn(body: any, employeeId: number) {
         })
         grnDetails.push(grnDetail)
 
-        // 2. Find existing stock (within transaction)
-        const existingStock = await tx.stock.findFirst({
-          where: {
-            productId: item.productId,
-            variationId: item.variationId || null
-          }
-        })
+        // 2. Use the stock map instead of querying database
+        const stockKey = `${item.productId}-${item.variationId || 'null'}`;
+        const existingStock = stockMap.get(stockKey);
 
         let stockUpdate
         let finalBalance
@@ -834,6 +892,144 @@ async function handleStockOut(body: any, employeeId: number) {
   }
 
   try {
+    // OPTIMIZATION: Pre-validate all data OUTSIDE the transaction
+    console.log(' Pre-validating data before transaction...');
+
+    // Validate basic structure first
+    for (const item of items) {
+      if (!item.productId || !item.quantityIssued || item.quantityIssued <= 0 || !item.unitCost) {
+        return NextResponse.json(
+          { 
+            status: 'error',
+            code: 400,
+            message: 'Each item must have productId, quantityIssued (> 0), and unitCost',
+            timestamp: new Date().toISOString()
+          },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Collect all product IDs and variation IDs
+    const productIds = items
+      .map(item => item.productId)
+      .filter((id): id is number => id !== undefined && id !== null);
+    
+    const variationIds = items
+      .map(item => item.variationId)
+      .filter((id): id is number => id !== undefined && id !== null);
+
+    // Fetch all products in ONE query
+    const products = await prisma.product.findMany({
+      where: {
+        productId: { in: productIds },
+        deletedAt: null
+      }
+    });
+
+    // Fetch all variations in ONE query (if any variations exist)
+    const variations = variationIds.length > 0
+      ? await prisma.productvariation.findMany({
+          where: {
+            variationId: { in: variationIds }
+          }
+        })
+      : [];
+
+    // Create maps for O(1) lookup
+    const productMap = new Map(
+      products.map(p => [p.productId, p])
+    );
+
+    const variationMap = new Map(
+      variations.map(v => [v.variationId, v])
+    );
+
+    // Validate products and variations
+    for (const item of items) {
+      const product = productMap.get(item.productId);
+      if (!product) {
+        return NextResponse.json(
+          { 
+            status: 'error',
+            code: 404,
+            message: `Product with ID ${item.productId} not found`,
+            timestamp: new Date().toISOString()
+          },
+          { status: 404 }
+        )
+      }
+
+      if (item.variationId) {
+        const variation = variationMap.get(item.variationId);
+        if (!variation) {
+          return NextResponse.json(
+            { 
+              status: 'error',
+              code: 404,
+              message: `Product variation with ID ${item.variationId} not found`,
+              timestamp: new Date().toISOString()
+            },
+            { status: 404 }
+          )
+        }
+      }
+    }
+
+    // Collect all product/variation combinations for stock validation
+    const stockQueries = items.map(item => ({
+      productId: item.productId,
+      variationId: item.variationId || null
+    }));
+
+    // Fetch all existing stocks in ONE query for pre-validation
+    const existingStocks = await prisma.stock.findMany({
+      where: {
+        OR: stockQueries.map(sq => ({
+          productId: sq.productId,
+          variationId: sq.variationId
+        }))
+      }
+    });
+
+    // Create a map for O(1) lookup
+    const stockMap = new Map(
+      existingStocks.map(s => [`${s.productId}-${s.variationId || 'null'}`, s])
+    );
+
+    // Pre-validate stock availability
+    for (const item of items) {
+      const stockKey = `${item.productId}-${item.variationId || 'null'}`;
+      const existingStock = stockMap.get(stockKey);
+
+      if (!existingStock) {
+        return NextResponse.json(
+          { 
+            status: 'error',
+            code: 400,
+            message: `No stock found for product ID ${item.productId}`,
+            timestamp: new Date().toISOString()
+          },
+          { status: 400 }
+        )
+      }
+
+      const availableQuantity = existingStock.quantityAvailable || 0;
+      if (availableQuantity < item.quantityIssued) {
+        return NextResponse.json(
+          { 
+            status: 'error',
+            code: 400,
+            message: `Insufficient stock for product ID ${item.productId}. Available: ${availableQuantity}, Required: ${item.quantityIssued}`,
+            timestamp: new Date().toISOString()
+          },
+          { status: 400 }
+        )
+      }
+    }
+
+    console.log(' Pre-validation completed. Starting transaction...');
+
     const result = await prisma.$transaction(async (tx) => {
       // Generate GIN number
       const ginNumber = generateGinNumber()
@@ -852,6 +1048,22 @@ async function handleStockOut(body: any, employeeId: number) {
         }
       })
 
+      // OPTIMIZATION: Fetch all stocks needed for transaction in ONE query
+      // Re-fetch stocks within transaction to ensure we have the latest data
+      const transactionStocks = await tx.stock.findMany({
+        where: {
+          OR: stockQueries.map(sq => ({
+            productId: sq.productId,
+            variationId: sq.variationId
+          }))
+        }
+      });
+
+      // Create stock map for transaction
+      const transactionStockMap = new Map(
+        transactionStocks.map(s => [`${s.productId}-${s.variationId || 'null'}`, s])
+      );
+
       // Process each item
       const ginDetails = []
       const stockUpdates = []
@@ -859,18 +1071,9 @@ async function handleStockOut(body: any, employeeId: number) {
       const transactionLogEntries = []
 
       for (const item of items) {
-        // Validate item
-        if (!item.productId || !item.quantityIssued || item.quantityIssued <= 0 || !item.unitCost) {
-          throw new Error('Each item must have productId, quantityIssued, and unitCost are required');
-        }
-
-        // Check stock availability
-        const existingStock = await tx.stock.findFirst({
-          where: {
-            productId: item.productId,
-            variationId: item.variationId || null
-          }
-        })
+        // Use the stock map instead of querying database
+        const stockKey = `${item.productId}-${item.variationId || 'null'}`;
+        const existingStock = transactionStockMap.get(stockKey);
 
         if (!existingStock) {
           throw new Error(`No stock found for product ID ${item.productId}`);

@@ -6,14 +6,14 @@ const BASE_URL = '/api/gin/gindetails';
 // Fetch all GIN details or filter by GIN ID
 export async function fetchGinDetails(ginId?: number): Promise<GINDetail[]> {
   try {
-    console.log('🔗 Fetching GIN details...');
+    console.log(' Fetching GIN details...');
     
     let url = BASE_URL;
     
     // Add ginId as query parameter if provided
     if (ginId) {
       url = `${BASE_URL}?ginId=${ginId}`;
-      console.log('🔍 Filtering by GIN ID:', ginId);
+      console.log(' Filtering by GIN ID:', ginId);
     }
     
     const response = await fetch(url, {
@@ -27,7 +27,7 @@ export async function fetchGinDetails(ginId?: number): Promise<GINDetail[]> {
     }
     
     const result = await response.json();
-    console.log('📋 GIN Details API Response:', result);
+    console.log(' GIN Details API Response:', result);
     
     // Handle the response structure
     if (result.status === 'success' && Array.isArray(result.data)) {
@@ -41,11 +41,11 @@ export async function fetchGinDetails(ginId?: number): Promise<GINDetail[]> {
         location: item.location
       }));
     } else {
-      console.error('❌ Invalid response format:', result);
+      console.error(' Invalid response format:', result);
       throw new Error('Invalid response format');
     }
   } catch (error) {
-    console.error('❌ Error fetching GIN details:', error);
+    console.error(' Error fetching GIN details:', error);
     throw error;
   }
 }
@@ -56,7 +56,7 @@ export async function fetchGinDetailsByGinId(ginId: number): Promise<GINDetail[]
     console.log('🔗 Fetching GIN details for GIN ID:', ginId);
     return await fetchGinDetails(ginId);
   } catch (error) {
-    console.error('❌ Error fetching GIN details by GIN ID:', error);
+    console.error(' Error fetching GIN details by GIN ID:', error);
     throw error;
   }
 }
@@ -64,7 +64,7 @@ export async function fetchGinDetailsByGinId(ginId: number): Promise<GINDetail[]
 // Fetch single GIN detail by ID
 export async function fetchGinDetailById(detailId: number): Promise<GINDetail> {
   try {
-    console.log('🔗 Fetching GIN detail with ID:', detailId);
+    console.log(' Fetching GIN detail with ID:', detailId);
     
     const response = await fetch(`${BASE_URL}/${detailId}`, {
       method: 'GET',
@@ -77,7 +77,7 @@ export async function fetchGinDetailById(detailId: number): Promise<GINDetail> {
     }
     
     const result = await response.json();
-    console.log('📋 GIN detail fetch response:', result);
+    console.log(' GIN detail fetch response:', result);
     
     if (result.status === 'success' && result.data) {
       return {
@@ -93,7 +93,7 @@ export async function fetchGinDetailById(detailId: number): Promise<GINDetail> {
       throw new Error(result.message || 'Invalid response format');
     }
   } catch (error) {
-    console.error('❌ Error fetching GIN detail:', error);
+    console.error(' Error fetching GIN detail:', error);
     throw error;
   }
 }
@@ -101,7 +101,7 @@ export async function fetchGinDetailById(detailId: number): Promise<GINDetail> {
 // Create individual GIN detail - Updated to use the new POST format
 export async function createGinDetail(data: CreateGINDetailRequest): Promise<GINDetail> {
   try {
-    console.log('🔗 Creating individual GIN detail with data:', data);
+    console.log(' Creating individual GIN detail with data:', data);
     
     const apiData = {
       ginId: data.ginId,
@@ -111,7 +111,7 @@ export async function createGinDetail(data: CreateGINDetailRequest): Promise<GIN
       location: data.location
     };
 
-    console.log('📤 Sending GIN detail data:', apiData);
+    console.log(' Sending GIN detail data:', apiData);
 
     // Use the main /api/gin/gindetails endpoint for individual detail creation
     const response = await fetch(BASE_URL, {
@@ -127,7 +127,7 @@ export async function createGinDetail(data: CreateGINDetailRequest): Promise<GIN
     }
     
     const result = await response.json();
-    console.log('✅ Create GIN detail response:', result);
+    console.log(' Create GIN detail response:', result);
     
     if (result.status === 'success' && result.data) {
       return {
@@ -143,7 +143,7 @@ export async function createGinDetail(data: CreateGINDetailRequest): Promise<GIN
       throw new Error(result.message || 'Invalid response format');
     }
   } catch (error) {
-    console.error('❌ Error creating GIN detail:', error);
+    console.error(' Error creating GIN detail:', error);
     throw error;
   }
 }
@@ -151,7 +151,7 @@ export async function createGinDetail(data: CreateGINDetailRequest): Promise<GIN
 // Create GIN detail for specific GIN - DEPRECATED, use createGinDetail instead
 export async function createGinDetailForGin(ginId: number, data: Omit<CreateGINDetailRequest, 'ginId'>): Promise<GINDetail> {
   try {
-    console.log('🔗 Creating GIN detail for GIN:', ginId, 'with data:', data);
+    console.log(' Creating GIN detail for GIN:', ginId, 'with data:', data);
     
     // Convert to full CreateGINDetailRequest format
     const fullData: CreateGINDetailRequest = {
@@ -164,7 +164,7 @@ export async function createGinDetailForGin(ginId: number, data: Omit<CreateGIND
     
     return await createGinDetail(fullData);
   } catch (error) {
-    console.error('❌ Error creating GIN detail for GIN:', error);
+    console.error(' Error creating GIN detail for GIN:', error);
     throw error;
   }
 }
@@ -172,7 +172,7 @@ export async function createGinDetailForGin(ginId: number, data: Omit<CreateGIND
 // Update GIN detail
 export async function updateGinDetail(detailId: number, data: UpdateGINDetailRequest): Promise<GINDetail> {
   try {
-    console.log('🔗 Updating GIN detail:', detailId, data);
+    console.log(' Updating GIN detail:', detailId, data);
     
     const apiData = {
       ...(data.productId !== undefined && { productId: data.productId }),
@@ -181,7 +181,7 @@ export async function updateGinDetail(detailId: number, data: UpdateGINDetailReq
       ...(data.location !== undefined && { location: data.location })
     };
 
-    console.log('📤 Sending update data:', apiData);
+    console.log(' Sending update data:', apiData);
 
     const response = await fetch(`${BASE_URL}/${detailId}`, {
       method: 'PUT',
@@ -192,12 +192,12 @@ export async function updateGinDetail(detailId: number, data: UpdateGINDetailReq
     
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('❌ Update error response:', errorData);
+      console.error(' Update error response:', errorData);
       throw new Error(errorData.message || 'Failed to update GIN detail');
     }
     
     const result = await response.json();
-    console.log('✅ Update response:', result);
+    console.log(' Update response:', result);
     
     if (result.status === 'success' && result.data) {
       return {
@@ -213,7 +213,7 @@ export async function updateGinDetail(detailId: number, data: UpdateGINDetailReq
       throw new Error(result.message || 'Invalid response format');
     }
   } catch (error) {
-    console.error('❌ Error updating GIN detail:', error);
+    console.error(' Error updating GIN detail:', error);
     throw error;
   }
 }
@@ -221,7 +221,7 @@ export async function updateGinDetail(detailId: number, data: UpdateGINDetailReq
 // Delete GIN detail
 export async function deleteGinDetail(detailId: number): Promise<void> {
   try {
-    console.log('🔗 Deleting GIN detail:', detailId);
+    console.log(' Deleting GIN detail:', detailId);
     
     const response = await fetch(`${BASE_URL}/${detailId}`, {
       method: 'DELETE',
@@ -230,18 +230,18 @@ export async function deleteGinDetail(detailId: number): Promise<void> {
     
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('❌ Delete error response:', errorData);
+      console.error(' Delete error response:', errorData);
       throw new Error(errorData.message || 'Failed to delete GIN detail');
     }
     
     const result = await response.json();
-    console.log('✅ Delete response:', result);
+    console.log(' Delete response:', result);
     
     if (result.status !== 'success') {
       throw new Error(result.message || 'Failed to delete GIN detail');
     }
   } catch (error) {
-    console.error('❌ Error deleting GIN detail:', error);
+    console.error(' Error deleting GIN detail:', error);
     throw error;
   }
 }
@@ -249,7 +249,7 @@ export async function deleteGinDetail(detailId: number): Promise<void> {
 // Batch create GIN details - Create multiple details for a GIN at once
 export async function createMultipleGinDetails(ginId: number, details: Omit<CreateGINDetailRequest, 'ginId'>[]): Promise<GINDetail[]> {
   try {
-    console.log('🔗 Creating multiple GIN details for GIN:', ginId, details);
+    console.log(' Creating multiple GIN details for GIN:', ginId, details);
     
     const createdDetails: GINDetail[] = [];
     
@@ -267,10 +267,10 @@ export async function createMultipleGinDetails(ginId: number, details: Omit<Crea
       createdDetails.push(createdDetail);
     }
     
-    console.log('✅ Created multiple GIN details:', createdDetails.length);
+    console.log(' Created multiple GIN details:', createdDetails.length);
     return createdDetails;
   } catch (error) {
-    console.error('❌ Error creating multiple GIN details:', error);
+    console.error(' Error creating multiple GIN details:', error);
     throw error;
   }
 }
@@ -278,7 +278,7 @@ export async function createMultipleGinDetails(ginId: number, details: Omit<Crea
 // Batch update GIN details for a specific GIN
 export async function updateMultipleGinDetails(updates: { detailId: number; data: UpdateGINDetailRequest }[]): Promise<GINDetail[]> {
   try {
-    console.log('🔗 Updating multiple GIN details:', updates);
+    console.log(' Updating multiple GIN details:', updates);
     
     const updatedDetails: GINDetail[] = [];
     
@@ -288,10 +288,10 @@ export async function updateMultipleGinDetails(updates: { detailId: number; data
       updatedDetails.push(updatedDetail);
     }
     
-    console.log('✅ Updated multiple GIN details:', updatedDetails.length);
+    console.log(' Updated multiple GIN details:', updatedDetails.length);
     return updatedDetails;
   } catch (error) {
-    console.error('❌ Error updating multiple GIN details:', error);
+    console.error(' Error updating multiple GIN details:', error);
     throw error;
   }
 }
@@ -299,7 +299,7 @@ export async function updateMultipleGinDetails(updates: { detailId: number; data
 // Delete all GIN details for a specific GIN
 export async function deleteAllGinDetailsForGin(ginId: number): Promise<void> {
   try {
-    console.log('🔗 Deleting all GIN details for GIN:', ginId);
+    console.log(' Deleting all GIN details for GIN:', ginId);
     
     // First fetch all details for this GIN
     const details = await fetchGinDetailsByGinId(ginId);
@@ -309,9 +309,9 @@ export async function deleteAllGinDetailsForGin(ginId: number): Promise<void> {
       await deleteGinDetail(detail.ginDetailId);
     }
     
-    console.log('✅ Deleted all GIN details for GIN:', ginId);
+    console.log(' Deleted all GIN details for GIN:', ginId);
   } catch (error) {
-    console.error('❌ Error deleting all GIN details:', error);
+    console.error(' Error deleting all GIN details:', error);
     throw error;
   }
 }
@@ -319,7 +319,7 @@ export async function deleteAllGinDetailsForGin(ginId: number): Promise<void> {
 // Calculate total amount for a GIN based on its details
 export async function calculateGinTotal(ginId: number): Promise<number> {
   try {
-    console.log('🧮 Calculating total for GIN:', ginId);
+    console.log(' Calculating total for GIN:', ginId);
     
     const details = await fetchGinDetailsByGinId(ginId);
     
@@ -327,10 +327,10 @@ export async function calculateGinTotal(ginId: number): Promise<number> {
       return sum + (detail.subTotal || 0);
     }, 0);
     
-    console.log('✅ Calculated GIN total:', total);
+    console.log(' Calculated GIN total:', total);
     return total;
   } catch (error) {
-    console.error('❌ Error calculating GIN total:', error);
+    console.error(' Error calculating GIN total:', error);
     throw error;
   }
 }
@@ -343,7 +343,7 @@ export async function getGinDetailStatistics(ginId?: number): Promise<{
   avgUnitCost: number;
 }> {
   try {
-    console.log('📊 Fetching GIN detail statistics for GIN:', ginId);
+    console.log(' Fetching GIN detail statistics for GIN:', ginId);
     
     const details = ginId ? await fetchGinDetailsByGinId(ginId) : await fetchGinDetails();
     
@@ -359,10 +359,10 @@ export async function getGinDetailStatistics(ginId?: number): Promise<{
       avgUnitCost: Math.round(avgUnitCost * 100) / 100 // Round to 2 decimal places
     };
     
-    console.log('📊 GIN detail statistics:', statistics);
+    console.log(' GIN detail statistics:', statistics);
     return statistics;
   } catch (error) {
-    console.error('❌ Error fetching GIN detail statistics:', error);
+    console.error(' Error fetching GIN detail statistics:', error);
     throw error;
   }
 }

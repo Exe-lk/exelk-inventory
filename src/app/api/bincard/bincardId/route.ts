@@ -254,7 +254,11 @@ export async function GET(request: NextRequest) {
           timestamp: new Date().toISOString(),
           data: transformedBinCard
         },
-        { status: 200 }
+        { status: 200 ,
+          headers: {
+            'Cache-Control': 'private, max-age=300, stale-while-revalidate=600' // Cache for 5 minutes, allow stale for 10 minutes
+          }
+        }
       )
 
     } catch (dbError) {

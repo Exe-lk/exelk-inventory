@@ -14,6 +14,9 @@ export interface DashboardStatistics {
   rejectedReturns: number;
   totalLowStockItems: number;
   outOfStockItems: number;
+  stockValueAnalytics?: StockValueAnalytics;
+  grnAnalytics?: GRNAnalytics;
+  ginAnalytics?: GINAnalytics;
 }
 
 export interface LowStockItem {
@@ -34,14 +37,70 @@ export interface LowStockItem {
   lastUpdatedDate: string;
 }
 
-// Interface for dashboard data
+
+export interface StockValueAnalytics {
+  totalInventoryValue: number;
+  inventoryValueByCategory: Array<{
+    categoryId: number;
+    categoryName: string;
+    value: number;
+    percentage: number;
+  }>;
+  inventoryValueByBrand: Array<{
+    brandId: number;
+    brandName: string;
+    value: number;
+    percentage: number;
+  }>;
+  averageStockValuePerProduct: number;
+  totalProducts: number;
+  inventoryValueTrend: {
+    last30Days: number;
+    last90Days: number;
+  };
+}
+export interface GRNAnalytics {
+  totalGRNsThisMonth: number;
+  totalGRNsLastMonth: number;
+  totalValueThisMonth: number;
+  totalValueLastMonth: number;
+  averageGRNValue: number;
+  grnValueTrend: Array<{
+    date: string; // Format: "YYYY-MM-DD"
+    value: number; // Total value for that date
+    count: number; // Number of GRNs on that date
+  }>;
+}
+
+export interface GINAnalytics {
+  totalGINsThisMonth: number;
+  totalGINsLastMonth: number;
+  totalQuantityIssuedThisMonth: number;
+  totalQuantityIssuedLastMonth: number;
+  averageGINValue: number;
+  quantityIssuedTrend: Array<{
+    date: string; // Format: "YYYY-MM-DD"
+    quantity: number; // Total quantity issued on that date
+    count: number; // Number of GINs on that date
+  }>;
+}
+
+// Update DashboardStatistics interface (around line 10
+
+// Update DashboardData interface (around line 38)
 export interface DashboardData {
-  user?: Omit<Employee, 'Password'>; // Optional user data from API
-  role?: string; // Optional role name from API
+  user?: Omit<Employee, 'Password'>;
+  role?: string;
   statistics: DashboardStatistics;
   pendingReturns: ReturnResponse[];
   lowStockItems: LowStockItem[];
+  stockValueAnalytics?: StockValueAnalytics; 
+  grnAnalytics?: GRNAnalytics;
+  ginAnalytics?: GINAnalytics;
 }
+
+
+
 
 // Interface for approve return request
 export interface ApproveReturnRequest {

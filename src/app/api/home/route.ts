@@ -30,6 +30,506 @@ function generateReturnReference(returnId: number): string {
   return `RTN-${year}${month}${day}-${String(returnId).padStart(6, '0')}`;
 }
 
+
+
+// Add after generateReturnReference function
+async function calculateStockValueAnalytics() {
+  try {
+    // OPTIMIZED: Get all stock with related data in one query
+    const allStocks = await prisma.stock.findMany({
+      where: {
+        quantityAvailable: { gt: 0 }
+      },
+      include: {
+        product: {
+          select: {
+            productId: true,
+            category: {
+              select: {
+                categoryId: true,
+                categoryName: true
+              }
+            },
+            brand: {
+              select: {
+                brandId: true,
+                brandName: true
+              }
+            }
+          }
+        },
+        productvariation: {
+          select: {
+            variationId: true,
+            price: true
+          }
+        }
+      }
+    });
+
+    // OPTIMIZED: Get all GRN details in one query, grouped by productId
+    const allGrnDetails = await prisma.grndetails.findMany({
+      select: {
+        productId: true,
+        unitCost: true,
+        grnDetailId: true
+      },
+      orderBy: {
+        grnDetailId: 'desc'
+      }
+    });
+
+    // Create a map of latest unit cost per product
+    const latestUnitCostMap = new Map<number, number>();
+    allGrnDetails.forEach(detail => {
+      if (!latestUnitCostMap.has(detail.productId) && detail.unitCost) {
+        latestUnitCostMap.set(detail.productId, parseFloat(detail.unitCost.toString()));
+      }
+    });
+
+    // Process stocks
+    const stockValues: Array<{
+      productId: number;
+      quantityAvailable: number;
+      categoryId: number | null;
+      categoryName: string | null;
+      brandId: number | null;
+      brandName: string | null;
+      unitCost: number;
+      value: number;
+    }> = [];
+
+    const uniqueProducts = new Set<number>();
+
+    for (const stock of allStocks) {
+      const quantityAvailable = stock.quantityAvailable || 0;
+      if (quantityAvailable <= 0) continue;
+
+      // Get unit cost: GRN detail > variation price > 0
+      let unitCost = latestUnitCostMap.get(stock.productId) || 0;
+      if (unitCost <= 0 && stock.productvariation?.price) {
+        unitCost = parseFloat(stock.productvariation.price.toString());
+      }
+      if (unitCost <= 0) continue; // Skip if no cost data
+
+      const value = quantityAvailable * unitCost;
+      uniqueProducts.add(stock.productId);
+
+      stockValues.push({
+        productId: stock.productId,
+        quantityAvailable,
+        categoryId: stock.product?.category?.categoryId || null,
+        categoryName: stock.product?.category?.categoryName || null,
+        brandId: stock.product?.brand?.brandId || null,
+        brandName: stock.product?.brand?.brandName || null,
+        unitCost,
+        value
+      });
+    }
+
+    // Calculate totals
+    const totalInventoryValue = stockValues.reduce((sum, item) => sum + item.value, 0);
+
+    // Group by category
+    const categoryMap = new Map<number, { categoryId: number; categoryName: string; value: number }>();
+    stockValues.forEach(item => {
+      if (item.categoryId && item.categoryName) {
+        const existing = categoryMap.get(item.categoryId) || {
+          categoryId: item.categoryId,
+          categoryName: item.categoryName,
+          value: 0
+        };
+        existing.value += item.value;
+        categoryMap.set(item.categoryId, existing);
+      }
+    });
+
+    const inventoryValueByCategory = Array.from(categoryMap.values())
+      .map(cat => ({
+        ...cat,
+        percentage: totalInventoryValue > 0 ? (cat.value / totalInventoryValue) * 100 : 0
+      }))
+      .sort((a, b) => b.value - a.value);
+
+    // Group by brand
+    const brandMap = new Map<number, { brandId: number; brandName: string; value: number }>();
+    stockValues.forEach(item => {
+      if (item.brandId && item.brandName) {
+        const existing = brandMap.get(item.brandId) || {
+          brandId: item.brandId,
+          brandName: item.brandName,
+          value: 0
+        };
+        existing.value += item.value;
+        brandMap.set(item.brandId, existing);
+      }
+    });
+
+    const inventoryValueByBrand = Array.from(brandMap.values())
+      .map(brand => ({
+        ...brand,
+        percentage: totalInventoryValue > 0 ? (brand.value / totalInventoryValue) * 100 : 0
+      }))
+      .sort((a, b) => b.value - a.value);
+
+    const averageStockValuePerProduct = uniqueProducts.size > 0
+      ? totalInventoryValue / uniqueProducts.size
+      : 0;
+
+    // Trend calculation (simplified - you can enhance with historical data)
+    const inventoryValueTrend = {
+      last30Days: totalInventoryValue,
+      last90Days: totalInventoryValue
+    };
+
+    return {
+      totalInventoryValue,
+      inventoryValueByCategory,
+      inventoryValueByBrand,
+      averageStockValuePerProduct,
+      totalProducts: uniqueProducts.size,
+      inventoryValueTrend
+    };
+  } catch (error) {
+    console.error('Error calculating stock value analytics:', error);
+    return {
+      totalInventoryValue: 0,
+      inventoryValueByCategory: [],
+      inventoryValueByBrand: [],
+      averageStockValuePerProduct: 0,
+      totalProducts: 0,
+      inventoryValueTrend: {
+        last30Days: 0,
+        last90Days: 0
+      }
+    };
+  }
+}
+
+
+// Add after calculateStockValueAnalytics function (around line 200)
+async function calculateGRNAnalytics() {
+  try {
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+
+    // Get GRNs for current month
+    const grnsThisMonth = await prisma.grn.findMany({
+      where: {
+        receivedDate: {
+          gte: currentMonthStart,
+          lte: currentMonthEnd
+        }
+      },
+      select: {
+        grnId: true,
+        receivedDate: true,
+        totalAmount: true
+      }
+    });
+
+    // Get GRNs for last month
+    const grnsLastMonth = await prisma.grn.findMany({
+      where: {
+        receivedDate: {
+          gte: lastMonthStart,
+          lte: lastMonthEnd
+        }
+      },
+      select: {
+        grnId: true,
+        receivedDate: true,
+        totalAmount: true
+      }
+    });
+
+    // Calculate totals
+    const totalGRNsThisMonth = grnsThisMonth.length;
+    const totalGRNsLastMonth = grnsLastMonth.length;
+    
+    const totalValueThisMonth = grnsThisMonth.reduce((sum, grn) => {
+      return sum + (grn.totalAmount ? parseFloat(grn.totalAmount.toString()) : 0);
+    }, 0);
+    
+    const totalValueLastMonth = grnsLastMonth.reduce((sum, grn) => {
+      return sum + (grn.totalAmount ? parseFloat(grn.totalAmount.toString()) : 0);
+    }, 0);
+
+    // Calculate average GRN value (from all GRNs, not just this month)
+    const allGRNs = await prisma.grn.findMany({
+      where: {
+        totalAmount: {
+          not: null
+        }
+      },
+      select: {
+        totalAmount: true
+      }
+    });
+
+    const totalGRNValue = allGRNs.reduce((sum, grn) => {
+      return sum + (grn.totalAmount ? parseFloat(grn.totalAmount.toString()) : 0);
+    }, 0);
+    
+    const averageGRNValue = allGRNs.length > 0 ? totalGRNValue / allGRNs.length : 0;
+
+    // Get GRN value trend for last 30 days
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    thirtyDaysAgo.setHours(0, 0, 0, 0);
+
+    const grnsForTrend = await prisma.grn.findMany({
+      where: {
+        receivedDate: {
+          gte: thirtyDaysAgo
+        }
+      },
+      select: {
+        receivedDate: true,
+        totalAmount: true
+      },
+      orderBy: {
+        receivedDate: 'asc'
+      }
+    });
+
+    // Group by date
+    const trendMap = new Map<string, { value: number; count: number }>();
+    
+    grnsForTrend.forEach(grn => {
+      if (grn.receivedDate) {
+        const dateKey = grn.receivedDate.toISOString().split('T')[0]; // YYYY-MM-DD
+        const amount = grn.totalAmount ? parseFloat(grn.totalAmount.toString()) : 0;
+        
+        const existing = trendMap.get(dateKey) || { value: 0, count: 0 };
+        existing.value += amount;
+        existing.count += 1;
+        trendMap.set(dateKey, existing);
+      }
+    });
+
+    // Convert to array and fill missing dates with 0
+    const grnValueTrend: Array<{ date: string; value: number; count: number }> = [];
+    const currentDate = new Date(thirtyDaysAgo);
+    
+    while (currentDate <= now) {
+      const dateKey = currentDate.toISOString().split('T')[0];
+      const data = trendMap.get(dateKey) || { value: 0, count: 0 };
+      
+      grnValueTrend.push({
+        date: dateKey,
+        value: data.value,
+        count: data.count
+      });
+      
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return {
+      totalGRNsThisMonth,
+      totalGRNsLastMonth,
+      totalValueThisMonth,
+      totalValueLastMonth,
+      averageGRNValue,
+      grnValueTrend
+    };
+  } catch (error) {
+    console.error('Error calculating GRN analytics:', error);
+    return {
+      totalGRNsThisMonth: 0,
+      totalGRNsLastMonth: 0,
+      totalValueThisMonth: 0,
+      totalValueLastMonth: 0,
+      averageGRNValue: 0,
+      grnValueTrend: []
+    };
+  }
+}
+
+
+
+
+// Add after calculateGRNAnalytics function (around line 350)
+async function calculateGINAnalytics() {
+  try {
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+
+    // Get GINs for current month with details
+    const ginsThisMonth = await prisma.gin.findMany({
+      where: {
+        issueDate: {
+          gte: currentMonthStart,
+          lte: currentMonthEnd
+        }
+      },
+      include: {
+        gindetails: {
+          select: {
+            quantityIssued: true,
+            subTotal: true
+          }
+        }
+      }
+    });
+
+    // Get GINs for last month with details
+    const ginsLastMonth = await prisma.gin.findMany({
+      where: {
+        issueDate: {
+          gte: lastMonthStart,
+          lte: lastMonthEnd
+        }
+      },
+      include: {
+        gindetails: {
+          select: {
+            quantityIssued: true,
+            subTotal: true
+          }
+        }
+      }
+    });
+
+    // Calculate totals
+    const totalGINsThisMonth = ginsThisMonth.length;
+    const totalGINsLastMonth = ginsLastMonth.length;
+    
+    // Calculate total quantity issued this month
+    const totalQuantityIssuedThisMonth = ginsThisMonth.reduce((sum, gin) => {
+      const ginQuantity = gin.gindetails.reduce((detailSum, detail) => {
+        return detailSum + (detail.quantityIssued || 0);
+      }, 0);
+      return sum + ginQuantity;
+    }, 0);
+    
+    // Calculate total quantity issued last month
+    const totalQuantityIssuedLastMonth = ginsLastMonth.reduce((sum, gin) => {
+      const ginQuantity = gin.gindetails.reduce((detailSum, detail) => {
+        return detailSum + (detail.quantityIssued || 0);
+      }, 0);
+      return sum + ginQuantity;
+    }, 0);
+
+    // Calculate average GIN value (from all GIN details, not just this month)
+    const allGINDetails = await prisma.gindetails.findMany({
+      where: {
+        subTotal: {
+          not: null
+        }
+      },
+      select: {
+        subTotal: true,
+        gin: {
+          select: {
+            ginId: true
+          }
+        }
+      }
+    });
+
+    // Group by GIN to calculate average per GIN
+    const ginValueMap = new Map<number, number>();
+    allGINDetails.forEach(detail => {
+      const ginId = detail.gin.ginId;
+      const subTotal = detail.subTotal ? parseFloat(detail.subTotal.toString()) : 0;
+      const existing = ginValueMap.get(ginId) || 0;
+      ginValueMap.set(ginId, existing + subTotal);
+    });
+
+    const ginValues = Array.from(ginValueMap.values());
+    const averageGINValue = ginValues.length > 0 
+      ? ginValues.reduce((sum, val) => sum + val, 0) / ginValues.length 
+      : 0;
+
+    // Get GIN quantity trend for last 30 days
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    thirtyDaysAgo.setHours(0, 0, 0, 0);
+
+    const ginsForTrend = await prisma.gin.findMany({
+      where: {
+        issueDate: {
+          gte: thirtyDaysAgo
+        }
+      },
+      include: {
+        gindetails: {
+          select: {
+            quantityIssued: true
+          }
+        }
+      },
+      orderBy: {
+        issueDate: 'asc'
+      }
+    });
+
+    // Group by date
+    const trendMap = new Map<string, { quantity: number; count: number }>();
+    
+    ginsForTrend.forEach(gin => {
+      if (gin.issueDate) {
+        const dateKey = gin.issueDate.toISOString().split('T')[0]; // YYYY-MM-DD
+        const totalQuantity = gin.gindetails.reduce((sum, detail) => {
+          return sum + (detail.quantityIssued || 0);
+        }, 0);
+        
+        const existing = trendMap.get(dateKey) || { quantity: 0, count: 0 };
+        existing.quantity += totalQuantity;
+        existing.count += 1;
+        trendMap.set(dateKey, existing);
+      }
+    });
+
+    // Convert to array and fill missing dates with 0
+    const quantityIssuedTrend: Array<{ date: string; quantity: number; count: number }> = [];
+    const currentDate = new Date(thirtyDaysAgo);
+    
+    while (currentDate <= now) {
+      const dateKey = currentDate.toISOString().split('T')[0];
+      const data = trendMap.get(dateKey) || { quantity: 0, count: 0 };
+      
+      quantityIssuedTrend.push({
+        date: dateKey,
+        quantity: data.quantity,
+        count: data.count
+      });
+      
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return {
+      totalGINsThisMonth,
+      totalGINsLastMonth,
+      totalQuantityIssuedThisMonth,
+      totalQuantityIssuedLastMonth,
+      averageGINValue,
+      quantityIssuedTrend
+    };
+  } catch (error) {
+    console.error('Error calculating GIN analytics:', error);
+    return {
+      totalGINsThisMonth: 0,
+      totalGINsLastMonth: 0,
+      totalQuantityIssuedThisMonth: 0,
+      totalQuantityIssuedLastMonth: 0,
+      averageGINValue: 0,
+      quantityIssuedTrend: []
+    };
+  }
+}
+
+
+
 // GET - Get dashboard data including pending returns
 export async function GET(request: NextRequest) {
   console.log(' Home dashboard GET request started');
@@ -70,7 +570,7 @@ export async function GET(request: NextRequest) {
 
     try {
       // OPTIMIZATION: Run all independent queries in parallel using Promise.all
-      const [pendingReturns, totalReturns, approvedReturns, rejectedReturns, lowStockItems] = await Promise.all([
+      const [pendingReturns, totalReturns, approvedReturns, rejectedReturns, lowStockItems, stockValueAnalytics, grnAnalytics, ginAnalytics] = await Promise.all([
         // Get pending returns with details
         prisma.returns.findMany({
           where: {
@@ -190,7 +690,10 @@ export async function GET(request: NextRequest) {
             }
           ],
           take: 10 // Limit to top 10 most critical items
-        })
+        }),
+        calculateStockValueAnalytics(),
+        calculateGRNAnalytics(),
+        calculateGINAnalytics()
       ]);
 
       // Transform pending returns for response
@@ -273,7 +776,10 @@ export async function GET(request: NextRequest) {
           outOfStockItems
         },
         pendingReturns: transformedPendingReturns,
-        lowStockItems: transformedLowStockItems
+        lowStockItems: transformedLowStockItems,
+        stockValueAnalytics: stockValueAnalytics,
+        grnAnalytics: grnAnalytics,
+        ginAnalytics: ginAnalytics
       };
 
       console.log(` Found ${pendingReturns.length} pending returns and ${totalLowStockItems} low stock items`);

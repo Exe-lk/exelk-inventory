@@ -8,9 +8,11 @@ import { Employee, hasAdminAccess, isStockKeeper } from '@/types/user';
 import { getCurrentUser, logoutUser } from '@/lib/auth';
 import { fetchDashboardData, approveReturn, DashboardData, clearDashboardCache } from '@/lib/services/homeService';
 import { ReturnResponse } from '@/types/return';
-import { CheckCircle, Clock, XCircle, Eye, AlertCircle } from 'lucide-react';
-// Add new imports at the top
-import { AlertTriangle, Package, ExternalLink } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, Eye, AlertCircle,AlertTriangle, Package, ExternalLink, HelpCircle } from 'lucide-react';
+import Tooltip from '@/components/Common/Tooltip';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
+import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+
 
 // Add new interface after existing interfaces
 interface LowStockItem {
@@ -469,88 +471,104 @@ const handleApproveReturn = async (returnId: number) => {
               </div>
             </div> */}
 
-            {/* Update the dashboard statistics cards section (replace the existing cards section) */}
-            {/* Dashboard Statistics Cards */}
-            {dashboardData && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-                <div className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow duration-200">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">Total Returns</h3>
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <Clock className="w-4 h-4 text-blue-600" />
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <span className="text-2xl font-bold text-gray-900">{dashboardData.statistics.totalReturns}</span>
-                    <span className="text-sm text-gray-500 ml-1">Total Returns</span>
-                  </div>
-                </div>
+            
+            {/* Dashboard Statistics Cards - Reorganized into 2 cards */}
+{dashboardData && (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    {/* Returns Section Card */}
+    <div className="bg-white p-5 rounded-lg shadow hover:shadow-md transition-shadow duration-200">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">Returns Overview</h3>
+        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+          <Clock className="w-4 h-4 text-blue-600" />
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-3 gap-3">
+        {/* Total Returns */}
+        <div className="text-center p-3 bg-blue-50 rounded-lg">
+          <div className="flex items-center justify-center mb-1">
+            <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Clock className="w-3 h-3 text-blue-600" />
+            </div>
+          </div>
+          <p className="text-xl font-bold text-gray-900">{dashboardData.statistics.totalReturns}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Total Returns</p>
+        </div>
 
-                <div className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow duration-200">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">Pending Returns</h3>
-                    <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                      <AlertCircle className="w-4 h-4 text-yellow-600" />
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <span className="text-2xl font-bold text-yellow-600">{dashboardData.statistics.pendingReturns}</span>
-                    <span className="text-sm text-gray-500 ml-1">Awaiting Approval</span>
-                  </div>
-                </div>
+        {/* Pending Returns */}
+        <div className="text-center p-3 bg-yellow-50 rounded-lg">
+          <div className="flex items-center justify-center mb-1">
+            <div className="w-6 h-6 bg-yellow-100 rounded-lg flex items-center justify-center">
+              <AlertCircle className="w-3 h-3 text-yellow-600" />
+            </div>
+          </div>
+          <p className="text-xl font-bold text-yellow-600">{dashboardData.statistics.pendingReturns}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Pending</p>
+        </div>
 
-                <div className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow duration-200">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">Approved Returns</h3>
-                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <span className="text-2xl font-bold text-green-600">{dashboardData.statistics.approvedReturns}</span>
-                    <span className="text-sm text-gray-500 ml-1">Approved</span>
-                  </div>
-                </div>
+        {/* Approved Returns */}
+        <div className="text-center p-3 bg-green-50 rounded-lg">
+          <div className="flex items-center justify-center mb-1">
+            <div className="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center">
+              <CheckCircle className="w-3 h-3 text-green-600" />
+            </div>
+          </div>
+          <p className="text-xl font-bold text-green-600">{dashboardData.statistics.approvedReturns}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Approved</p>
+        </div>
+      </div>
+    </div>
 
-                {/* New Low Stock Alert Card */}
-                <div className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow duration-200 cursor-pointer" onClick={handleViewLowStock}>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">Low Stock Items</h3>
-                    <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                      <AlertTriangle className="w-4 h-4 text-orange-600" />
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <span className="text-2xl font-bold text-orange-600">{dashboardData.statistics.totalLowStockItems}</span>
-                    <span className="text-sm text-gray-500 ml-1">Items Low</span>
-                  </div>
-                  {dashboardData.statistics.outOfStockItems > 0 && (
-                    <div className="mt-2 text-sm">
-                      <span className="text-red-600 font-medium">{dashboardData.statistics.outOfStockItems}</span>
-                      <span className="text-gray-500 ml-1">Out of Stock</span>
-                    </div>
-                  )}
-                </div>
+    {/* Stock Section Card */}
+    <div className="bg-white p-5 rounded-lg shadow hover:shadow-md transition-shadow duration-200">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">Stock Alerts</h3>
+        <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+          <Package className="w-4 h-4 text-orange-600" />
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-3">
+        {/* Low Stock Items */}
+        <div 
+          className="text-center p-3 bg-orange-50 rounded-lg cursor-pointer hover:bg-orange-100 transition-colors"
+          onClick={handleViewLowStock}
+        >
+          <div className="flex items-center justify-center mb-1">
+            <div className="w-6 h-6 bg-orange-100 rounded-lg flex items-center justify-center">
+              <AlertTriangle className="w-3 h-3 text-orange-600" />
+            </div>
+          </div>
+          <p className="text-xl font-bold text-orange-600">{dashboardData.statistics.totalLowStockItems}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Low Stock Items</p>
+          {dashboardData.statistics.outOfStockItems > 0 && (
+            <p className="text-xs text-red-600 mt-0.5 font-medium">
+              {dashboardData.statistics.outOfStockItems} Out of Stock
+            </p>
+          )}
+        </div>
 
-                {/* New Out of Stock Card */}
-                <div className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow duration-200 cursor-pointer" onClick={handleNavigateToStock}>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">Out of Stock</h3>
-                    <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-                      <Package className="w-4 h-4 text-red-600" />
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <span className="text-2xl font-bold text-red-600">{dashboardData.statistics.outOfStockItems}</span>
-                    <span className="text-sm text-gray-500 ml-1">Critical</span>
-                  </div>
-                  {/* <div className="mt-2 flex items-center text-sm text-blue-600 hover:text-blue-800">
-                    <ExternalLink className="w-3 h-3 mr-1" />
-                    View Stock Page
-                  </div> */}
-                </div>
-              </div>
-            )}
+        {/* Out of Stock - No click handler */}
+        <div className="text-center p-3 bg-red-50 rounded-lg">
+          <div className="flex items-center justify-center mb-1">
+            <div className="w-6 h-6 bg-red-100 rounded-lg flex items-center justify-center">
+              <Package className="w-3 h-3 text-red-600" />
+            </div>
+          </div>
+          <p className="text-xl font-bold text-red-600">{dashboardData.statistics.outOfStockItems}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Out of Stock</p>
+          <p className="text-xs text-gray-400 mt-0.5">Critical</p>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+
+            
+            
+            
 
             {/* Role-based Dashboard Content */}
             {hasAdminAccess(currentUser?.RoleID || 0) && (
@@ -703,6 +721,636 @@ const handleApproveReturn = async (returnId: number) => {
               </div>
             )}
 
+
+
+            
+{/* Stock Value Analytics - Combined Section */}
+{dashboardData?.stockValueAnalytics && (
+  <div className="bg-white shadow rounded-lg mb-6">
+    {/* Header */}
+    <div className="px-6 py-4 border-b border-gray-200">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h3 className="text-xl font-semibold text-gray-900">Inventory Value Analytics</h3>
+          <Tooltip
+            title="Inventory Value Analytics"
+            description="This section provides a comprehensive overview of your inventory's total value, broken down by categories, brands, and time periods. All values are calculated based on the latest unit costs from GRN (Goods Receipt Notes) or product variation prices."
+            position="top"
+          />
+        </div>
+        <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+          <Package className="w-5 h-5 text-purple-600" />
+        </div>
+      </div>
+      <p className="text-sm text-gray-500 mt-1">Comprehensive overview of your inventory value</p>
+    </div>
+
+    <div className="px-6 py-6">
+      {/* Key Metrics - Top Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {/* Total Inventory Value */}
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-lg border border-purple-200">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-medium text-purple-700 uppercase tracking-wide">Total Inventory Value</h4>
+              <Tooltip
+                title="Total Inventory Value"
+                description="The total monetary value of all products currently in stock. This represents the sum of all inventory items multiplied by their unit costs."
+                formula="Σ (Quantity Available × Unit Cost) for all products"
+                example="If you have 100 units at LKR 50 each and 200 units at LKR 30 each, Total Value = (100 × 50) + (200 × 30) = LKR 11,000"
+                position="top"
+              />
+            </div>
+            <Package className="w-5 h-5 text-purple-600" />
+          </div>
+          <div className="mt-2">
+            <p className="text-3xl font-bold text-purple-900">
+              LKR {dashboardData.stockValueAnalytics.totalInventoryValue.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}
+            </p>
+            <p className="text-sm text-purple-600 mt-2">
+              Across {dashboardData.stockValueAnalytics.totalProducts} {dashboardData.stockValueAnalytics.totalProducts === 1 ? 'product' : 'products'}
+            </p>
+          </div>
+        </div>
+
+        {/* Average Value Per Product */}
+        <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-6 rounded-lg border border-indigo-200">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-medium text-indigo-700 uppercase tracking-wide">Average Value Per Product</h4>
+              <Tooltip
+                title="Average Value Per Product"
+                description="The average monetary value per product in your inventory. This helps you understand the typical value of a single product in your stock."
+                formula="Total Inventory Value ÷ Number of Unique Products"
+                example="If Total Value is LKR 100,000 and you have 50 unique products, Average = 100,000 ÷ 50 = LKR 2,000 per product"
+                position="top"
+              />
+            </div>
+            <AlertCircle className="w-5 h-5 text-indigo-600" />
+          </div>
+          <div className="mt-2">
+            <p className="text-3xl font-bold text-indigo-900">
+              LKR {dashboardData.stockValueAnalytics.averageStockValuePerProduct.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}
+            </p>
+            <p className="text-sm text-indigo-600 mt-2">
+              Per product average
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Breakdown Section - Category & Brand */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* By Category */}
+        <div className="border border-gray-200 rounded-lg p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                <Package className="w-4 h-4 text-blue-600" />
+              </div>
+              <h4 className="text-lg font-semibold text-gray-900">By Category</h4>
+              <Tooltip
+                title="Inventory Value by Category"
+                description="Shows the total inventory value grouped by product categories. This helps you identify which categories hold the most value in your inventory."
+                formula="For each category: Σ (Quantity × Unit Cost) of all products in that category"
+                example="Electronics category: 50 units × LKR 100 = LKR 5,000. Clothing category: 100 units × LKR 30 = LKR 3,000"
+                position="top"
+              />
+            </div>
+          </div>
+          {dashboardData.stockValueAnalytics.inventoryValueByCategory.length > 0 ? (
+            <div className="space-y-3">
+              {dashboardData.stockValueAnalytics.inventoryValueByCategory.slice(0, 5).map((category, index) => (
+                <div key={category.categoryId} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div className="flex items-center flex-1">
+                    <div className={`w-2 h-2 rounded-full mr-3 ${
+                      index === 0 ? 'bg-blue-500' :
+                      index === 1 ? 'bg-green-500' :
+                      index === 2 ? 'bg-yellow-500' :
+                      index === 3 ? 'bg-purple-500' : 'bg-gray-400'
+                    }`}></div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-gray-900">{category.categoryName}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{category.percentage.toFixed(1)}% of total value</p>
+                    </div>
+                  </div>
+                  <div className="text-right ml-4">
+                    <p className="text-sm font-bold text-gray-900">
+                      LKR {category.value.toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                      })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {dashboardData.stockValueAnalytics.inventoryValueByCategory.length > 5 && (
+                <p className="text-xs text-gray-500 text-center mt-2">
+                  +{dashboardData.stockValueAnalytics.inventoryValueByCategory.length - 5} more categories
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-sm text-gray-500">No category data available</p>
+            </div>
+          )}
+        </div>
+
+        {/* By Brand */}
+        <div className="border border-gray-200 rounded-lg p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                <Package className="w-4 h-4 text-green-600" />
+              </div>
+              <h4 className="text-lg font-semibold text-gray-900">By Brand</h4>
+              <Tooltip
+                title="Inventory Value by Brand"
+                description="Shows the total inventory value grouped by product brands. This helps you identify which brands represent the most value in your inventory."
+                formula="For each brand: Σ (Quantity × Unit Cost) of all products from that brand"
+                example="Brand A: 75 units × LKR 80 = LKR 6,000. Brand B: 120 units × LKR 25 = LKR 3,000"
+                position="top"
+              />
+            </div>
+          </div>
+          {dashboardData.stockValueAnalytics.inventoryValueByBrand.length > 0 ? (
+            <div className="space-y-3">
+              {dashboardData.stockValueAnalytics.inventoryValueByBrand.slice(0, 5).map((brand, index) => (
+                <div key={brand.brandId} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div className="flex items-center flex-1">
+                    <div className={`w-2 h-2 rounded-full mr-3 ${
+                      index === 0 ? 'bg-blue-500' :
+                      index === 1 ? 'bg-green-500' :
+                      index === 2 ? 'bg-yellow-500' :
+                      index === 3 ? 'bg-purple-500' : 'bg-gray-400'
+                    }`}></div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-gray-900">{brand.brandName}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{brand.percentage.toFixed(1)}% of total value</p>
+                    </div>
+                  </div>
+                  <div className="text-right ml-4">
+                    <p className="text-sm font-bold text-gray-900">
+                      LKR {brand.value.toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                      })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {dashboardData.stockValueAnalytics.inventoryValueByBrand.length > 5 && (
+                <p className="text-xs text-gray-500 text-center mt-2">
+                  +{dashboardData.stockValueAnalytics.inventoryValueByBrand.length - 5} more brands
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-sm text-gray-500">No brand data available</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Value Trends Section */}
+      <div className="border-t border-gray-200 pt-6">
+        <div className="flex items-center mb-4">
+          <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+            <Clock className="w-4 h-4 text-orange-600" />
+          </div>
+          <div className="flex items-center gap-2">
+            <h4 className="text-lg font-semibold text-gray-900">Value Trends</h4>
+            <Tooltip
+              title="Inventory Value Trends"
+              description="Shows the inventory value over different time periods. Currently displays the current inventory value. Historical tracking can be added to show actual trends over time."
+              position="top"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-5 rounded-lg border border-blue-200">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium text-blue-700">Last 30 Days</p>
+                <Tooltip
+                  title="30-Day Inventory Value"
+                  description="The total inventory value calculated for the last 30 days. Currently shows the current value. This metric helps track inventory value changes over a monthly period."
+                  formula="Current: Σ (Current Quantity × Latest Unit Cost). Historical: Would track value at 30 days ago"
+                  example="If tracking historical data, this would show the inventory value from 30 days ago for comparison"
+                  position="top"
+                />
+              </div>
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            </div>
+            <p className="text-2xl font-bold text-blue-900">
+              LKR {dashboardData.stockValueAnalytics.inventoryValueTrend.last30Days.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}
+            </p>
+            <p className="text-xs text-blue-600 mt-1">30-day inventory value</p>
+          </div>
+          <div className="bg-gradient-to-br from-green-50 to-green-100 p-5 rounded-lg border border-green-200">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium text-green-700">Last 90 Days</p>
+                <Tooltip
+                  title="90-Day Inventory Value"
+                  description="The total inventory value calculated for the last 90 days. Currently shows the current value. This metric helps track inventory value changes over a quarterly period."
+                  formula="Current: Σ (Current Quantity × Latest Unit Cost). Historical: Would track value at 90 days ago"
+                  example="If tracking historical data, this would show the inventory value from 90 days ago for comparison"
+                  position="top"
+                />
+              </div>
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            </div>
+            <p className="text-2xl font-bold text-green-900">
+              LKR {dashboardData.stockValueAnalytics.inventoryValueTrend.last90Days.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}
+            </p>
+            <p className="text-xs text-green-600 mt-1">90-day inventory value</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+
+
+
+{/* GRN Analytics Section */}
+{dashboardData?.grnAnalytics && (
+  <div className="bg-white shadow rounded-lg mb-6">
+    {/* Header */}
+    <div className="px-6 py-4 border-b border-gray-200">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h3 className="text-xl font-semibold text-gray-900">GRN (Goods Receipt) Analytics</h3>
+          <Tooltip
+            title="GRN Analytics"
+            description="Comprehensive analytics for Goods Receipt Notes (GRN), showing monthly totals, trends, and average values over time."
+            position="bottom"
+          />
+        </div>
+        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+          <Package className="w-5 h-5 text-blue-600" />
+        </div>
+      </div>
+    </div>
+
+    <div className="px-6 py-6">
+      {/* Key Metrics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Total GRNs This Month vs Last Month */}
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-lg border border-blue-200">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-medium text-blue-700 uppercase tracking-wide">Total GRNs</h4>
+            <Package className="w-5 h-5 text-blue-600" />
+          </div>
+          <div className="mt-2">
+            <div className="flex items-baseline gap-2">
+              <p className="text-3xl font-bold text-blue-900">
+                {dashboardData.grnAnalytics.totalGRNsThisMonth}
+              </p>
+              <span className="text-sm text-blue-600">This Month</span>
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              {dashboardData.grnAnalytics.totalGRNsThisMonth > dashboardData.grnAnalytics.totalGRNsLastMonth ? (
+                <TrendingUp className="w-4 h-4 text-green-600" />
+              ) : dashboardData.grnAnalytics.totalGRNsThisMonth < dashboardData.grnAnalytics.totalGRNsLastMonth ? (
+                <TrendingDown className="w-4 h-4 text-red-600" />
+              ) : (
+                <Minus className="w-4 h-4 text-gray-600" />
+              )}
+              <p className="text-sm text-blue-600">
+                Last Month: {dashboardData.grnAnalytics.totalGRNsLastMonth}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Total Value This Month */}
+        <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-lg border border-green-200">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-medium text-green-700 uppercase tracking-wide">Total Value This Month</h4>
+            <TrendingUp className="w-5 h-5 text-green-600" />
+          </div>
+          <div className="mt-2">
+            <p className="text-3xl font-bold text-green-900">
+              LKR {dashboardData.grnAnalytics.totalValueThisMonth.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}
+            </p>
+            <div className="flex items-center gap-2 mt-2">
+              {dashboardData.grnAnalytics.totalValueThisMonth > dashboardData.grnAnalytics.totalValueLastMonth ? (
+                <TrendingUp className="w-4 h-4 text-green-600" />
+              ) : dashboardData.grnAnalytics.totalValueThisMonth < dashboardData.grnAnalytics.totalValueLastMonth ? (
+                <TrendingDown className="w-4 h-4 text-red-600" />
+              ) : (
+                <Minus className="w-4 h-4 text-gray-600" />
+              )}
+              <p className="text-sm text-green-600">
+                Last Month: LKR {dashboardData.grnAnalytics.totalValueLastMonth.toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Average GRN Value */}
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-lg border border-purple-200">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-medium text-purple-700 uppercase tracking-wide">Average GRN Value</h4>
+            <AlertCircle className="w-5 h-5 text-purple-600" />
+          </div>
+          <div className="mt-2">
+            <p className="text-3xl font-bold text-purple-900">
+              LKR {dashboardData.grnAnalytics.averageGRNValue.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}
+            </p>
+            <p className="text-sm text-purple-600 mt-2">
+              Across all GRNs
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* GRN Value Trend Chart */}
+      <div className="border-t border-gray-200 pt-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <h4 className="text-lg font-semibold text-gray-900">GRN Value Trend (Last 30 Days)</h4>
+            <Tooltip
+              title="GRN Value Trend"
+              description="Shows the daily total value of GRNs received over the last 30 days. Helps identify patterns and trends in goods receipt."
+              position="bottom"
+            />
+          </div>
+        </div>
+        
+        {dashboardData.grnAnalytics.grnValueTrend.length > 0 ? (
+          <div className="w-full h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={dashboardData.grnAnalytics.grnValueTrend}
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis 
+                  dataKey="date" 
+                  stroke="#6b7280"
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    return `${date.getMonth() + 1}/${date.getDate()}`;
+                  }}
+                />
+                <YAxis 
+                  stroke="#6b7280"
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(value) => {
+                    if (value >= 1000000) return `LKR ${(value / 1000000).toFixed(1)}M`;
+                    if (value >= 1000) return `LKR ${(value / 1000).toFixed(1)}K`;
+                    return `LKR ${value}`;
+                  }}
+                />
+                <RechartsTooltip
+                  contentStyle={{
+                    backgroundColor: '#1f2937',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: '#fff'
+                  }}
+                  formatter={(value: number | undefined) => [
+                    `LKR ${(value ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                    'Value'
+                  ]}
+                  labelFormatter={(label) => {
+                    const date = new Date(label);
+                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                  }}
+                />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke="#3b82f6" 
+                  strokeWidth={2}
+                  dot={{ fill: '#3b82f6', r: 4 }}
+                  activeDot={{ r: 6 }}
+                  name="GRN Value (LKR)"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-gray-50 rounded-lg">
+            <p className="text-gray-500">No GRN data available for the last 30 days</p>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
+
+
+
+
+{/* GIN Analytics Section */}
+{dashboardData?.ginAnalytics && (
+  <div className="bg-white shadow rounded-lg mb-6">
+    {/* Header */}
+    <div className="px-6 py-4 border-b border-gray-200">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h3 className="text-xl font-semibold text-gray-900">GIN (Goods Issue) Analytics</h3>
+          <Tooltip
+            title="GIN Analytics"
+            description="Comprehensive analytics for Goods Issue Notes (GIN), showing monthly totals, quantities issued, and trends over time."
+            position="bottom"
+          />
+        </div>
+        <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+          <Package className="w-5 h-5 text-orange-600" />
+        </div>
+      </div>
+    </div>
+
+    <div className="px-6 py-6">
+      {/* Key Metrics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Total GINs This Month vs Last Month */}
+        <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-lg border border-orange-200">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-medium text-orange-700 uppercase tracking-wide">Total GINs</h4>
+            <Package className="w-5 h-5 text-orange-600" />
+          </div>
+          <div className="mt-2">
+            <div className="flex items-baseline gap-2">
+              <p className="text-3xl font-bold text-orange-900">
+                {dashboardData.ginAnalytics.totalGINsThisMonth}
+              </p>
+              <span className="text-sm text-orange-600">This Month</span>
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              {dashboardData.ginAnalytics.totalGINsThisMonth > dashboardData.ginAnalytics.totalGINsLastMonth ? (
+                <TrendingUp className="w-4 h-4 text-green-600" />
+              ) : dashboardData.ginAnalytics.totalGINsThisMonth < dashboardData.ginAnalytics.totalGINsLastMonth ? (
+                <TrendingDown className="w-4 h-4 text-red-600" />
+              ) : (
+                <Minus className="w-4 h-4 text-gray-600" />
+              )}
+              <p className="text-sm text-orange-600">
+                Last Month: {dashboardData.ginAnalytics.totalGINsLastMonth}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Total Quantity Issued This Month */}
+        <div className="bg-gradient-to-br from-red-50 to-red-100 p-6 rounded-lg border border-red-200">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-medium text-red-700 uppercase tracking-wide">Total Quantity Issued</h4>
+            <TrendingUp className="w-5 h-5 text-red-600" />
+          </div>
+          <div className="mt-2">
+            <p className="text-3xl font-bold text-red-900">
+              {dashboardData.ginAnalytics.totalQuantityIssuedThisMonth.toLocaleString('en-US')}
+            </p>
+            <span className="text-sm text-red-600">Units This Month</span>
+            <div className="flex items-center gap-2 mt-2">
+              {dashboardData.ginAnalytics.totalQuantityIssuedThisMonth > dashboardData.ginAnalytics.totalQuantityIssuedLastMonth ? (
+                <TrendingUp className="w-4 h-4 text-green-600" />
+              ) : dashboardData.ginAnalytics.totalQuantityIssuedThisMonth < dashboardData.ginAnalytics.totalQuantityIssuedLastMonth ? (
+                <TrendingDown className="w-4 h-4 text-red-600" />
+              ) : (
+                <Minus className="w-4 h-4 text-gray-600" />
+              )}
+              <p className="text-sm text-red-600">
+                Last Month: {dashboardData.ginAnalytics.totalQuantityIssuedLastMonth.toLocaleString('en-US')}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Average GIN Value */}
+        <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-6 rounded-lg border border-amber-200">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-medium text-amber-700 uppercase tracking-wide">Average GIN Value</h4>
+            <AlertCircle className="w-5 h-5 text-amber-600" />
+          </div>
+          <div className="mt-2">
+            <p className="text-3xl font-bold text-amber-900">
+              LKR {dashboardData.ginAnalytics.averageGINValue.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}
+            </p>
+            <p className="text-sm text-amber-600 mt-2">
+              Per GIN average
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Quantity Issued Trend Chart */}
+      <div className="border-t border-gray-200 pt-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <h4 className="text-lg font-semibold text-gray-900">Quantity Issued Trend (Last 30 Days)</h4>
+            <Tooltip
+              title="Quantity Issued Trend"
+              description="Shows the daily total quantity of items issued through GINs over the last 30 days. Helps identify patterns in goods issuance."
+              position="bottom"
+            />
+          </div>
+        </div>
+        
+        {dashboardData.ginAnalytics.quantityIssuedTrend.length > 0 ? (
+          <div className="w-full h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={dashboardData.ginAnalytics.quantityIssuedTrend}
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis 
+                  dataKey="date" 
+                  stroke="#6b7280"
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    return `${date.getMonth() + 1}/${date.getDate()}`;
+                  }}
+                />
+                <YAxis 
+                  stroke="#6b7280"
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(value: number) => {
+                    if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+                    return `${value}`;
+                  }}
+                />
+                <RechartsTooltip
+                  contentStyle={{
+                    backgroundColor: '#1f2937',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: '#fff'
+                  }}
+                  formatter={(value: number | undefined) => [
+                    `${(value ?? 0).toLocaleString('en-US')} units`,
+                    'Quantity'
+                  ]}
+                  labelFormatter={(label) => {
+                    const date = new Date(label);
+                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                  }}
+                />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="quantity" 
+                  stroke="#f97316" 
+                  strokeWidth={2}
+                  dot={{ fill: '#f97316', r: 4 }}
+                  activeDot={{ r: 6 }}
+                  name="Quantity Issued (Units)"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-gray-50 rounded-lg">
+            <p className="text-gray-500">No GIN data available for the last 30 days</p>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
+
+
+
+
+
+
             {/* {isStockKeeper(currentUser?.RoleID || 0) && (
               <div className="mb-6">
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -730,7 +1378,7 @@ const handleApproveReturn = async (returnId: number) => {
                 <div className="px-6 py-4 border-b border-gray-200">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-xl font-semibold text-gray-900">Low Stock Alert Details</h2>
+                      <h2 className="text-xl font-semibold text-gray-900">Low Stock Items Details</h2>
                       <p className="text-sm text-gray-500 mt-1">
                         Items with stock levels at or below their reorder points
                       </p>

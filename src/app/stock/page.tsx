@@ -13,6 +13,7 @@ import { fetchStocks, createStockIn, createStockOut, deleteStock, fetchProducts,
 import { Stock as StockType } from '@/types/stock';
 import { ArrowUpCircle, ArrowDownCircle, Trash2, Upload, Download } from 'lucide-react';
 import Tooltip from '@/components/Common/Tooltip';
+import { usePageTitle } from '@/lib/hooks/usePageTitle';
 
 // Stock interfaces
 interface Stock extends StockType {
@@ -147,6 +148,7 @@ const StockPage: React.FC = () => {
     dateRange: null
   });
   const [isExporting, setIsExporting] = useState(false);
+  usePageTitle('Stock');
 
   // Check authentication
   useEffect(() => {

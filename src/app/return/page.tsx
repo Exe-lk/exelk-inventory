@@ -11,6 +11,7 @@ import { getCurrentUser, logoutUser } from '@/lib/auth';
 import { fetchReturns, createReturn, updateReturn, deleteReturn, fetchProducts, fetchSuppliers, fetchVariationsByProductId, fetchProductVariations, fetchReturnDetailsById } from '@/lib/services/returnService';
 import { ReturnResponse, CreateReturnRequest, UpdateReturnRequest, ReturnStatus, ReturnType } from '@/types/return';
 import { Pencil, Eye, Trash2 } from 'lucide-react';
+import { usePageTitle } from '@/lib/hooks/usePageTitle';
 
 // Interfaces matching the stock page pattern
 interface Return extends ReturnResponse {
@@ -131,6 +132,7 @@ const ReturnPage: React.FC = () => {
       default: return status;
     }
   };
+  usePageTitle('Return');
 
   // Check authentication
   useEffect(() => {

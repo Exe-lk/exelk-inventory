@@ -33,6 +33,7 @@ import { Pencil, Eye, Trash2 } from 'lucide-react';
 import { Upload, Download } from 'lucide-react';
 import { importProductFromCSV, exportProductToCSV } from '@/lib/services/productService';
 import Tooltip from '@/components/Common/Tooltip';
+import { usePageTitle } from '@/lib/hooks/usePageTitle';
 
 
 const ProductPage: React.FC = () => {
@@ -109,6 +110,8 @@ const ProductPage: React.FC = () => {
     includeHeaders: true
   });
   const [isExporting, setIsExporting] = useState(false);
+
+  usePageTitle('Product');
 
   // Check authentication and authorization
   useEffect(() => {

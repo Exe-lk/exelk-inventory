@@ -14,6 +14,7 @@ import { fetchGinDetailsByGinId } from '@/lib/services/gindetailsService';
 import { fetchGins, createCompleteGin, updateGin, deleteGin, CreateCompleteGINRequest } from '@/lib/services/ginService';
 import { Pencil, Eye, Trash2 } from 'lucide-react';
 import { GINDetail } from '@/types/gindetails';
+import { usePageTitle } from '@/lib/hooks/usePageTitle';
 
 
 // GIN interface
@@ -143,6 +144,8 @@ const GinPage: React.FC = () => {
     const product = products.find(p => p.productId === productID);
     return product ? `${product.productName} (${product.sku})` : `Product ${productID}`;
   };
+
+  usePageTitle('GIN');
 
   // Check authentication and authorization
   useEffect(() => {

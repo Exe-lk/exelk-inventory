@@ -13,6 +13,7 @@ import { Supplier } from '@/types/supplier';
 import { fetchSuppliers, createSupplier, updateSupplier, deleteSupplier } from '@/lib/services/supplierService';
 import { getCurrentUser, logoutUser } from '@/lib/auth';
 import { Pencil, Eye, Trash2 } from 'lucide-react';
+import { usePageTitle } from '@/lib/hooks/usePageTitle';
 
 const SupplierPage: React.FC = () => {
   const router = useRouter();
@@ -41,6 +42,7 @@ const SupplierPage: React.FC = () => {
   // Delete confirmation states
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(null);
+  usePageTitle('Supplier');
 
   // Check authentication and authorization
   useEffect(() => {

@@ -13,6 +13,7 @@ import { Category } from '@/types/category';
 import { fetchCategories, createCategory, updateCategory, deleteCategory } from '@/lib/services/categoryService';
 import { getCurrentUser, logoutUser } from '@/lib/auth';
 import { Pencil, Eye, Trash2 } from 'lucide-react';
+import { usePageTitle } from '@/lib/hooks/usePageTitle';
 
 const CategoryPage: React.FC = () => {
   const router = useRouter();
@@ -41,6 +42,7 @@ const CategoryPage: React.FC = () => {
   // Delete confirmation states
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  usePageTitle('Category');
 
   // Check authentication and authorization
   useEffect(() => {

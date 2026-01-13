@@ -13,6 +13,7 @@ import { ProductVariation } from '@/types/productvariation';
 import { fetchProductVariations, createProductVariation, updateProductVariation, deleteProductVariation } from '@/lib/services/productvariationService';
 import { getCurrentUser, logoutUser } from '@/lib/auth';
 import { Pencil, Eye, Trash2 } from 'lucide-react';
+import { usePageTitle } from '@/lib/hooks/usePageTitle';
 
 const ProductVariationPage: React.FC = () => {
   const router = useRouter();
@@ -41,6 +42,7 @@ const ProductVariationPage: React.FC = () => {
   // Delete confirmation states
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productVariationToDelete, setProductVariationToDelete] = useState<ProductVariation | null>(null);
+  usePageTitle('Product Variation');
 
   // Check authentication and authorization
   useEffect(() => {

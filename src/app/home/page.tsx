@@ -97,115 +97,78 @@ export default function HomePage() {
     router.push('/stock');
   };
 
-  // useEffect(() => {
-  //   // Check for existing session
-  //   const checkAuth = async () => {
-  //     try {
-  //       const user = await getCurrentUser()
-  //       if (user) {
-  //         setCurrentUser(user)
-  //         setIsLoggedIn(true)
-  //         // Load dashboard data after authentication
-  //         await loadDashboardData()
-  //       }
-  //     } catch (error) {
-  //       console.error('Auth check failed:', error)
-  //     } finally {
-  //       setIsLoading(false)
-  //     }
-  //   }
-
-  //   checkAuth()
-  // }, [])
-
-
-  // Add at top of component
+ 
 const [userCache, setUserCache] = useState<Omit<Employee, 'Password'> | null>(null)
 
+
+
+
+// Update the useEffect hook (around line 123)
 // useEffect(() => {
 //   const checkAuth = async () => {
 //     try {
-//       // Load dashboard data first (it includes user data)
-//       const data = await fetchDashboardData()
+//       // Try to load cached dashboard data first for instant display
+//       try {
+//         const cached = sessionStorage.getItem('dashboard_data_cache');
+//         if (cached) {
+//           const { data, timestamp } = JSON.parse(cached);
+//           // Show cached data immediately if available (even if expired)
+//           if (data) {
+//             setDashboardData(data);
+//             if (data.user) {
+//               setCurrentUser(data.user);
+//               setUserCache(data.user);
+//               setIsLoggedIn(true);
+//             }
+//           }
+//         }
+//       } catch (cacheError) {
+//         // Ignore cache errors, continue with normal flow
+//         console.warn('Cache read error:', cacheError);
+//       }
+      
+//       // Load dashboard data (will use cache if valid, or fetch fresh)
+//       const data = await fetchDashboardData();
       
 //       if (data.user) {
-//         setCurrentUser(data.user)
-//         setUserCache(data.user)
-//         setIsLoggedIn(true)
-//         setDashboardData(data)
+//         setCurrentUser(data.user);
+//         setUserCache(data.user);
+//         setIsLoggedIn(true);
+//         setDashboardData(data);
 //       } else {
 //         // Fallback: if dashboard doesn't have user, try getCurrentUser
-//         const user = await getCurrentUser()
+//         const user = await getCurrentUser();
 //         if (user) {
-//           setCurrentUser(user)
-//           setUserCache(user)
-//           setIsLoggedIn(true)
-//           await loadDashboardData()
+//           setCurrentUser(user);
+//           setUserCache(user);
+//           setIsLoggedIn(true);
+//           await loadDashboardData();
 //         }
 //       }
 //     } catch (error) {
-//       console.error('Auth check failed:', error)
+//       console.error('Auth check failed:', error);
 //     } finally {
-//       setIsLoading(false)
+//       setIsLoading(false);
 //     }
 //   }
 
 //   checkAuth()
 // }, [])
 
-//   // Load dashboard data
-//   const loadDashboardData = async () => {
-//     try {
-//       setIsLoadingDashboard(true)
-//       setDashboardError(null)
-      
-//       const data = await fetchDashboardData()
-
-//       if (data.user && !currentUser) {
-//         setCurrentUser(data.user)
-//       }
-
-//       setDashboardData(data)
-      
-//       console.log(' Dashboard data loaded:', data)
-//     } catch (error) {
-//       console.error(' Error loading dashboard data:', error)
-//       setDashboardError(error instanceof Error ? error.message : 'Failed to load dashboard data')
-//     } finally {
-//       setIsLoadingDashboard(false)
-//     }
-//   }
-
-//   // Handle approve return
-//   const handleApproveReturn = async (returnId: number) => {
-//     try {
-//       setIsApprovingReturn(returnId)
-      
-//       await approveReturn(returnId)
-      
-//       // Refresh dashboard data to update the pending returns list
-//       await loadDashboardData()
-      
-//       alert('Return approved successfully!')
-      
-//     } catch (error) {
-//       console.error(' Error approving return:', error)
-//       alert(`Failed to approve return: ${error instanceof Error ? error.message : 'Unknown error'}`)
-//     } finally {
-//       setIsApprovingReturn(null)
-//     }
-//   }
 
 
+// ... existing imports ...
 
-// Update the useEffect hook (around line 123)
+// Update the useEffect hook (around line 200)
 useEffect(() => {
+  let isMounted = true // Prevent state updates after unmount
+  
   const checkAuth = async () => {
     try {
       // Try to load cached dashboard data first for instant display
       try {
         const cached = sessionStorage.getItem('dashboard_data_cache');
-        if (cached) {
+        if (cached && isMounted) {
           const { data, timestamp } = JSON.parse(cached);
           // Show cached data immediately if available (even if expired)
           if (data) {
@@ -225,6 +188,8 @@ useEffect(() => {
       // Load dashboard data (will use cache if valid, or fetch fresh)
       const data = await fetchDashboardData();
       
+      if (!isMounted) return // Don't update state if component unmounted
+      
       if (data.user) {
         setCurrentUser(data.user);
         setUserCache(data.user);
@@ -233,7 +198,7 @@ useEffect(() => {
       } else {
         // Fallback: if dashboard doesn't have user, try getCurrentUser
         const user = await getCurrentUser();
-        if (user) {
+        if (user && isMounted) {
           setCurrentUser(user);
           setUserCache(user);
           setIsLoggedIn(true);
@@ -242,13 +207,27 @@ useEffect(() => {
       }
     } catch (error) {
       console.error('Auth check failed:', error);
+      if (isMounted) {
+        setIsLoggedIn(false);
+      }
     } finally {
-      setIsLoading(false);
+      if (isMounted) {
+        setIsLoading(false);
+      }
     }
   }
 
   checkAuth()
+  
+  // Cleanup function
+  return () => {
+    isMounted = false
+  }
 }, [])
+
+// ... rest of the code ...
+
+
 
 // Update loadDashboardData function (around line 155)
 const loadDashboardData = async () => {

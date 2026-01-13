@@ -20,6 +20,7 @@ import {
   exportBinCardsToCSV 
 } from '@/lib/services/bincardService';
 import Tooltip from '@/components/Common/Tooltip';
+import { usePageTitle } from '@/lib/hooks/usePageTitle';
 
 const BinCardPage: React.FC = () => {
   const router = useRouter();
@@ -80,6 +81,7 @@ const BinCardPage: React.FC = () => {
     dateRange: null
   });
   const [isExporting, setIsExporting] = useState(false);
+  usePageTitle('Bin Card');
 
   // Check authentication and authorization
   useEffect(() => {

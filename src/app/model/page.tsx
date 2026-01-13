@@ -14,6 +14,7 @@ import { Brand } from '@/types/brand';
 import { fetchModels, createModel, updateModel, deleteModel, fetchBrands } from '@/lib/services/modelService';
 import { getCurrentUser, logoutUser } from '@/lib/auth';
 import { Pencil, Eye, Trash2 } from 'lucide-react';
+import { usePageTitle } from '@/lib/hooks/usePageTitle';
 
 const ModelPage: React.FC = () => {
   const router = useRouter();
@@ -43,6 +44,7 @@ const ModelPage: React.FC = () => {
   // Delete confirmation states
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [modelToDelete, setModelToDelete] = useState<Model | null>(null);
+  usePageTitle('Model');
 
   // Check authentication and authorization
   useEffect(() => {

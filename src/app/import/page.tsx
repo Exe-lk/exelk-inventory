@@ -20,6 +20,7 @@ import {
 } from '@/lib/services/importService';
 import { getCurrentUser, logoutUser } from '@/lib/auth';
 import { Pencil, Eye, Trash2, Upload, Download, FileText } from 'lucide-react';
+import { usePageTitle } from '@/lib/hooks/usePageTitle';
 
 const ImportPage: React.FC = () => {
   const router = useRouter();
@@ -48,6 +49,8 @@ const ImportPage: React.FC = () => {
   // Delete confirmation states
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [importFileToDelete, setImportFileToDelete] = useState<ImportFile | null>(null);
+
+  usePageTitle('Import');
 
   // Check authentication and authorization
   useEffect(() => {

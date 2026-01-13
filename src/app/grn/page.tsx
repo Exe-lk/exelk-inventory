@@ -14,6 +14,7 @@ import { fetchSuppliers } from '@/lib/services/supplierService';
 import { fetchProducts } from '@/lib/services/productService';
 import { fetchGrnDetailsByGrnId } from '@/lib/services/grndetailsService';
 import { Pencil, Eye, Trash2 } from 'lucide-react';
+import { usePageTitle } from '@/lib/hooks/usePageTitle';
 
 // GRN interface
 interface GRN {
@@ -150,6 +151,7 @@ const GrnPage: React.FC = () => {
     const product = products.find(p => p.productId === productID);
     return product ? `${product.productName} (${product.sku})` : `Product ${productID}`;
   };
+  usePageTitle('GRN');
 
   // Check authentication and authorization
   useEffect(() => {

@@ -12,6 +12,7 @@ import { getCurrentUser, logoutUser } from '@/lib/auth';
 import { exportTransactionLogsToCSV } from '@/lib/services/transactionlogService';
 import { Download } from 'lucide-react';
 import Tooltip from '@/components/Common/Tooltip';
+import { usePageTitle } from '@/lib/hooks/usePageTitle';
 
 // Service function to fetch transaction logs
 const fetchTransactionLogs = async (params: TransactionLogQueryParams = {}) => {
@@ -33,7 +34,7 @@ const fetchTransactionLogs = async (params: TransactionLogQueryParams = {}) => {
     if (params.dateTo) queryParams.set('dateTo', params.dateTo);
 
     const url = queryParams.toString() ? `/api/transactionlog?${queryParams}` : '/api/transactionlog';
-    console.log('🔗 Request URL:', url);
+    console.log(' Request URL:', url);
     
     const response = await fetch(url, {
       method: 'GET',
@@ -45,12 +46,12 @@ const fetchTransactionLogs = async (params: TransactionLogQueryParams = {}) => {
     
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('❌ Fetch transaction logs error response:', errorData);
+      console.error(' Fetch transaction logs error response:', errorData);
       throw new Error(errorData.message || 'Failed to fetch transaction logs');
     }
     
     const result = await response.json();
-    console.log('📋 Transaction Logs API Response:', result);
+    console.log(' Transaction Logs API Response:', result);
     
     if (result.status === 'success' && result.data) {
       return result.data;
@@ -58,7 +59,7 @@ const fetchTransactionLogs = async (params: TransactionLogQueryParams = {}) => {
       throw new Error(result.message || 'Invalid response format');
     }
   } catch (error) {
-    console.error('❌ Error fetching transaction logs:', error);
+    console.error(' Error fetching transaction logs:', error);
     throw error;
   }
 };
@@ -114,6 +115,7 @@ const TransactionLogPage: React.FC = () => {
     dateRange: null
   });
   const [isExporting, setIsExporting] = useState(false);
+  usePageTitle('Transaction Log');
 
   // Check authentication and authorization
   useEffect(() => {

@@ -9,6 +9,7 @@ import Form, { FormField } from '@/components/form-popup/create';
 import { Employee, Role, hasAdminAccess, isSuperAdmin, isAdmin, isStockKeeper } from '@/types/user';
 import { fetchEmployees, fetchRoles, deleteEmployee } from '@/lib/services/employeeService';
 import { getCurrentUser, logoutUser } from '@/lib/auth';
+import { usePageTitle } from '@/lib/hooks/usePageTitle';
 
 const CreateAccountPage: React.FC = () => {
   const router = useRouter();
@@ -32,6 +33,7 @@ const CreateAccountPage: React.FC = () => {
   // Form popup states
   const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  usePageTitle('Create Account');
 
   // Check authentication and authorization
   useEffect(() => {

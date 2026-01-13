@@ -40,6 +40,8 @@ export default function Login({ onLogin }: LoginProps) {
     password: '',
   }
 
+
+
   // const handleSubmit = async (
   //   values: LoginFormValues, 
   //   { setSubmitting, setStatus }: FormikHelpers<LoginFormValues>
@@ -47,16 +49,16 @@ export default function Login({ onLogin }: LoginProps) {
   //   try {
   //     setStatus(null)
   //     setApiError('')
-
+  
   //     console.log('Attempting login for:', values.username)
       
   //     const response = await loginUser({
   //       username: values.username,
   //       password: values.password
   //     })
-
+  
   //     console.log('Login API response:', response)
-
+  
   //     if (response.success && response.data) {
   //       // Call onLogin prop if provided
   //       if (onLogin) {
@@ -71,13 +73,10 @@ export default function Login({ onLogin }: LoginProps) {
         
   //       console.log('Login successful:', response.data)
         
-        
-  //       setTimeout(() => {
-  //         console.log('Redirecting to /home')
-  //         window.location.replace('/home')
-  //       }, 1500)
-  //         //window.location.href = '/home'
-        
+  //       // Remove all the cookie polling logic - just redirect immediately
+  //       // Supabase cookies are set automatically via SSR
+  //       router.replace('/home')
+          
   //     } else {
   //       const errorMessage = response?.message || 'Login failed'
   //       console.error('Login failed:', errorMessage, response)
@@ -101,97 +100,7 @@ export default function Login({ onLogin }: LoginProps) {
 
 
 
-  // const handleSubmit = async (
-  //   values: LoginFormValues, 
-  //   { setSubmitting, setStatus }: FormikHelpers<LoginFormValues>
-  // ) => {
-  //   try {
-  //     setStatus(null)
-  //     setApiError('')
-
-  //     console.log('Attempting login for:', values.username)
-      
-  //     const response = await loginUser({
-  //       username: values.username,
-  //       password: values.password
-  //     })
-
-  //     console.log('Login API response:', response)
-
-  //     if (response.success && response.data) {
-  //       // Call onLogin prop if provided
-  //       if (onLogin) {
-  //         onLogin({
-  //           EmployeeID: response.data.userId,
-  //           UserName: response.data.username,
-  //           RoleID: response.data.role === 'superAdmin' ? 1 : 
-  //                   response.data.role === 'admin' ? 2 : 
-  //                   response.data.role === 'stockKeeper' ? 3 : 4
-  //         })
-  //       }
-        
-  //       console.log('Login successful:', response.data)
-        
-  //       // Wait for cookies to be set and verify they're available
-  //       // Use a longer delay and verify cookies are set before redirecting
-  //       let attempts = 0
-  //       const maxAttempts = 10
-        
-  //       const checkCookiesAndRedirect = async () => {
-  //         attempts++
-          
-  //         // Check if cookies are set by making a test request
-  //         try {
-  //           const testResponse = await fetch('/api/auth/me', {
-  //             credentials: 'include',
-  //             method: 'GET'
-  //           })
-            
-  //           if (testResponse.ok) {
-  //             // Cookies are set, safe to redirect
-  //             console.log('Cookies verified, redirecting to /home') // end in here.....
-  //             //window.location.href = '/home'
-  //             router.replace('/home')
-  //             return
-  //           }
-  //         } catch (error) {
-  //           console.log('Cookie check attempt', attempts, 'failed:', error)
-  //         }
-          
-  //         // If cookies not ready and haven't exceeded max attempts, try again
-  //         if (attempts < maxAttempts) {
-  //           setTimeout(checkCookiesAndRedirect, 200) // Check every 200ms
-  //         } else {
-            
-  //           console.log('Max attempts reached, redirecting anyway')
-  //           window.location.href = '/home'
-  //         }
-  //       }
-        
-  //       // Start checking after initial delay
-  //       setTimeout(checkCookiesAndRedirect, 500)
-        
-  //     } else {
-  //       const errorMessage = response?.message || 'Login failed'
-  //       console.error('Login failed:', errorMessage, response)
-  //       setStatus(errorMessage)
-  //       setApiError(errorMessage)
-  //       setSubmitting(false)
-  //     }
-  //   } catch (error: any) {
-  //     console.error('Login error caught:', error)
-  //     const errorMessage = error?.message || error?.toString() || 'Login failed. Please try again.'
-  //     console.error('Error details:', {
-  //       message: errorMessage,
-  //       error: error,
-  //       stack: error?.stack
-  //     })
-  //     setStatus(errorMessage)
-  //     setApiError(errorMessage)
-  //     setSubmitting(false)
-  //   } 
-  // }
-
+  // ... existing code ...
 
   const handleSubmit = async (
     values: LoginFormValues, 
@@ -224,9 +133,11 @@ export default function Login({ onLogin }: LoginProps) {
         
         console.log('Login successful:', response.data)
         
-        // Remove all the cookie polling logic - just redirect immediately
-        // Supabase cookies are set automatically via SSR
-        router.replace('/home')
+        // Use router.replace to prevent back button issues
+        // Add a small delay to ensure cookies are set
+        setTimeout(() => {
+          router.replace('/home')
+        }, 100)
           
       } else {
         const errorMessage = response?.message || 'Login failed'
@@ -248,6 +159,8 @@ export default function Login({ onLogin }: LoginProps) {
       setSubmitting(false)
     } 
   }
+
+// ... rest of the code ...
 
 
 

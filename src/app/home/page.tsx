@@ -12,6 +12,7 @@ import { CheckCircle, Clock, XCircle, Eye, AlertCircle,AlertTriangle, Package, E
 import Tooltip from '@/components/Common/Tooltip';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { usePageTitle } from '@/lib/hooks/usePageTitle';
 
 
 // Add new interface after existing interfaces
@@ -54,6 +55,7 @@ export default function HomePage() {
   // Add state for low stock modal
   const [isLowStockModalOpen, setIsLowStockModalOpen] = useState(false)
   const [isNavigatingToStock, setIsNavigatingToStock] = useState(false)
+  usePageTitle('Dashboard');
 
   // Add helper function for getting variation display name
   const getVariationDisplayName = (item: LowStockItem): string => {

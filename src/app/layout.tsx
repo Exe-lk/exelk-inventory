@@ -13,7 +13,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EXELK Inventory",
+  title: {
+    template: "%s | EXELK Inventory",
+    default: "EXELK Inventory",
+  },
   description: "EXELK Inventory System",
 };
 

@@ -13,6 +13,7 @@ import { Brand } from '@/types/brand';
 import { fetchBrands, createBrand, updateBrand, deleteBrand } from '@/lib/services/brandService';
 import { getCurrentUser, logoutUser } from '@/lib/auth';
 import { Pencil, Eye, Trash2 } from 'lucide-react';
+import { usePageTitle } from '@/lib/hooks/usePageTitle';
 
 const BrandPage: React.FC = () => {
   const router = useRouter();
@@ -41,6 +42,7 @@ const BrandPage: React.FC = () => {
   // Delete confirmation states
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [brandToDelete, setBrandToDelete] = useState<Brand | null>(null);
+  usePageTitle('Brand');
 
   // Check authentication and authorization
   useEffect(() => {

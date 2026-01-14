@@ -18,39 +18,18 @@ import { usePageTitle } from '@/lib/hooks/usePageTitle';
 
 
 // GIN interface
-// interface GIN {
-//   ginId: number;
-//   ginNumber: string;
-//   stockKeeperId: number;
-//   issuedTo: string;
-//   issueReason: string | null;
-//   issueDate: string;
-//   remarks: string | null;
-//   stockId?: number | null;
-//   createdDate?: string;
-//   updatedDate?: string;
-//   // Enhanced for search context
-//   gindetails?: {
-//     product?: {
-//       productName: string;
-//       sku: string;
-//     };
-//   }[];
-// }
-
 interface GIN {
   ginId: number;
-  ginNumber: string | null; // Changed from string to string | null
-  stockKeeperId?: number; // Made optional
-  employeeId?: number; // Added as optional
-  issuedTo: string | null; // Changed from string to string | null
+  ginNumber: string | null;
+  stockKeeperId?: number;
+  employeeId?: number;
+  issuedTo: string | null;
   issueReason: string | null;
-  issueDate: string | null; // Changed from string to string | null
+  issueDate: string | null;
   remarks: string | null;
   stockId?: number | null;
-  createdDate?: string | null; // Changed from string to string | null
-  updatedDate?: string | null; // Changed from string to string | null
-  // Enhanced for search context
+  createdDate?: string | null;
+  updatedDate?: string | null;
   gindetails?: {
     product?: {
       productName: string;
@@ -66,17 +45,6 @@ interface Product {
   productName: string;
   isActive: boolean;
 }
-
-// GIN Detail interface
-// interface GINDetail {
-//   ginDetailId: number;
-//   ginId: number;
-//   productId: number;
-//   quantityIssued: number;
-//   unitCost: number;
-//   subTotal: number;
-//   location: string | null;
-// }
 
 // GIN Detail for form
 interface GINDetailFormData {
@@ -605,7 +573,7 @@ const GinPage: React.FC = () => {
       label: 'GIN ID',
       sortable: true,
       render: (value: number) => (
-        <span className="font-medium text-gray-900">
+        <span className="font-medium text-gray-900 dark:text-white">
           {String(value).padStart(4, '0')}
         </span>
       )
@@ -617,9 +585,9 @@ const GinPage: React.FC = () => {
       filterable: true,
       render: (value: string, row: any) => (
         <div>
-          <span className="font-medium text-gray-600">{value}</span>
+          <span className="font-medium text-gray-600 dark:text-gray-400">{value}</span>
           {searchTerm && row.gindetails && row.gindetails.length > 0 && (
-            <div className="text-xs text-blue-600 mt-1">
+            <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
               Products: {row.gindetails.slice(0, 2).map((detail: any) => detail.product?.productName || 'Unknown').join(', ')}
               {row.gindetails.length > 2 && ` +${row.gindetails.length - 2} more`}
             </div>
@@ -633,7 +601,7 @@ const GinPage: React.FC = () => {
       sortable: true,
       filterable: true,
       render: (value: string) => (
-        <span className="font-medium text-gray-900">{value}</span>
+        <span className="font-medium text-gray-900 dark:text-white">{value}</span>
       )
     },
     {
@@ -642,7 +610,7 @@ const GinPage: React.FC = () => {
       sortable: true,
       filterable: true,
       render: (value: string | null) => (
-        <span className="text-gray-600">
+        <span className="text-gray-600 dark:text-gray-400">
           {value ? (value.length > 20 ? `${value.substring(0, 20)}...` : value) : 'N/A'}
         </span>
       )
@@ -653,7 +621,7 @@ const GinPage: React.FC = () => {
       sortable: true,
       filterable: true,
       render: (value: number) => (
-        <span className="text-gray-600">ID: {value}</span>
+        <span className="text-gray-600 dark:text-gray-400">ID: {value}</span>
       )
     },
     {
@@ -661,7 +629,7 @@ const GinPage: React.FC = () => {
       label: 'Issue Date',
       sortable: true,
       render: (value: string) => (
-        <span className="text-gray-600">
+        <span className="text-gray-600 dark:text-gray-400">
           {value ? new Date(value).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short',
@@ -676,7 +644,7 @@ const GinPage: React.FC = () => {
       sortable: false,
       filterable: false,
       render: (value: string | null) => (
-        <span className="text-gray-600">
+        <span className="text-gray-600 dark:text-gray-400">
           {value ? (value.length > 30 ? `${value.substring(0, 30)}...` : value) : 'N/A'}
         </span>
       )
@@ -770,10 +738,10 @@ const GinPage: React.FC = () => {
   // Show loading spinner during auth check
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950">
         <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <div className="text-lg text-gray-600">Loading...</div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-indigo-500 mb-4"></div>
+          <div className="text-lg text-gray-600 dark:text-gray-300">Loading...</div>
         </div>
       </div>
     );
@@ -787,16 +755,16 @@ const GinPage: React.FC = () => {
   // Show access denied for unauthorized users
   if (!isStockKeeper(currentUser?.RoleID || 0)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg text-center">
-          <div className="text-red-500 text-4xl mb-4"></div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
-          <p className="text-gray-600 mb-6">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950">
+        <div className="max-w-md w-full bg-white dark:bg-slate-800 p-8 rounded-lg shadow-lg text-center">
+          <div className="text-red-500 dark:text-red-400 text-4xl mb-4">🚫</div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Access Denied</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             Only stockkeepers can access GIN management.
           </p>
           <button
             onClick={() => router.push('/home')}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-6 py-3 bg-blue-600 dark:bg-indigo-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-indigo-700 transition-colors"
           >
             Go to Dashboard
           </button>
@@ -806,7 +774,7 @@ const GinPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-slate-950">
       {/* Navbar */}
       <Navbar currentUser={currentUser} onMenuClick={toggleSidebar} />
 
@@ -821,13 +789,13 @@ const GinPage: React.FC = () => {
 
       {/* Main Content */}
       <div className={`pt-[70px] transition-all duration-300 ease-in-out ${isSidebarExpanded ? 'lg:ml-[300px]' : 'lg:ml-16'}`}>
-        <main className="overflow-y-auto bg-gray-50 p-6" style={{ minHeight: 'calc(100vh - 70px)' }}>
+        <main className="overflow-y-auto bg-gray-50 dark:bg-slate-950 p-6" style={{ minHeight: 'calc(100vh - 70px)' }}>
           <div className="max-w-full">
             <div className="mb-8">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">GIN Management</h1>
-                  <p className="mt-2 text-gray-600">
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">GIN Management</h1>
+                  <p className="mt-2 text-gray-600 dark:text-gray-400">
                     Manage Goods Issue Notes and track internal inventory distribution
                   </p>
                 </div>
@@ -837,12 +805,12 @@ const GinPage: React.FC = () => {
             {/* Enhanced Search Bar */}
             <div className="mb-6">
               <div className="max-w-md">
-                <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="search" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Search GINs
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   </div>
@@ -851,12 +819,12 @@ const GinPage: React.FC = () => {
                     type="text"
                     value={searchTerm}
                     onChange={(e) => handleSearchChange(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md leading-5 bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:placeholder-gray-400 dark:focus:placeholder-gray-500 focus:ring-1 focus:ring-blue-500 dark:focus:ring-indigo-500 focus:border-blue-500 dark:focus:border-indigo-500"
                     placeholder="Search by GIN number, issued to, product name, or issue reason..."
                   />
                 </div>
                 {searchTerm && (
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     🔍 Searching GINs, issued to, and products for: "{searchTerm}"
                   </p>
                 )}
@@ -865,14 +833,14 @@ const GinPage: React.FC = () => {
 
             {error ? (
               <div className="flex items-center justify-center min-h-[60vh]">
-                <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+                <div className="bg-white dark:bg-slate-800 p-8 rounded-lg shadow-lg max-w-md w-full">
                   <div className="text-center">
-                    <div className="text-red-500 text-xl mb-4"></div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Data</h3>
-                    <p className="text-gray-500 mb-4">{error}</p>
+                    <div className="text-red-500 dark:text-red-400 text-xl mb-4"></div>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Error Loading Data</h3>
+                    <p className="text-gray-500 dark:text-gray-400 mb-4">{error}</p>
                     <button 
                       onClick={() => window.location.reload()} 
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                      className="px-4 py-2 bg-blue-600 dark:bg-indigo-600 text-white rounded-md hover:bg-blue-700 dark:hover:bg-indigo-700 transition-colors"
                     >
                       Reload Page
                     </button>
@@ -880,7 +848,7 @@ const GinPage: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="bg-white rounded-lg shadow">
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
                 <Table
                   data={gins}
                   columns={columns}
@@ -892,7 +860,7 @@ const GinPage: React.FC = () => {
                   emptyMessage="No GIN records found. Create your first GIN to get started."
                   onCreateClick={isStockKeeper(currentUser?.RoleID || 0) ? handleCreateClick : undefined}
                   createButtonLabel="Create GIN"
-                  className="border border-gray-200"
+                  className="border border-gray-200 dark:border-slate-700"
                 />
               </div>
             )}
@@ -907,14 +875,14 @@ const GinPage: React.FC = () => {
           
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="relative w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-              <div className="relative bg-white rounded-lg shadow-xl">
+              <div className="relative bg-white dark:bg-slate-800 rounded-lg shadow-xl">
                 {/* Header */}
-                <div className="px-6 py-4 border-b border-gray-200">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-xl font-semibold text-gray-900">GIN Details</h2>
+                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white">GIN Details</h2>
                       {viewingGin && (
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                           {viewingGin.ginNumber} • Issued To: {viewingGin.issuedTo} • 
                           Date: {viewingGin.issueDate ? new Date(viewingGin.issueDate).toLocaleDateString() : 'N/A'}
                         </p>
@@ -922,7 +890,7 @@ const GinPage: React.FC = () => {
                     </div>
                     <button
                       onClick={handleCloseViewModal}
-                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                     >
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -936,34 +904,34 @@ const GinPage: React.FC = () => {
                   {isLoadingDetails ? (
                     <div className="flex items-center justify-center py-12">
                       <div className="flex flex-col items-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-                        <p className="text-gray-500">Loading GIN details...</p>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-indigo-500 mb-4"></div>
+                        <p className="text-gray-500 dark:text-gray-400">Loading GIN details...</p>
                       </div>
                     </div>
                   ) : viewGinDetails.length === 0 ? (
                     <div className="text-center py-12">
-                      <div className="text-gray-400 text-xl mb-4">📄</div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Details Found</h3>
-                      <p className="text-gray-500">This GIN doesn't have any details yet.</p>
+                      <div className="text-gray-400 dark:text-gray-500 text-xl mb-4">📄</div>
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Details Found</h3>
+                      <p className="text-gray-500 dark:text-gray-400">This GIN doesn't have any details yet.</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       {/* GIN Summary */}
                       {viewingGin && (
-                        <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                          <h3 className="text-lg font-medium text-gray-900 mb-3">GIN Summary</h3>
+                        <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 mb-6">
+                          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">GIN Summary</h3>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">GIN Number</label>
-                              <p className="text-sm text-gray-900 font-medium">{viewingGin.ginNumber}</p>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">GIN Number</label>
+                              <p className="text-sm text-gray-900 dark:text-white font-medium">{viewingGin.ginNumber}</p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Issued To</label>
-                              <p className="text-sm text-gray-900">{viewingGin.issuedTo}</p>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Issued To</label>
+                              <p className="text-sm text-gray-900 dark:text-white">{viewingGin.issuedTo}</p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Issue Date</label>
-                              <p className="text-sm text-gray-900">
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Issue Date</label>
+                              <p className="text-sm text-gray-900 dark:text-white">
                                 {viewingGin.issueDate 
                                   ? new Date(viewingGin.issueDate).toLocaleDateString('en-US', {
                                       year: 'numeric',
@@ -975,18 +943,18 @@ const GinPage: React.FC = () => {
                             </div>
                             {viewingGin.issueReason && (
                               <div>
-                                <label className="block text-sm font-medium text-gray-700">Issue Reason</label>
-                                <p className="text-sm text-gray-900">{viewingGin.issueReason}</p>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Issue Reason</label>
+                                <p className="text-sm text-gray-900 dark:text-white">{viewingGin.issueReason}</p>
                               </div>
                             )}
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Stock Keeper ID</label>
-                              <p className="text-sm text-gray-900">{viewingGin.stockKeeperId}</p>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Stock Keeper ID</label>
+                              <p className="text-sm text-gray-900 dark:text-white">{viewingGin.stockKeeperId}</p>
                             </div>
                             {viewingGin.remarks && (
                               <div className="md:col-span-3">
-                                <label className="block text-sm font-medium text-gray-700">Remarks</label>
-                                <p className="text-sm text-gray-900">{viewingGin.remarks}</p>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Remarks</label>
+                                <p className="text-sm text-gray-900 dark:text-white">{viewingGin.remarks}</p>
                               </div>
                             )}
                           </div>
@@ -995,74 +963,74 @@ const GinPage: React.FC = () => {
 
                       {/* GIN Details Table */}
                       <div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-3">
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
                           GIN Details ({viewGinDetails.length} items)
                         </h3>
                         <div className="overflow-x-auto">
-                          <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                          <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                            <thead className="bg-gray-50 dark:bg-slate-700">
                               <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                   Detail ID
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                   Product
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                   Quantity Issued
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                   Unit Cost
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                   Subtotal
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                   Location
                                 </th>
                               </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
                               {viewGinDetails.map((detail, index) => (
-                                <tr key={detail.ginDetailId} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                <tr key={detail.ginDetailId} className={index % 2 === 0 ? 'bg-white dark:bg-slate-800' : 'bg-gray-50 dark:bg-slate-700/50'}>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                                     {String(detail.ginDetailId).padStart(4, '0')}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm font-medium text-gray-900">
+                                    <div className="text-sm font-medium text-gray-900 dark:text-white">
                                       {getProductName(detail.productId)}
                                     </div>
-                                    <div className="text-sm text-gray-500">
+                                    <div className="text-sm text-gray-500 dark:text-gray-400">
                                       Product ID: {detail.productId}
                                     </div>
                                   </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                     {detail.quantityIssued?.toLocaleString() || 0}
                                   </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                     LKR {detail.unitCost?.toLocaleString('en-US', {
                                       minimumFractionDigits: 2,
                                       maximumFractionDigits: 2
                                     }) || '0.00'}
                                   </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                                     LKR {(detail.subTotal ?? 0).toLocaleString('en-US', {
                                       minimumFractionDigits: 2,
                                       maximumFractionDigits: 2
                                     })}
                                   </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                     {detail.location || 'N/A'}
                                   </td>
                                 </tr>
                               ))}
                             </tbody>
-                            <tfoot className="bg-gray-100">
+                            <tfoot className="bg-gray-100 dark:bg-slate-700">
                               <tr>
-                                <td colSpan={4} className="px-6 py-4 text-sm font-medium text-gray-900 text-right">
+                                <td colSpan={4} className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white text-right">
                                   Total Value:
                                 </td>
-                                <td className="px-6 py-4 text-sm font-bold text-gray-900">
+                                <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-white">
                                   LKR {viewGinDetails.reduce((total, detail) => total + (detail.subTotal ?? 0), 0).toLocaleString('en-US', {
                                     minimumFractionDigits: 2,
                                     maximumFractionDigits: 2
@@ -1079,10 +1047,10 @@ const GinPage: React.FC = () => {
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+                <div className="px-6 py-4 border-t border-gray-200 dark:border-slate-700 flex justify-end">
                   <button
                     onClick={handleCloseViewModal}
-                    className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                    className="px-6 py-2 bg-gray-600 dark:bg-slate-600 text-white rounded-md hover:bg-gray-700 dark:hover:bg-slate-500 transition-colors"
                   >
                     Close
                   </button>
@@ -1100,13 +1068,13 @@ const GinPage: React.FC = () => {
           
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-              <div className="relative bg-white rounded-lg shadow-xl">
-                <div className="px-6 py-4 border-b border-gray-200">
+              <div className="relative bg-white dark:bg-slate-800 rounded-lg shadow-xl">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-gray-900">Create Complete GIN</h2>
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Create Complete GIN</h2>
                     <button
                       onClick={handleCloseCreateForm}
-                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                     >
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1118,81 +1086,81 @@ const GinPage: React.FC = () => {
                 <div className="px-6 py-4">
                   {/* GIN Information Section */}
                   <div className="mb-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">GIN Information</h3>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">GIN Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           GIN Number <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
                           value={ginFormData.ginNumber}
                           onChange={(e) => handleGinFormChange('ginNumber', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white dark:placeholder-gray-400"
                           placeholder="Enter GIN number (e.g., GIN-2025-001)"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Issued To <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
                           value={ginFormData.issuedTo}
                           onChange={(e) => handleGinFormChange('issuedTo', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white dark:placeholder-gray-400"
                           placeholder="Enter person/department name"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Issue Reason
                         </label>
                         <input
                           type="text"
                           value={ginFormData.issueReason}
                           onChange={(e) => handleGinFormChange('issueReason', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white dark:placeholder-gray-400"
                           placeholder="Enter reason for issuing goods"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Issue Date <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="date"
                           value={ginFormData.issueDate}
                           onChange={(e) => handleGinFormChange('issueDate', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Stock ID (Optional)
                         </label>
                         <input
                           type="number"
                           value={ginFormData.stockId}
                           onChange={(e) => handleGinFormChange('stockId', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white dark:placeholder-gray-400"
                           placeholder="Enter stock ID"
                         />
                       </div>
 
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Remarks
                         </label>
                         <textarea
                           value={ginFormData.remarks}
                           onChange={(e) => handleGinFormChange('remarks', e.target.value)}
                           rows={3}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white dark:placeholder-gray-400"
                           placeholder="Enter remarks (optional)"
                         />
                       </div>
@@ -1202,10 +1170,10 @@ const GinPage: React.FC = () => {
                   {/* GIN Details Section */}
                   <div className="mb-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-medium text-gray-900">GIN Details</h3>
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">GIN Details</h3>
                       <button
                         onClick={addGinDetail}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                        className="px-4 py-2 bg-blue-600 dark:bg-indigo-600 text-white rounded-md hover:bg-blue-700 dark:hover:bg-indigo-700 transition-colors"
                       >
                         Add Product
                       </button>
@@ -1213,13 +1181,13 @@ const GinPage: React.FC = () => {
 
                     <div className="space-y-4">
                       {ginDetails.map((detail, index) => (
-                        <div key={index} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                        <div key={index} className="p-4 border border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-700/50">
                           <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-medium text-gray-700">Product Item {index + 1}</h4>
+                            <h4 className="font-medium text-gray-700 dark:text-gray-300">Product Item {index + 1}</h4>
                             {ginDetails.length > 1 && (
                               <button
                                 onClick={() => removeGinDetail(index)}
-                                className="text-red-600 hover:text-red-800"
+                                className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
                               >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1230,13 +1198,13 @@ const GinPage: React.FC = () => {
 
                           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                 Product <span className="text-red-500">*</span>
                               </label>
                               <select
                                 value={detail.productId}
                                 onChange={(e) => handleDetailChange(index, 'productId', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
                               >
                                 <option value="">Select product</option>
                                 {products.filter(p => p.isActive).map(product => (
@@ -1248,20 +1216,20 @@ const GinPage: React.FC = () => {
                             </div>
 
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                 Quantity Issued <span className="text-red-500">*</span>
                               </label>
                               <input
                                 type="number"
                                 value={detail.quantityIssued}
                                 onChange={(e) => handleDetailChange(index, 'quantityIssued', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white dark:placeholder-gray-400"
                                 placeholder="Quantity to issue"
                               />
                             </div>
 
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                 Unit Cost <span className="text-red-500">*</span>
                               </label>
                               <input
@@ -1269,27 +1237,27 @@ const GinPage: React.FC = () => {
                                 step="0.01"
                                 value={detail.unitCost}
                                 onChange={(e) => handleDetailChange(index, 'unitCost', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white dark:placeholder-gray-400"
                                 placeholder="Unit cost"
                               />
                             </div>
 
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                 Location
                               </label>
                               <input
                                 type="text"
                                 value={detail.location}
                                 onChange={(e) => handleDetailChange(index, 'location', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white dark:placeholder-gray-400"
                                 placeholder="Location/Warehouse"
                               />
                             </div>
                           </div>
 
                           {detail.quantityIssued && detail.unitCost && (
-                            <div className="mt-2 text-sm text-gray-600">
+                            <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                               Subtotal: LKR {(parseInt(detail.quantityIssued) * parseFloat(detail.unitCost)).toFixed(2)}
                             </div>
                           )}
@@ -1297,26 +1265,26 @@ const GinPage: React.FC = () => {
                       ))}
                     </div>
 
-                    <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                      <div className="text-sm font-medium text-blue-800">
+                    <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <div className="text-sm font-medium text-blue-800 dark:text-blue-300">
                         Total Value: LKR {calculateTotalAmount().toFixed(2)}
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                <div className="px-6 py-4 border-t border-gray-200 dark:border-slate-700 flex justify-end space-x-3">
                   <button
                     onClick={handleCloseCreateForm}
                     disabled={isSubmitting}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                    className="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleCreateCompleteGin}
                     disabled={isSubmitting}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    className="px-6 py-2 bg-blue-600 dark:bg-indigo-600 text-white rounded-md hover:bg-blue-700 dark:hover:bg-indigo-700 transition-colors disabled:opacity-50"
                   >
                     {isSubmitting ? 'Creating...' : 'Create GIN'}
                   </button>
@@ -1334,10 +1302,10 @@ const GinPage: React.FC = () => {
           
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="relative w-full max-w-2xl">
-              <div className="relative bg-white rounded-lg shadow-xl">
+              <div className="relative bg-white dark:bg-slate-800 rounded-lg shadow-xl">
                 <button
                   onClick={handleCloseUpdateForm}
-                  className="absolute right-4 top-4 z-10 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-4 top-4 z-10 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

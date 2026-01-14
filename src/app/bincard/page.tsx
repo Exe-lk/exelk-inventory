@@ -499,7 +499,7 @@ const BinCardPage: React.FC = () => {
       label: 'Bin Card ID',
       sortable: true,
       render: (value: number) => (
-        <span className="font-medium text-gray-900">
+        <span className="font-medium text-gray-900 dark:text-white">
           {String(value).padStart(4, '0')}
         </span>
       )
@@ -510,7 +510,7 @@ const BinCardPage: React.FC = () => {
       sortable: true,
       filterable: true,
       render: (value: string) => (
-        <span className="text-gray-900">
+        <span className="text-gray-900 dark:text-white">
           {value ? new Date(value).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short',
@@ -526,7 +526,9 @@ const BinCardPage: React.FC = () => {
       filterable: true,
       render: (value: string) => (
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-          value === 'GRN' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
+          value === 'GRN' 
+            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' 
+            : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
         }`}>
           {value}
         </span>
@@ -539,7 +541,7 @@ const BinCardPage: React.FC = () => {
       filterable: true,
       render: (value: number, row: BinCardWithDetails) => (
         <div className="text-sm">
-          <div className="font-medium text-gray-900">{value}</div>
+          <div className="font-medium text-gray-900 dark:text-white">{value}</div>
         </div>
       )
     },
@@ -550,7 +552,7 @@ const BinCardPage: React.FC = () => {
       filterable: true,
       render: (value: string | null, row: BinCardWithDetails) => (
         <div className="text-sm">
-          <div className="font-medium text-gray-900">
+          <div className="font-medium text-gray-900 dark:text-white">
             {value || 'N/A'}
           </div>
         </div>
@@ -561,7 +563,7 @@ const BinCardPage: React.FC = () => {
       label: 'Qty In',
       sortable: true,
       render: (value: number) => (
-        <span className={`font-medium ${value > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+        <span className={`font-medium ${value > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
           {value || '-'}
         </span>
       )
@@ -571,7 +573,7 @@ const BinCardPage: React.FC = () => {
       label: 'Qty Out',
       sortable: true,
       render: (value: number) => (
-        <span className={`font-medium ${value > 0 ? 'text-orange-600' : 'text-gray-400'}`}>
+        <span className={`font-medium ${value > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-gray-400 dark:text-gray-500'}`}>
           {value || '-'}
         </span>
       )
@@ -581,7 +583,7 @@ const BinCardPage: React.FC = () => {
       label: 'Balance',
       sortable: true,
       render: (value: number) => (
-        <span className="font-medium text-blue-600">
+        <span className="font-medium text-blue-600 dark:text-blue-400">
           {value}
         </span>
       )
@@ -592,7 +594,7 @@ const BinCardPage: React.FC = () => {
       sortable: true,
       filterable: true,
       render: (value: number | null) => (
-        <span className="text-gray-600">
+        <span className="text-gray-600 dark:text-gray-400">
           {value ? `${value}` : 'N/A'}
         </span>
       )
@@ -603,10 +605,10 @@ const BinCardPage: React.FC = () => {
       sortable: false,
       render: (value: string | null, row: BinCardWithDetails) => (
         <div className="text-sm">
-          <div className="font-medium text-gray-900">
+          <div className="font-medium text-gray-900 dark:text-white">
             {value || 'Unknown'}
           </div>
-          <div className="text-gray-500">ID: {row.stockKeeperId}</div>
+          <div className="text-gray-500 dark:text-gray-400">ID: {row.stockKeeperId}</div>
         </div>
       )
     }
@@ -638,10 +640,10 @@ const BinCardPage: React.FC = () => {
   // Export Form Component
   const ExportForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     return (
-      <div className="bg-white p-8 max-w-4xl mx-auto">
+      <div className="bg-white dark:bg-slate-800 p-8 max-w-4xl mx-auto">
         <div className="text-center mb-8">
-          <h2 className="text-2xl font-semibold text-gray-700">Export Bin Cards to CSV</h2>
-          <p className="mt-2 text-sm text-gray-500">
+          <h2 className="text-2xl font-semibold text-gray-700 dark:text-white">Export Bin Cards to CSV</h2>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
             Export bin card records to a CSV file for external use
           </p>
         </div>
@@ -649,8 +651,8 @@ const BinCardPage: React.FC = () => {
         {/* Export Options */}
         <div className="space-y-6 mb-6">
           {/* Export Scope */}
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <h3 className="font-semibold text-gray-900 mb-3">Export Scope</h3>
+          <div className="bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-700 rounded-lg p-4">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Export Scope</h3>
             <div className="space-y-2">
               <label className="flex items-center">
                 <input
@@ -661,7 +663,7 @@ const BinCardPage: React.FC = () => {
                   disabled={isExporting}
                   className="mr-2"
                 />
-                <span className="text-sm text-gray-700">Export all bin cards (with current filters applied)</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Export all bin cards (with current filters applied)</span>
               </label>
               <label className="flex items-center">
                 <input
@@ -672,18 +674,18 @@ const BinCardPage: React.FC = () => {
                   disabled={isExporting}
                   className="mr-2"
                 />
-                <span className="text-sm text-gray-700">Export currently displayed bin cards only ({binCards.length} records)</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Export currently displayed bin cards only ({binCards.length} records)</span>
               </label>
             </div>
           </div>
 
           {/* Date Range Filter (Optional) */}
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <h3 className="font-semibold text-gray-900 mb-3">Additional Date Range Filter (Optional)</h3>
-            <p className="text-xs text-gray-500 mb-3">This will further filter the exported data by transaction date</p>
+          <div className="bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-700 rounded-lg p-4">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Additional Date Range Filter (Optional)</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">This will further filter the exported data by transaction date</p>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Start Date
                 </label>
                 <input
@@ -697,11 +699,11 @@ const BinCardPage: React.FC = () => {
                     }
                   }))}
                   disabled={isExporting}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   End Date
                 </label>
                 <input
@@ -715,22 +717,22 @@ const BinCardPage: React.FC = () => {
                     }
                   }))}
                   disabled={isExporting}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
                 />
               </div>
             </div>
             <button
               onClick={() => setExportOptions(prev => ({ ...prev, dateRange: null }))}
               disabled={isExporting}
-              className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+              className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
             >
               Clear date filter
             </button>
           </div>
 
           {/* CSV Options */}
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <h3 className="font-semibold text-gray-900 mb-3">CSV Options</h3>
+          <div className="bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-700 rounded-lg p-4">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-3">CSV Options</h3>
             <label className="flex items-center">
               <input
                 type="checkbox"
@@ -739,14 +741,14 @@ const BinCardPage: React.FC = () => {
                 disabled={isExporting}
                 className="mr-2"
               />
-              <span className="text-sm text-gray-700">Include column headers</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Include column headers</span>
             </label>
           </div>
 
           {/* Export Preview */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="font-semibold text-blue-900 mb-2">Export Preview</h3>
-            <div className="text-sm text-blue-800 space-y-1">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">Export Preview</h3>
+            <div className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
               <div>Records to export: <strong>{exportOptions.exportAll ? 'All bin cards (with filters)' : binCards.length}</strong></div>
               {exportOptions.dateRange?.start && exportOptions.dateRange?.end && (
                 <div>
@@ -763,14 +765,14 @@ const BinCardPage: React.FC = () => {
           <button
             onClick={handleExportSubmit}
             disabled={isExporting}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-3 bg-blue-600 dark:bg-indigo-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isExporting ? 'Exporting...' : 'Export to CSV'}
           </button>
           <button
             onClick={onClose}
             disabled={isExporting}
-            className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50"
+            className="px-6 py-3 bg-gray-300 dark:bg-slate-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 dark:hover:bg-slate-500 disabled:opacity-50"
           >
             Cancel
           </button>
@@ -823,10 +825,10 @@ const BinCardPage: React.FC = () => {
   // Show loading spinner during auth check
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950">
         <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <div className="text-lg text-gray-600">Loading...</div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-indigo-500 mb-4"></div>
+          <div className="text-lg text-gray-600 dark:text-gray-300">Loading...</div>
         </div>
       </div>
     );
@@ -840,16 +842,16 @@ const BinCardPage: React.FC = () => {
   // Show access denied for unauthorized users
   if (!isStockKeeper(currentUser?.RoleID || 0)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg text-center">
-          <div className="text-red-500 text-4xl mb-4">🚫</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
-          <p className="text-gray-600 mb-6">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950">
+        <div className="max-w-md w-full bg-white dark:bg-slate-800 p-8 rounded-lg shadow-lg text-center">
+          <div className="text-red-500 dark:text-red-400 text-4xl mb-4">🚫</div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Access Denied</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             Only stockkeepers can access bin card management.
           </p>
           <button
             onClick={() => router.push('/home')}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-6 py-3 bg-blue-600 dark:bg-indigo-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-indigo-700 transition-colors"
           >
             Go to Dashboard
           </button>
@@ -861,7 +863,7 @@ const BinCardPage: React.FC = () => {
   // Show error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-gray-100 dark:bg-slate-950">
         <Navbar currentUser={currentUser} onMenuClick={toggleSidebar} />
         <SidebarWrapper
           currentUser={currentUser}
@@ -871,18 +873,18 @@ const BinCardPage: React.FC = () => {
           onExpandedChange={handleSidebarExpandChange}
         />
         <div className={`pt-[70px] transition-all duration-300 ease-in-out ${isSidebarExpanded ? 'lg:ml-[300px]' : 'lg:ml-16'}`}>
-          <main className="overflow-y-auto bg-gray-50 p-6" style={{ minHeight: 'calc(100vh - 70px)' }}>
+          <main className="overflow-y-auto bg-gray-50 dark:bg-slate-950 p-6" style={{ minHeight: 'calc(100vh - 70px)' }}>
             <div className="flex items-center justify-center min-h-[60vh]">
-              <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+              <div className="bg-white dark:bg-slate-800 p-8 rounded-lg shadow-lg max-w-md w-full">
                 <div className="text-center">
-                  <div className="text-red-500 text-xl mb-4">⚠️</div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Data</h3>
-                  <p className="text-gray-500 mb-4">{error}</p>
+                  <div className="text-red-500 dark:text-red-400 text-xl mb-4">⚠️</div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Error Loading Data</h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">{error}</p>
                   <div className="space-x-4">
-                    <button onClick={refreshData} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                    <button onClick={refreshData} className="px-4 py-2 bg-blue-600 dark:bg-indigo-600 text-white rounded-md hover:bg-blue-700 dark:hover:bg-indigo-700 transition-colors">
                       Retry
                     </button>
-                    <button onClick={() => window.location.reload()} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors">
+                    <button onClick={() => window.location.reload()} className="px-4 py-2 bg-gray-300 dark:bg-slate-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-400 dark:hover:bg-slate-500 transition-colors">
                       Reload Page
                     </button>
                   </div>
@@ -896,7 +898,7 @@ const BinCardPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-slate-950">
       {/* Navbar */}
       <Navbar currentUser={currentUser} onMenuClick={toggleSidebar} />
 
@@ -911,13 +913,13 @@ const BinCardPage: React.FC = () => {
 
       {/* Main Content */}
       <div className={`pt-[70px] transition-all duration-300 ease-in-out ${isSidebarExpanded ? 'lg:ml-[300px]' : 'lg:ml-16'}`}>
-        <main className="overflow-y-auto bg-gray-50 p-6" style={{ minHeight: 'calc(100vh - 70px)' }}>
+        <main className="overflow-y-auto bg-gray-50 dark:bg-slate-950 p-6" style={{ minHeight: 'calc(100vh - 70px)' }}>
           <div className="max-w-full">
             <div className="mb-8">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Bin Card Management</h1>
-                  <p className="mt-2 text-gray-600">
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Bin Card Management</h1>
+                  <p className="mt-2 text-gray-600 dark:text-gray-400">
                     Track stock movements and maintain balance records for product variations
                   </p>
                 </div>
@@ -926,7 +928,7 @@ const BinCardPage: React.FC = () => {
                     <Tooltip content="Export Bin Card data to CSV file" position="bottom">
                       <button
                         onClick={handleExportClick}
-                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-indigo-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800"
                       >
                         <Download size={20} className="mr-2" />
                       </button>
@@ -934,7 +936,7 @@ const BinCardPage: React.FC = () => {
                     <Tooltip content="Refresh data" position="bottom">
                       <button
                         onClick={refreshData}
-                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-indigo-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800"
                       >
                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -947,40 +949,40 @@ const BinCardPage: React.FC = () => {
 
               {/* Summary Info */}
               <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                  <div className="text-2xl font-bold text-green-600">{binCards.filter(bc => bc.transactionType === 'GRN').length}</div>
-                  <div className="text-sm text-gray-600">GRN Transactions</div>
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-gray-200 dark:border-slate-700">
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">{binCards.filter(bc => bc.transactionType === 'GRN').length}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">GRN Transactions</div>
                 </div>
-                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                  <div className="text-2xl font-bold text-orange-600">{binCards.filter(bc => bc.transactionType === 'GIN').length}</div>
-                  <div className="text-sm text-gray-600">GIN Transactions</div>
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-gray-200 dark:border-slate-700">
+                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{binCards.filter(bc => bc.transactionType === 'GIN').length}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">GIN Transactions</div>
                 </div>
               </div>
 
               {/* Active Filters Display */}
               {(Object.values(filters).some(v => v !== null) || searchTerm) && (
-                <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-medium text-blue-800">Active Filters:</h3>
+                      <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300">Active Filters:</h3>
                       <div className="mt-1 flex flex-wrap gap-2">
                         {searchTerm && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
                             Search: "{searchTerm}"
                           </span>
                         )}
                         {filters.variationId && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
                             Variation ID: {filters.variationId}
                           </span>
                         )}
                         {filters.transactionType && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
                             Type: {filters.transactionType}
                           </span>
                         )}
                         {filters.stockKeeperId && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
                             Stock Keeper ID: {filters.stockKeeperId}
                           </span>
                         )}
@@ -988,7 +990,7 @@ const BinCardPage: React.FC = () => {
                     </div>
                     <button
                       onClick={clearFilters}
-                      className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                      className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
                     >
                       Clear All
                     </button>
@@ -997,7 +999,7 @@ const BinCardPage: React.FC = () => {
               )}
             </div>
 
-            <div className="bg-white rounded-lg shadow">
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
               <Table
                 data={binCards}
                 columns={columns}
@@ -1009,32 +1011,32 @@ const BinCardPage: React.FC = () => {
                 emptyMessage="No bin card records found. Create your first bin card entry to get started."
                 onCreateClick={isStockKeeper(currentUser?.RoleID || 0) ? handleCreateClick : undefined}
                 createButtonLabel="Create Bin Card Entry"
-                className="border border-gray-200"
+                className="border border-gray-200 dark:border-slate-700"
               />
             </div>
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="mt-6 flex items-center justify-between bg-white px-4 py-3 border border-gray-200 rounded-lg">
+              <div className="mt-6 flex items-center justify-between bg-white dark:bg-slate-800 px-4 py-3 border border-gray-200 dark:border-slate-700 rounded-lg">
                 <div className="flex-1 flex justify-between sm:hidden">
                   <button
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-slate-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 disabled:opacity-50"
                   >
                     Previous
                   </button>
                   <button
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
-                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-slate-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 disabled:opacity-50"
                   >
                     Next
                   </button>
                 </div>
                 <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-sm text-gray-700">
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
                       Showing <span className="font-medium">{((currentPage - 1) * 10) + 1}</span> to{' '}
                       <span className="font-medium">{Math.min(currentPage * 10, totalItems)}</span> of{' '}
                       <span className="font-medium">{totalItems}</span> results
@@ -1045,7 +1047,7 @@ const BinCardPage: React.FC = () => {
                       <button
                         onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                         disabled={currentPage === 1}
-                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-600 disabled:opacity-50"
                       >
                         Previous
                       </button>
@@ -1069,8 +1071,8 @@ const BinCardPage: React.FC = () => {
                             onClick={() => setCurrentPage(pageNum)}
                             className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                               currentPage === pageNum
-                                ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                                : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                                ? 'z-10 bg-blue-50 dark:bg-indigo-900/30 border-blue-500 dark:border-indigo-500 text-blue-600 dark:text-indigo-300'
+                                : 'bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-600'
                             }`}
                           >
                             {pageNum}
@@ -1081,7 +1083,7 @@ const BinCardPage: React.FC = () => {
                       <button
                         onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                         disabled={currentPage === totalPages}
-                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-600 disabled:opacity-50"
                       >
                         Next
                       </button>
@@ -1101,14 +1103,14 @@ const BinCardPage: React.FC = () => {
           
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-              <div className="relative bg-white rounded-lg shadow-xl">
+              <div className="relative bg-white dark:bg-slate-800 rounded-lg shadow-xl">
                 {/* Header */}
-                <div className="px-6 py-4 border-b border-gray-200">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-xl font-semibold text-gray-900">Bin Card Details</h2>
+                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Bin Card Details</h2>
                       {viewingBinCard && (
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                           ID: {String(viewingBinCard.binCardId).padStart(4, '0')} • 
                           Type: {viewingBinCard.transactionType} • 
                           Date: {new Date(viewingBinCard.transactionDate).toLocaleDateString()}
@@ -1117,7 +1119,7 @@ const BinCardPage: React.FC = () => {
                     </div>
                     <button
                       onClick={handleCloseViewModal}
-                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                     >
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1131,29 +1133,29 @@ const BinCardPage: React.FC = () => {
                   {isLoadingDetails ? (
                     <div className="flex items-center justify-center py-12">
                       <div className="flex flex-col items-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-                        <p className="text-gray-500">Loading bin card details...</p>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-indigo-500 mb-4"></div>
+                        <p className="text-gray-500 dark:text-gray-400">Loading bin card details...</p>
                       </div>
                     </div>
                   ) : !viewBinCardDetails ? (
                     <div className="text-center py-12">
-                      <div className="text-gray-400 text-xl mb-4">📄</div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Details Found</h3>
-                      <p className="text-gray-500">Unable to load bin card details.</p>
+                      <div className="text-gray-400 dark:text-gray-500 text-xl mb-4">📄</div>
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Details Found</h3>
+                      <p className="text-gray-500 dark:text-gray-400">Unable to load bin card details.</p>
                     </div>
                   ) : (
                     <div className="space-y-6">
                       {/* Transaction Details Section */}
-                      <div className="bg-blue-50 rounded-lg p-6">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">Transaction Information</h3>
+                      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Transaction Information</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700">Bin Card ID</label>
-                            <p className="text-sm font-medium text-gray-900">{String(viewBinCardDetails.binCardId).padStart(4, '0')}</p>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Bin Card ID</label>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">{String(viewBinCardDetails.binCardId).padStart(4, '0')}</p>
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700">Transaction Date</label>
-                            <p className="text-sm text-gray-900">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Transaction Date</label>
+                            <p className="text-sm text-gray-900 dark:text-white">
                               {new Date(viewBinCardDetails.transactionDate).toLocaleDateString('en-US', {
                                 year: 'numeric',
                                 month: 'long',
@@ -1162,77 +1164,77 @@ const BinCardPage: React.FC = () => {
                             </p>
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700">Transaction Type</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Transaction Type</label>
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                               viewBinCardDetails.transactionType === 'GRN' 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-orange-100 text-orange-800'
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' 
+                                : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
                             }`}>
                               {formatTransactionType(viewBinCardDetails.transactionType)}
                             </span>
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700">Reference ID</label>
-                            <p className="text-sm text-gray-900">{viewBinCardDetails.referenceId || 'N/A'}</p>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Reference ID</label>
+                            <p className="text-sm text-gray-900 dark:text-white">{viewBinCardDetails.referenceId || 'N/A'}</p>
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700">Quantity In</label>
-                            <p className={`text-sm font-medium ${viewBinCardDetails.quantityIn > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Quantity In</label>
+                            <p className={`text-sm font-medium ${viewBinCardDetails.quantityIn > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
                               {viewBinCardDetails.quantityIn || '-'}
                             </p>
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700">Quantity Out</label>
-                            <p className={`text-sm font-medium ${viewBinCardDetails.quantityOut > 0 ? 'text-orange-600' : 'text-gray-400'}`}>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Quantity Out</label>
+                            <p className={`text-sm font-medium ${viewBinCardDetails.quantityOut > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-gray-400 dark:text-gray-500'}`}>
                               {viewBinCardDetails.quantityOut || '-'}
                             </p>
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700">Current Balance</label>
-                            <p className="text-sm font-bold text-blue-600">{viewBinCardDetails.balance}</p>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Current Balance</label>
+                            <p className="text-sm font-bold text-blue-600 dark:text-blue-400">{viewBinCardDetails.balance}</p>
                           </div>
                           <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">Remarks</label>
-                            <p className="text-sm text-gray-900">{viewBinCardDetails.remarks || 'No remarks'}</p>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Remarks</label>
+                            <p className="text-sm text-gray-900 dark:text-white">{viewBinCardDetails.remarks || 'No remarks'}</p>
                           </div>
                         </div>
                       </div>
 
                       {/* Product Information */}
                       {viewBinCardDetails.product && (
-                        <div className="bg-blue-50 rounded-lg p-6">
-                          <h3 className="text-lg font-medium text-gray-900 mb-4">Product Information</h3>
+                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
+                          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Product Information</h3>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Product ID</label>
-                              <p className="text-sm font-medium text-gray-900">{viewBinCardDetails.product.id}</p>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Product ID</label>
+                              <p className="text-sm font-medium text-gray-900 dark:text-white">{viewBinCardDetails.product.id}</p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Product Name</label>
-                              <p className="text-sm font-medium text-gray-900">{viewBinCardDetails.product.name || 'N/A'}</p>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Product Name</label>
+                              <p className="text-sm font-medium text-gray-900 dark:text-white">{viewBinCardDetails.product.name || 'N/A'}</p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">SKU</label>
-                              <p className="text-sm text-gray-900 font-mono">{viewBinCardDetails.product.sku || 'N/A'}</p>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">SKU</label>
+                              <p className="text-sm text-gray-900 dark:text-white font-mono">{viewBinCardDetails.product.sku || 'N/A'}</p>
                             </div>
                             <div className="md:col-span-3">
-                              <label className="block text-sm font-medium text-gray-700">Description</label>
-                              <p className="text-sm text-gray-900">{viewBinCardDetails.product.description || 'No description available'}</p>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+                              <p className="text-sm text-gray-900 dark:text-white">{viewBinCardDetails.product.description || 'No description available'}</p>
                             </div>
                           </div>
 
                           {/* Brand Information */}
                           {viewBinCardDetails.product.brand && (
-                            <div className="mt-4 pt-4 border-t border-purple-200">
-                              <h4 className="text-md font-medium text-gray-900 mb-3">Brand Information</h4>
+                            <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-800">
+                              <h4 className="text-md font-medium text-gray-900 dark:text-white mb-3">Brand Information</h4>
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
-                                  <label className="block text-sm font-medium text-gray-700">Brand Name</label>
-                                  <p className="text-sm text-gray-900">{viewBinCardDetails.product.brand.name || 'N/A'}</p>
+                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Brand Name</label>
+                                  <p className="text-sm text-gray-900 dark:text-white">{viewBinCardDetails.product.brand.name || 'N/A'}</p>
                                 </div>
                                 <div>
-                                  <label className="block text-sm font-medium text-gray-700">Country</label>
-                                  <p className="text-sm text-gray-900">{viewBinCardDetails.product.brand.country || 'N/A'}</p>
+                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Country</label>
+                                  <p className="text-sm text-gray-900 dark:text-white">{viewBinCardDetails.product.brand.country || 'N/A'}</p>
                                 </div>
                               </div>
                             </div>
@@ -1240,16 +1242,16 @@ const BinCardPage: React.FC = () => {
 
                           {/* Category Information */}
                           {viewBinCardDetails.product.category && (
-                            <div className="mt-4 pt-4 border-t border-purple-200">
-                              <h4 className="text-md font-medium text-gray-900 mb-3">Category Information</h4>
+                            <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-800">
+                              <h4 className="text-md font-medium text-gray-900 dark:text-white mb-3">Category Information</h4>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                  <label className="block text-sm font-medium text-gray-700">Category</label>
-                                  <p className="text-sm text-gray-900">{viewBinCardDetails.product.category.name || 'N/A'}</p>
+                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
+                                  <p className="text-sm text-gray-900 dark:text-white">{viewBinCardDetails.product.category.name || 'N/A'}</p>
                                 </div>
                                 <div>
-                                  <label className="block text-sm font-medium text-gray-700">Main Category</label>
-                                  <p className="text-sm text-gray-900">{viewBinCardDetails.product.category.mainCategory || 'N/A'}</p>
+                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Main Category</label>
+                                  <p className="text-sm text-gray-900 dark:text-white">{viewBinCardDetails.product.category.mainCategory || 'N/A'}</p>
                                 </div>
                               </div>
                             </div>
@@ -1257,24 +1259,24 @@ const BinCardPage: React.FC = () => {
 
                           {/* Supplier Information */}
                           {viewBinCardDetails.product.supplier && (
-                            <div className="mt-4 pt-4 border-t border-purple-200">
-                              <h4 className="text-md font-medium text-gray-900 mb-3">Supplier Information</h4>
+                            <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-800">
+                              <h4 className="text-md font-medium text-gray-900 dark:text-white mb-3">Supplier Information</h4>
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <div>
-                                  <label className="block text-sm font-medium text-gray-700">Supplier Name</label>
-                                  <p className="text-sm text-gray-900">{viewBinCardDetails.product.supplier.name || 'N/A'}</p>
+                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Supplier Name</label>
+                                  <p className="text-sm text-gray-900 dark:text-white">{viewBinCardDetails.product.supplier.name || 'N/A'}</p>
                                 </div>
                                 <div>
-                                  <label className="block text-sm font-medium text-gray-700">Contact Person</label>
-                                  <p className="text-sm text-gray-900">{viewBinCardDetails.product.supplier.contactPerson || 'N/A'}</p>
+                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Contact Person</label>
+                                  <p className="text-sm text-gray-900 dark:text-white">{viewBinCardDetails.product.supplier.contactPerson || 'N/A'}</p>
                                 </div>
                                 <div>
-                                  <label className="block text-sm font-medium text-gray-700">Email</label>
-                                  <p className="text-sm text-gray-900">{viewBinCardDetails.product.supplier.email || 'N/A'}</p>
+                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                                  <p className="text-sm text-gray-900 dark:text-white">{viewBinCardDetails.product.supplier.email || 'N/A'}</p>
                                 </div>
                                 <div>
-                                  <label className="block text-sm font-medium text-gray-700">Phone</label>
-                                  <p className="text-sm text-gray-900">{viewBinCardDetails.product.supplier.phone || 'N/A'}</p>
+                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone</label>
+                                  <p className="text-sm text-gray-900 dark:text-white">{viewBinCardDetails.product.supplier.phone || 'N/A'}</p>
                                 </div>
                               </div>
                             </div>
@@ -1284,20 +1286,20 @@ const BinCardPage: React.FC = () => {
 
                       {/* Version Information */}
                       {viewBinCardDetails.version && (
-                        <div className="bg-blue-50 rounded-lg p-6">
-                          <h3 className="text-lg font-medium text-gray-900 mb-4">Version Information</h3>
+                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
+                          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Version Information</h3>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Version ID</label>
-                              <p className="text-sm font-medium text-gray-900">{viewBinCardDetails.version.id}</p>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Version ID</label>
+                              <p className="text-sm font-medium text-gray-900 dark:text-white">{viewBinCardDetails.version.id}</p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Version Number</label>
-                              <p className="text-sm text-gray-900">{viewBinCardDetails.version.number || 'N/A'}</p>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Version Number</label>
+                              <p className="text-sm text-gray-900 dark:text-white">{viewBinCardDetails.version.number || 'N/A'}</p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Release Date</label>
-                              <p className="text-sm text-gray-900">
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Release Date</label>
+                              <p className="text-sm text-gray-900 dark:text-white">
                                 {viewBinCardDetails.version.releaseDate ? 
                                   new Date(viewBinCardDetails.version.releaseDate).toLocaleDateString() : 'N/A'}
                               </p>
@@ -1308,36 +1310,36 @@ const BinCardPage: React.FC = () => {
 
                       {/* Product Variation Information */}
                       {viewBinCardDetails.variation && (
-                        <div className="bg-blue-50 rounded-lg p-6">
-                          <h3 className="text-lg font-medium text-gray-900 mb-4">Product Variation Information</h3>
+                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
+                          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Product Variation Information</h3>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Variation ID</label>
-                              <p className="text-sm font-medium text-gray-900">{viewBinCardDetails.variation.id}</p>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Variation ID</label>
+                              <p className="text-sm font-medium text-gray-900 dark:text-white">{viewBinCardDetails.variation.id}</p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Variation Name</label>
-                              <p className="text-sm text-gray-900">{viewBinCardDetails.variation.name || 'N/A'}</p>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Variation Name</label>
+                              <p className="text-sm text-gray-900 dark:text-white">{viewBinCardDetails.variation.name || 'N/A'}</p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Color</label>
-                              <p className="text-sm text-gray-900">{viewBinCardDetails.variation.color || 'N/A'}</p>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Color</label>
+                              <p className="text-sm text-gray-900 dark:text-white">{viewBinCardDetails.variation.color || 'N/A'}</p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Size</label>
-                              <p className="text-sm text-gray-900">{viewBinCardDetails.variation.size || 'N/A'}</p>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Size</label>
+                              <p className="text-sm text-gray-900 dark:text-white">{viewBinCardDetails.variation.size || 'N/A'}</p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Capacity</label>
-                              <p className="text-sm text-gray-900">{viewBinCardDetails.variation.capacity || 'N/A'}</p>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Capacity</label>
+                              <p className="text-sm text-gray-900 dark:text-white">{viewBinCardDetails.variation.capacity || 'N/A'}</p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Barcode</label>
-                              <p className="text-sm text-gray-900 font-mono">{viewBinCardDetails.variation.barcode || 'N/A'}</p>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Barcode</label>
+                              <p className="text-sm text-gray-900 dark:text-white font-mono">{viewBinCardDetails.variation.barcode || 'N/A'}</p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Price</label>
-                              <p className="text-sm font-medium text-gray-900">
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Price</label>
+                              <p className="text-sm font-medium text-gray-900 dark:text-white">
                                 {viewBinCardDetails.variation.price ? `LKR ${viewBinCardDetails.variation.price.toLocaleString('en-US', {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2
@@ -1345,12 +1347,12 @@ const BinCardPage: React.FC = () => {
                               </p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Current Quantity</label>
-                              <p className="text-sm text-gray-900">{viewBinCardDetails.variation.quantity || 0}</p>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Current Quantity</label>
+                              <p className="text-sm text-gray-900 dark:text-white">{viewBinCardDetails.variation.quantity || 0}</p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Stock Levels</label>
-                              <p className="text-sm text-gray-900">
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Stock Levels</label>
+                              <p className="text-sm text-gray-900 dark:text-white">
                                 Min: {viewBinCardDetails.variation.minStockLevel || 'N/A'} | 
                                 Max: {viewBinCardDetails.variation.maxStockLevel || 'N/A'}
                               </p>
@@ -1361,24 +1363,24 @@ const BinCardPage: React.FC = () => {
 
                       {/* Stock Keeper Information */}
                       {viewBinCardDetails.stockKeeper && (
-                        <div className="bg-blue-50 rounded-lg p-6">
-                          <h3 className="text-lg font-medium text-gray-900 mb-4">Stock Keeper Information</h3>
+                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
+                          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Stock Keeper Information</h3>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Stock Keeper ID</label>
-                              <p className="text-sm font-medium text-gray-900">{viewBinCardDetails.stockKeeper.id}</p>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Stock Keeper ID</label>
+                              <p className="text-sm font-medium text-gray-900 dark:text-white">{viewBinCardDetails.stockKeeper.id}</p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Name</label>
-                              <p className="text-sm text-gray-900">{viewBinCardDetails.stockKeeper.name || 'Unknown'}</p>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+                              <p className="text-sm text-gray-900 dark:text-white">{viewBinCardDetails.stockKeeper.name || 'Unknown'}</p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Email</label>
-                              <p className="text-sm text-gray-900">{viewBinCardDetails.stockKeeper.email || 'N/A'}</p>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                              <p className="text-sm text-gray-900 dark:text-white">{viewBinCardDetails.stockKeeper.email || 'N/A'}</p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Phone</label>
-                              <p className="text-sm text-gray-900">{viewBinCardDetails.stockKeeper.phone || 'N/A'}</p>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone</label>
+                              <p className="text-sm text-gray-900 dark:text-white">{viewBinCardDetails.stockKeeper.phone || 'N/A'}</p>
                             </div>
                           </div>
                         </div>
@@ -1388,10 +1390,10 @@ const BinCardPage: React.FC = () => {
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+                <div className="px-6 py-4 border-t border-gray-200 dark:border-slate-700 flex justify-end">
                   <button
                     onClick={handleCloseViewModal}
-                    className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                    className="px-6 py-2 bg-gray-600 dark:bg-slate-600 text-white rounded-md hover:bg-gray-700 dark:hover:bg-slate-500 transition-colors"
                   >
                     Close
                   </button>
@@ -1409,11 +1411,11 @@ const BinCardPage: React.FC = () => {
           
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-              <div className="relative bg-white rounded-lg shadow-xl">
+              <div className="relative bg-white dark:bg-slate-800 rounded-lg shadow-xl">
                 <button
                   onClick={handleCloseExportForm}
                   disabled={isExporting}
-                  className="absolute right-4 top-4 z-10 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+                  className="absolute right-4 top-4 z-10 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors disabled:opacity-50"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1436,11 +1438,11 @@ const BinCardPage: React.FC = () => {
           {/* Modal */}
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="relative w-full max-w-2xl">
-              <div className="relative bg-white rounded-lg shadow-xl">
+              <div className="relative bg-white dark:bg-slate-800 rounded-lg shadow-xl">
                 {/* Close button */}
                 <button
                   onClick={handleCloseCreateForm}
-                  className="absolute right-4 top-4 z-10 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-4 top-4 z-10 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

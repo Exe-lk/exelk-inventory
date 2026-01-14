@@ -38,7 +38,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onExpandedChange 
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
-  const pathname = usePathname(); // Get current pathname
+  const pathname = usePathname();
 
   const menuItems = [
     {
@@ -106,11 +106,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       label: 'Suppliers',
       href: '/supplier'
     },
-    // {
-    //   icon: FileText,
-    //   label: 'API Documentation',
-    //   href: '/swagger'
-    // }
   ];
 
   // Helper function to check if a menu item is active
@@ -149,7 +144,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       <div 
-        className={`bg-[#F6F9FF] fixed left-0 z-50 transition-all duration-300 ease-in-out ${
+        className={`bg-[#F6F9FF] dark:bg-slate-900 fixed left-0 z-50 transition-[width,transform] duration-300 ease-in-out ${
           isExpanded ? 'w-[300px]' : 'w-16'
         } flex flex-col ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
@@ -160,15 +155,15 @@ const Sidebar: React.FC<SidebarProps> = ({
         }}
       >
         {/* Header with toggle button */}
-        <div className="p-4 flex items-center justify-end border-b border-gray-200">
+        <div className="p-4 flex items-center justify-end border-b border-gray-200 dark:border-slate-700">
           <button
             onClick={toggleSidebar}
-            className="p-2 rounded-lg hover:bg-gray-200 transition-colors duration-200"
+            className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-800 transition-[background-color] duration-150"
           >
             {isExpanded ? (
-              <ChevronLeft className="w-5 h-5 text-gray-600" />
+              <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             ) : (
-              <ChevronRight className="w-5 h-5 text-gray-600" />
+              <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             )}
           </button>
         </div>
@@ -182,21 +177,21 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <li key={index}>
                   <a
                     href={item.href}
-                    className={`flex items-center p-3 rounded-lg transition-all duration-200 group relative ${
+                    className={`flex items-center p-3 rounded-lg transition-[background-color,box-shadow] duration-150 group relative ${
                       active
-                        ? 'bg-white shadow-sm text-blue-600 font-semibold'
-                        : 'text-gray-700 hover:bg-white hover:shadow-sm hover:text-blue-600'
+                        ? 'bg-white dark:bg-slate-800 shadow-sm text-blue-600 dark:text-indigo-400 font-semibold'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm hover:text-blue-600 dark:hover:text-indigo-400'
                     }`}
                     onClick={onMobileClose}
                   >
-                    <item.icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-blue-600' : ''}`} />
+                    <item.icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-blue-600 dark:text-indigo-400' : ''}`} />
                     {isExpanded && (
                       <span className="ml-3 text-sm font-medium whitespace-nowrap">
                         {item.label}
                       </span>
                     )}
                     {!isExpanded && (
-                      <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 whitespace-nowrap">
+                      <div className="absolute left-16 bg-gray-800 dark:bg-slate-700 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 whitespace-nowrap">
                         {item.label}
                       </div>
                     )}
@@ -208,17 +203,17 @@ const Sidebar: React.FC<SidebarProps> = ({
         </nav>
 
         {/* Logout Button */}
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-gray-200 dark:border-slate-700">
           <button 
             onClick={handleLogout}
-            className="flex items-center p-3 w-full rounded-lg hover:bg-white hover:shadow-sm transition-all duration-200 text-gray-700 hover:text-red-600 group relative"
+            className="flex items-center p-3 w-full rounded-lg hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm transition-[background-color,box-shadow,color] duration-150 text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 group relative"
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />
             {isExpanded && (
               <span className="ml-3 text-sm font-medium">Logout</span>
             )}
             {!isExpanded && (
-              <div className="absolute left-16 bg-gray-800 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+              <div className="absolute left-16 bg-gray-800 dark:bg-slate-700 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
                 Logout
               </div>
             )}

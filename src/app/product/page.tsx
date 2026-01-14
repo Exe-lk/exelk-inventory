@@ -871,7 +871,7 @@ const ProductPage: React.FC = () => {
       label: 'ID',
       sortable: true,
       render: (value: number) => (
-        <span className="font-medium text-gray-900">
+        <span className="font-medium text-gray-900 dark:text-white">
           {String(value).padStart(4, '0')}
         </span>
       )
@@ -882,7 +882,7 @@ const ProductPage: React.FC = () => {
       sortable: true,
       filterable: true,
       render: (value: string) => (
-        <span className="font-medium text-gray-900">{value}</span>
+        <span className="font-medium text-gray-900 dark:text-white">{value}</span>
       )
     },
     {
@@ -891,7 +891,7 @@ const ProductPage: React.FC = () => {
       sortable: true,
       filterable: true,
       render: (value: string) => (
-        <span className="font-medium text-gray-900">{value}</span>
+        <span className="font-medium text-gray-900 dark:text-white">{value}</span>
       )
     },
     {
@@ -900,7 +900,7 @@ const ProductPage: React.FC = () => {
       sortable: true,
       filterable: false,
       render: (value: string) => (
-        <span className="text-gray-600">
+        <span className="text-gray-600 dark:text-gray-400">
           {value.length > 30 ? `${value.substring(0, 30)}...` : value}
         </span>
       )
@@ -911,7 +911,7 @@ const ProductPage: React.FC = () => {
       sortable: true,
       filterable: true,
       render: (value: number) => (
-        <span className="font-medium text-gray-900">
+        <span className="font-medium text-gray-900 dark:text-white">
           {getCategoryName(value)}
         </span>
       )
@@ -922,7 +922,7 @@ const ProductPage: React.FC = () => {
       sortable: true,
       filterable: true,
       render: (value: number) => (
-        <span className="font-medium text-gray-900">
+        <span className="font-medium text-gray-900 dark:text-white">
           {getBrandName(value)}
         </span>
       )
@@ -933,7 +933,7 @@ const ProductPage: React.FC = () => {
       sortable: true,
       filterable: true,
       render: (value: number) => (
-        <span className="font-medium text-gray-900">
+        <span className="font-medium text-gray-900 dark:text-white">
           {getModelName(value)}
         </span>
       )
@@ -944,7 +944,7 @@ const ProductPage: React.FC = () => {
       sortable: true,
       filterable: true,
       render: (value: number) => (
-        <span className="font-medium text-gray-900">
+        <span className="font-medium text-gray-900 dark:text-white">
           {getSupplierName(value)}
         </span>
       )
@@ -957,8 +957,8 @@ const ProductPage: React.FC = () => {
       render: (value: boolean) => (
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
           value 
-            ? 'bg-green-100 text-green-800' 
-            : 'bg-red-100 text-red-800'
+            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' 
+            : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
         }`}>
           {value ? 'Active' : 'Inactive'}
         </span>
@@ -969,7 +969,7 @@ const ProductPage: React.FC = () => {
       label: 'Created Date',
       sortable: true,
       render: (value: string) => (
-        <span className="text-gray-600">
+        <span className="text-gray-600 dark:text-gray-400">
           {value ? new Date(value).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short',
@@ -1066,10 +1066,10 @@ const ProductPage: React.FC = () => {
   // Show loading spinner during auth check
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950">
         <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <div className="text-lg text-gray-600">Loading...</div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-indigo-500 mb-4"></div>
+          <div className="text-lg text-gray-600 dark:text-gray-300">Loading...</div>
         </div>
       </div>
     );
@@ -1083,16 +1083,16 @@ const ProductPage: React.FC = () => {
   // Show access denied for unauthorized users
   if (!isStockKeeper(currentUser?.RoleID || 0)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg text-center">
-          <div className="text-red-500 text-4xl mb-4">🚫</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
-          <p className="text-gray-600 mb-6">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950">
+        <div className="max-w-md w-full bg-white dark:bg-slate-800 p-8 rounded-lg shadow-lg text-center">
+          <div className="text-red-500 dark:text-red-400 text-4xl mb-4">🚫</div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Access Denied</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             Only stockkeepers can access product management.
           </p>
           <button
             onClick={() => router.push('/home')}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-6 py-3 bg-blue-600 dark:bg-indigo-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-indigo-700 transition-colors"
           >
             Go to Dashboard
           </button>
@@ -1104,7 +1104,7 @@ const ProductPage: React.FC = () => {
   // Show error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-gray-100 dark:bg-slate-950">
         <Navbar currentUser={currentUser} onMenuClick={toggleSidebar} />
         <SidebarWrapper
           currentUser={currentUser}
@@ -1114,18 +1114,18 @@ const ProductPage: React.FC = () => {
           onExpandedChange={handleSidebarExpandChange}
         />
         <div className={`pt-[70px] transition-all duration-300 ease-in-out ${isSidebarExpanded ? 'lg:ml-[300px]' : 'lg:ml-16'}`}>
-          <main className="overflow-y-auto bg-gray-50 p-6" style={{ minHeight: 'calc(100vh - 70px)' }}>
+          <main className="overflow-y-auto bg-gray-50 dark:bg-slate-950 p-6" style={{ minHeight: 'calc(100vh - 70px)' }}>
             <div className="flex items-center justify-center min-h-[60vh]">
-              <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+              <div className="bg-white dark:bg-slate-800 p-8 rounded-lg shadow-lg max-w-md w-full">
                 <div className="text-center">
-                  <div className="text-red-500 text-xl mb-4">⚠️</div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Data</h3>
-                  <p className="text-gray-500 mb-4">{error}</p>
+                  <div className="text-red-500 dark:text-red-400 text-xl mb-4">⚠️</div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Error Loading Data</h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">{error}</p>
                   <div className="space-x-4">
-                    <button onClick={refreshData} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                    <button onClick={refreshData} className="px-4 py-2 bg-blue-600 dark:bg-indigo-600 text-white rounded-md hover:bg-blue-700 dark:hover:bg-indigo-700 transition-colors">
                       Retry
                     </button>
-                    <button onClick={() => window.location.reload()} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors">
+                    <button onClick={() => window.location.reload()} className="px-4 py-2 bg-gray-300 dark:bg-slate-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-400 dark:hover:bg-slate-500 transition-colors">
                       Reload Page
                     </button>
                   </div>
@@ -1139,7 +1139,7 @@ const ProductPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-slate-950">
       <Navbar currentUser={currentUser} onMenuClick={toggleSidebar} />
 
       <SidebarWrapper
@@ -1151,13 +1151,13 @@ const ProductPage: React.FC = () => {
       />
 
       <div className={`pt-[70px] transition-all duration-300 ease-in-out ${isSidebarExpanded ? 'lg:ml-[300px]' : 'lg:ml-16'}`}>
-        <main className="overflow-y-auto bg-gray-50 p-6" style={{ minHeight: 'calc(100vh - 70px)' }}>
+        <main className="overflow-y-auto bg-gray-50 dark:bg-slate-950 p-6" style={{ minHeight: 'calc(100vh - 70px)' }}>
           <div className="max-w-full">
             <div className="mb-8">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Product Management</h1>
-                  <p className="mt-2 text-gray-600">
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Product Management</h1>
+                  <p className="mt-2 text-gray-600 dark:text-gray-400">
                     Create complete products with versions, variations, and specifications
                   </p>
                 </div>
@@ -1166,7 +1166,7 @@ const ProductPage: React.FC = () => {
                   <button
                     onClick={handleImportClick}
                      title="Import stock data from CSV file"
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-indigo-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800"
                   >
                     <Upload size={20} className="mr-2" />
                     
@@ -1176,7 +1176,7 @@ const ProductPage: React.FC = () => {
                   <button
                     onClick={handleExportClick}
                     title="Export stock data to CSV file"
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-indigo-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800"
                   >
                     <Download size={20} className="mr-2" />
                    
@@ -1184,7 +1184,7 @@ const ProductPage: React.FC = () => {
                 </Tooltip>
                   <button
                     onClick={handleViewProductVersions}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-indigo-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800"
                   >
                     View Product Versions
                   </button>
@@ -1192,7 +1192,25 @@ const ProductPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow">
+            {error && (
+              <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-400 dark:text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-red-800 dark:text-red-300">Error loading data</h3>
+                    <div className="mt-2 text-sm text-red-700 dark:text-red-400">
+                      <p>{error}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
               <Table
                 data={products}
                 columns={columns}
@@ -1204,7 +1222,7 @@ const ProductPage: React.FC = () => {
                 emptyMessage="No products found. Create your first complete product to get started."
                 onCreateClick={isStockKeeper(currentUser?.RoleID || 0) ? handleCreateClick : undefined}
                 createButtonLabel="Create Product"
-                className="border border-gray-200"
+                className="border border-gray-200 dark:border-slate-700"
               />
             </div>
           </div>
@@ -1218,10 +1236,10 @@ const ProductPage: React.FC = () => {
           
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-              <div className="relative bg-white rounded-lg shadow-xl">
+              <div className="relative bg-white dark:bg-slate-800 rounded-lg shadow-xl">
                 <button
                   onClick={handleCloseCreateForm}
-                  className="absolute right-4 top-4 z-10 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-4 top-4 z-10 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1252,10 +1270,10 @@ const ProductPage: React.FC = () => {
           
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="relative w-full max-w-2xl">
-              <div className="relative bg-white rounded-lg shadow-xl">
+              <div className="relative bg-white dark:bg-slate-800 rounded-lg shadow-xl">
                 <button
                   onClick={handleCloseUpdateForm}
-                  className="absolute right-4 top-4 z-10 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-4 top-4 z-10 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1294,37 +1312,37 @@ const ProductPage: React.FC = () => {
           
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-              <div className="relative bg-white rounded-lg shadow-xl">
+              <div className="relative bg-white dark:bg-slate-800 rounded-lg shadow-xl">
                 <button
                   onClick={handleCloseImportForm}
                   disabled={isImporting}
-                  className="absolute right-4 top-4 z-10 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+                  className="absolute right-4 top-4 z-10 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors disabled:opacity-50"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
 
-                <div className="bg-white p-8 max-w-4xl mx-auto">
+                <div className="bg-white dark:bg-slate-800 p-8 max-w-4xl mx-auto">
                   <div className="text-center mb-8">
-                    <h2 className="text-2xl font-semibold text-gray-700">Import Products from CSV</h2>
-                    <p className="mt-2 text-sm text-gray-500">
+                    <h2 className="text-2xl font-semibold text-gray-700 dark:text-white">Import Products from CSV</h2>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                       Upload a CSV file to bulk import product records
                     </p>
                   </div>
 
                   {/* CSV Format Instructions */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                    <h3 className="font-semibold text-blue-900 mb-2">CSV Format Requirements:</h3>
-                    <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+                    <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">CSV Format Requirements:</h3>
+                    <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1 list-disc list-inside">
                       <li><strong>Required columns:</strong> sku, productName, categoryId, brandId, modelId, supplierId</li>
                       <li><strong>Optional columns:</strong> productId (for updates), description, isActive</li>
                       <li>First row must contain column headers</li>
                       <li>File size limit: 10MB</li>
                     </ul>
-                    <div className="mt-3 text-xs text-blue-700">
+                    <div className="mt-3 text-xs text-blue-700 dark:text-blue-400">
                       <strong>Example:</strong>
-                      <pre className="mt-1 bg-white p-2 rounded border">
+                      <pre className="mt-1 bg-white dark:bg-slate-800 p-2 rounded border border-blue-200 dark:border-blue-700 text-blue-900 dark:text-blue-300">
                           {`sku,productName,description,categoryId,brandId,modelId,supplierId,isActive
                           LAP001,MacBook Pro,High-performance laptop,1,1,1,1,true
                           LAP002,MacBook Air,Lightweight laptop,1,1,2,1,true`}
@@ -1334,7 +1352,7 @@ const ProductPage: React.FC = () => {
 
                   {/* File Upload */}
                   <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Select CSV File *
                     </label>
                     <input
@@ -1342,10 +1360,10 @@ const ProductPage: React.FC = () => {
                       accept=".csv"
                       onChange={handleFileSelect}
                       disabled={isImporting}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
                     />
                     {selectedFile && (
-                      <div className="mt-2 text-sm text-gray-600">
+                      <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                         Selected: <span className="font-medium">{selectedFile.name}</span> 
                         ({(selectedFile.size / 1024).toFixed(2)} KB)
                       </div>
@@ -1356,24 +1374,24 @@ const ProductPage: React.FC = () => {
                   {importResult && (
                     <div className={`mb-6 p-4 rounded-lg ${
                       importResult.errorCount === 0 
-                        ? 'bg-green-50 border border-green-200' 
-                        : 'bg-yellow-50 border border-yellow-200'
+                        ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' 
+                        : 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800'
                     }`}>
-                      <h3 className="font-semibold mb-2">
+                      <h3 className="font-semibold mb-2 text-gray-900 dark:text-white">
                         {importResult.errorCount === 0 ? '✅ Import Successful' : '⚠️ Import Completed with Errors'}
                       </h3>
-                      <div className="text-sm space-y-1">
+                      <div className="text-sm space-y-1 text-gray-700 dark:text-gray-300">
                         <div>Total Rows: {importResult.totalRows}</div>
-                        <div className="text-green-700">Successful: {importResult.successCount}</div>
+                        <div className="text-green-700 dark:text-green-400">Successful: {importResult.successCount}</div>
                         {importResult.errorCount > 0 && (
-                          <div className="text-red-700">Errors: {importResult.errorCount}</div>
+                          <div className="text-red-700 dark:text-red-400">Errors: {importResult.errorCount}</div>
                         )}
                       </div>
                       
                       {importResult.errors && importResult.errors.length > 0 && (
                         <div className="mt-3 max-h-40 overflow-y-auto">
-                          <h4 className="font-medium text-sm mb-1">Error Details:</h4>
-                          <ul className="text-xs text-red-700 space-y-1 list-disc list-inside">
+                          <h4 className="font-medium text-sm mb-1 text-gray-900 dark:text-white">Error Details:</h4>
+                          <ul className="text-xs text-red-700 dark:text-red-400 space-y-1 list-disc list-inside">
                             {importResult.errors.slice(0, 10).map((error, idx) => (
                               <li key={idx}>{error}</li>
                             ))}
@@ -1391,14 +1409,14 @@ const ProductPage: React.FC = () => {
                     <button
                       onClick={handleImportSubmit}
                       disabled={!selectedFile || isImporting}
-                      className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-6 py-3 bg-blue-600 dark:bg-indigo-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isImporting ? 'Importing...' : 'Import Products'}
                     </button>
                     <button
                       onClick={handleCloseImportForm}
                       disabled={isImporting}
-                      className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50"
+                      className="px-6 py-3 bg-gray-300 dark:bg-slate-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 dark:hover:bg-slate-500 disabled:opacity-50"
                     >
                       {importResult ? 'Close' : 'Cancel'}
                     </button>
@@ -1417,21 +1435,21 @@ const ProductPage: React.FC = () => {
           
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-              <div className="relative bg-white rounded-lg shadow-xl">
+              <div className="relative bg-white dark:bg-slate-800 rounded-lg shadow-xl">
                 <button
                   onClick={handleCloseExportForm}
                   disabled={isExporting}
-                  className="absolute right-4 top-4 z-10 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+                  className="absolute right-4 top-4 z-10 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors disabled:opacity-50"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
 
-                <div className="bg-white p-8 max-w-4xl mx-auto">
+                <div className="bg-white dark:bg-slate-800 p-8 max-w-4xl mx-auto">
                   <div className="text-center mb-8">
-                    <h2 className="text-2xl font-semibold text-gray-700">Export Products to CSV</h2>
-                    <p className="mt-2 text-sm text-gray-500">
+                    <h2 className="text-2xl font-semibold text-gray-700 dark:text-white">Export Products to CSV</h2>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                       Export product records to a CSV file for external use
                     </p>
                   </div>
@@ -1439,8 +1457,8 @@ const ProductPage: React.FC = () => {
                   {/* Export Options */}
                   <div className="space-y-6 mb-6">
                     {/* Export Scope */}
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                      <h3 className="font-semibold text-gray-900 mb-3">Export Scope</h3>
+                    <div className="bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-700 rounded-lg p-4">
+                      <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Export Scope</h3>
                       <div className="space-y-2">
                         <label className="flex items-center">
                           <input
@@ -1451,7 +1469,7 @@ const ProductPage: React.FC = () => {
                             disabled={isExporting}
                             className="mr-2"
                           />
-                          <span className="text-sm text-gray-700">Export all products</span>
+                          <span className="text-sm text-gray-700 dark:text-gray-300">Export all products</span>
                         </label>
                         <label className="flex items-center">
                           <input
@@ -1462,15 +1480,15 @@ const ProductPage: React.FC = () => {
                             disabled={isExporting}
                             className="mr-2"
                           />
-                          <span className="text-sm text-gray-700">Export currently displayed products only ({products.length} records)</span>
+                          <span className="text-sm text-gray-700 dark:text-gray-300">Export currently displayed products only ({products.length} records)</span>
                         </label>
                       </div>
                     </div>
 
                     {/* Export Preview */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <h3 className="font-semibold text-blue-900 mb-2">Export Preview</h3>
-                      <div className="text-sm text-blue-800 space-y-1">
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                      <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">Export Preview</h3>
+                      <div className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
                         <div>Records to export: <strong>{exportOptions.exportAll ? 'All products' : products.length}</strong></div>
                         <div>File format: <strong>CSV (Comma-separated values)</strong></div>
                       </div>
@@ -1482,14 +1500,14 @@ const ProductPage: React.FC = () => {
                     <button
                       onClick={handleExportSubmit}
                       disabled={isExporting}
-                      className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-6 py-3 bg-blue-600 dark:bg-indigo-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isExporting ? 'Exporting...' : 'Export to CSV'}
                     </button>
                     <button
                       onClick={handleCloseExportForm}
                       disabled={isExporting}
-                      className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50"
+                      className="px-6 py-3 bg-gray-300 dark:bg-slate-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 dark:hover:bg-slate-500 disabled:opacity-50"
                     >
                       Cancel
                     </button>

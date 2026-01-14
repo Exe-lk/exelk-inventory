@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -683,7 +682,7 @@ const GrnPage: React.FC = () => {
       label: 'GRN ID',
       sortable: true,
       render: (value: number) => (
-        <span className="font-medium text-gray-900">
+        <span className="font-medium text-gray-900 dark:text-white">
           {String(value).padStart(4, '0')}
         </span>
       )
@@ -695,10 +694,10 @@ const GrnPage: React.FC = () => {
       filterable: true,
       render: (value: string, row: any) => (
         <div>
-          <span className="font-medium text-gray-600">{value}</span>
+          <span className="font-medium text-gray-600 dark:text-gray-300">{value}</span>
           {/* Show matched products when searching */}
           {searchTerm && row.grndetails && row.grndetails.length > 0 && (
-            <div className="mt-1 text-xs text-gray-500">
+            <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
               Products: {row.grndetails
                 .map((detail: any) => detail.product?.productName)
                 .filter(Boolean)
@@ -716,7 +715,7 @@ const GrnPage: React.FC = () => {
       sortable: true,
       filterable: true,
       render: (value: number) => (
-        <span className="font-medium text-gray-900">
+        <span className="font-medium text-gray-900 dark:text-white">
           {getSupplierName(value)}
         </span>
       )
@@ -727,7 +726,7 @@ const GrnPage: React.FC = () => {
       sortable: true,
       filterable: true,
       render: (value: number) => (
-        <span className="text-gray-600">ID: {value}</span>
+        <span className="text-gray-600 dark:text-gray-400">ID: {value}</span>
       )
     },
     {
@@ -735,7 +734,7 @@ const GrnPage: React.FC = () => {
       label: 'Received Date',
       sortable: true,
       render: (value: string) => (
-        <span className="text-gray-600">
+        <span className="text-gray-600 dark:text-gray-400">
           {value ? new Date(value).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short',
@@ -749,7 +748,7 @@ const GrnPage: React.FC = () => {
       label: 'Total Amount',
       sortable: true,
       render: (value: number) => (
-        <span className="font-medium text-gray-600">
+        <span className="font-medium text-gray-600 dark:text-gray-300">
           LKR {value ? value.toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
@@ -763,7 +762,7 @@ const GrnPage: React.FC = () => {
       sortable: false,
       filterable: false,
       render: (value: string | null) => (
-        <span className="text-gray-600">
+        <span className="text-gray-600 dark:text-gray-400">
           {value ? (value.length > 30 ? `${value.substring(0, 30)}...` : value) : 'N/A'}
         </span>
       )
@@ -781,7 +780,6 @@ const GrnPage: React.FC = () => {
         label: (
         <span className="flex items-center gap-2">
           <Eye size={16} />
-          
         </span>
       ),
         onClick: (grn: GRN) => {
@@ -796,7 +794,6 @@ const GrnPage: React.FC = () => {
         label:  (
                 <span className="flex items-center gap-2">
                   <Pencil size={16} />
-                  
                 </span>
               ),
         onClick: (grn: GRN) => {
@@ -811,7 +808,6 @@ const GrnPage: React.FC = () => {
         label: (
                 <span className="flex items-center gap-2">
                   <Trash2 size={16} />
-                  
                 </span>
               ),
         onClick: (grn: GRN) => {
@@ -857,10 +853,10 @@ const GrnPage: React.FC = () => {
   // Show loading spinner during auth check
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950">
         <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <div className="text-lg text-gray-600">Loading...</div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-indigo-500 mb-4"></div>
+          <div className="text-lg text-gray-600 dark:text-gray-300">Loading...</div>
         </div>
       </div>
     );
@@ -874,16 +870,16 @@ const GrnPage: React.FC = () => {
   // Show access denied for unauthorized users
   if (!isStockKeeper(currentUser?.RoleID || 0)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg text-center">
-          <div className="text-red-500 text-4xl mb-4">🚫</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
-          <p className="text-gray-600 mb-6">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950">
+        <div className="max-w-md w-full bg-white dark:bg-slate-800 p-8 rounded-lg shadow-lg text-center">
+          <div className="text-red-500 dark:text-red-400 text-4xl mb-4">🚫</div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Access Denied</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             Only stockkeepers can access GRN management.
           </p>
           <button
             onClick={() => router.push('/home')}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-6 py-3 bg-blue-600 dark:bg-indigo-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-indigo-700 transition-colors"
           >
             Go to Dashboard
           </button>
@@ -893,7 +889,7 @@ const GrnPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-slate-950">
       {/* Navbar */}
       <Navbar currentUser={currentUser} onMenuClick={toggleSidebar} />
 
@@ -908,13 +904,13 @@ const GrnPage: React.FC = () => {
 
       {/* Main Content */}
       <div className={`pt-[70px] transition-all duration-300 ease-in-out ${isSidebarExpanded ? 'lg:ml-[300px]' : 'lg:ml-16'}`}>
-        <main className="overflow-y-auto bg-gray-50 p-6" style={{ minHeight: 'calc(100vh - 70px)' }}>
+        <main className="overflow-y-auto bg-gray-50 dark:bg-slate-950 p-6" style={{ minHeight: 'calc(100vh - 70px)' }}>
           <div className="max-w-full">
             <div className="mb-8">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">GRN Management</h1>
-                  <p className="mt-2 text-gray-600">
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">GRN Management</h1>
+                  <p className="mt-2 text-gray-600 dark:text-gray-400">
                     Manage Goods Receipt Notes and track inventory receipts
                   </p>
                 </div>
@@ -923,14 +919,14 @@ const GrnPage: React.FC = () => {
 
             {error ? (
               <div className="flex items-center justify-center min-h-[60vh]">
-                <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+                <div className="bg-white dark:bg-slate-800 p-8 rounded-lg shadow-lg max-w-md w-full">
                   <div className="text-center">
-                    <div className="text-red-500 text-xl mb-4">⚠️</div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Data</h3>
-                    <p className="text-gray-500 mb-4">{error}</p>
+                    <div className="text-red-500 dark:text-red-400 text-xl mb-4">⚠️</div>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Error Loading Data</h3>
+                    <p className="text-gray-500 dark:text-gray-400 mb-4">{error}</p>
                     <button 
                       onClick={() => window.location.reload()} 
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                      className="px-4 py-2 bg-blue-600 dark:bg-indigo-600 text-white rounded-md hover:bg-blue-700 dark:hover:bg-indigo-700 transition-colors"
                     >
                       Reload Page
                     </button>
@@ -940,12 +936,12 @@ const GrnPage: React.FC = () => {
             ) : (
               <>
                 {/* Enhanced Search Section */}
-                <div className="mb-6 bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Search GRNs</h3>
+                <div className="mb-6 bg-white dark:bg-slate-800 rounded-lg shadow p-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Search GRNs</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {/* Combined Search Input */}
                     <div className="lg:col-span-2">
-                      <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="search" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Search by GRN Number or Product Name
                       </label>
                       <div className="relative">
@@ -955,10 +951,10 @@ const GrnPage: React.FC = () => {
                           value={searchTerm}
                           onChange={(e) => handleSearchChange(e.target.value)}
                           placeholder="Enter GRN number (e.g., GRN-2025-001) or product name (e.g., iPhone 13)"
-                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-700 dark:text-white dark:placeholder-gray-400"
                         />
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                           </svg>
                         </div>
@@ -967,21 +963,18 @@ const GrnPage: React.FC = () => {
                             onClick={() => handleSearchChange('')}
                             className="absolute inset-y-0 right-0 pr-3 flex items-center"
                           >
-                            <svg className="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                           </button>
                         )}
                       </div>
-                      
                     </div>
-                    
-                    
                   </div>
                 </div>
 
                 {/* Updated Table Component - Removed built-in search */}
-                <div className="bg-white rounded-lg shadow">
+                <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
                   <Table
                     data={grns}
                     columns={columns}
@@ -997,7 +990,7 @@ const GrnPage: React.FC = () => {
                     }
                     onCreateClick={isStockKeeper(currentUser?.RoleID || 0) ? handleCreateClick : undefined}
                     createButtonLabel="Create GRN"
-                    className="border border-gray-200"
+                    className="border border-gray-200 dark:border-slate-700"
                   />
                 </div>
               </>
@@ -1013,14 +1006,14 @@ const GrnPage: React.FC = () => {
           
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="relative w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-              <div className="relative bg-white rounded-lg shadow-xl">
+              <div className="relative bg-white dark:bg-slate-800 rounded-lg shadow-xl">
                 {/* Header */}
-                <div className="px-6 py-4 border-b border-gray-200">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-xl font-semibold text-gray-900">GRN Details</h2>
+                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white">GRN Details</h2>
                       {viewingGrn && (
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                           {viewingGrn.grnNumber} • Supplier: {getSupplierName(viewingGrn.supplierId)} • 
                           Date: {new Date(viewingGrn.receivedDate).toLocaleDateString()}
                         </p>
@@ -1028,7 +1021,7 @@ const GrnPage: React.FC = () => {
                     </div>
                     <button
                       onClick={handleCloseViewModal}
-                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                     >
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1042,34 +1035,34 @@ const GrnPage: React.FC = () => {
                   {isLoadingDetails ? (
                     <div className="flex items-center justify-center py-12">
                       <div className="flex flex-col items-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-                        <p className="text-gray-500">Loading GRN details...</p>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-indigo-500 mb-4"></div>
+                        <p className="text-gray-500 dark:text-gray-400">Loading GRN details...</p>
                       </div>
                     </div>
                   ) : viewGrnDetails.length === 0 ? (
                     <div className="text-center py-12">
-                      <div className="text-gray-400 text-xl mb-4">📄</div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Details Found</h3>
-                      <p className="text-gray-500">This GRN doesn't have any details yet.</p>
+                      <div className="text-gray-400 dark:text-gray-500 text-xl mb-4">📄</div>
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Details Found</h3>
+                      <p className="text-gray-500 dark:text-gray-400">This GRN doesn't have any details yet.</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       {/* GRN Summary */}
                       {viewingGrn && (
-                        <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                          <h3 className="text-lg font-medium text-gray-900 mb-3">GRN Summary</h3>
+                        <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 mb-6">
+                          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">GRN Summary</h3>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">GRN Number</label>
-                              <p className="text-sm text-gray-900 font-medium">{viewingGrn.grnNumber}</p>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">GRN Number</label>
+                              <p className="text-sm text-gray-900 dark:text-white font-medium">{viewingGrn.grnNumber}</p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Supplier</label>
-                              <p className="text-sm text-gray-900">{getSupplierName(viewingGrn.supplierId)}</p>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Supplier</label>
+                              <p className="text-sm text-gray-900 dark:text-white">{getSupplierName(viewingGrn.supplierId)}</p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Received Date</label>
-                              <p className="text-sm text-gray-900">
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Received Date</label>
+                              <p className="text-sm text-gray-900 dark:text-white">
                                 {new Date(viewingGrn.receivedDate).toLocaleDateString('en-US', {
                                   year: 'numeric',
                                   month: 'long',
@@ -1078,8 +1071,8 @@ const GrnPage: React.FC = () => {
                               </p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Total Amount</label>
-                              <p className="text-sm text-gray-900 font-medium">
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Total Amount</label>
+                              <p className="text-sm text-gray-900 dark:text-white font-medium">
                                 LKR {viewingGrn.totalAmount.toLocaleString('en-US', {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2
@@ -1087,13 +1080,13 @@ const GrnPage: React.FC = () => {
                               </p>
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700">Stock Keeper ID</label>
-                              <p className="text-sm text-gray-900">{viewingGrn.stockKeeperId}</p>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Stock Keeper ID</label>
+                              <p className="text-sm text-gray-900 dark:text-white">{viewingGrn.stockKeeperId}</p>
                             </div>
                             {viewingGrn.remarks && (
                               <div className="md:col-span-3">
-                                <label className="block text-sm font-medium text-gray-700">Remarks</label>
-                                <p className="text-sm text-gray-900">{viewingGrn.remarks}</p>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Remarks</label>
+                                <p className="text-sm text-gray-900 dark:text-white">{viewingGrn.remarks}</p>
                               </div>
                             )}
                           </div>
@@ -1102,74 +1095,74 @@ const GrnPage: React.FC = () => {
 
                       {/* GRN Details Table */}
                       <div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-3">
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
                           GRN Details ({viewGrnDetails.length} items)
                         </h3>
                         <div className="overflow-x-auto">
-                          <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                          <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                            <thead className="bg-gray-50 dark:bg-slate-700">
                               <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                   Detail ID
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                   Product
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                   Quantity
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                   Unit Cost
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                   Subtotal
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                   Location
                                 </th>
                               </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
                               {viewGrnDetails.map((detail, index) => (
-                                <tr key={detail.grnDetailId} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                <tr key={detail.grnDetailId} className={index % 2 === 0 ? 'bg-white dark:bg-slate-800' : 'bg-gray-50 dark:bg-slate-700/50'}>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                                     {String(detail.grnDetailId).padStart(4, '0')}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm font-medium text-gray-900">
+                                    <div className="text-sm font-medium text-gray-900 dark:text-white">
                                       {getProductName(detail.productId)}
                                     </div>
-                                    <div className="text-sm text-gray-500">
+                                    <div className="text-sm text-gray-500 dark:text-gray-400">
                                       Product ID: {detail.productId}
                                     </div>
                                   </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                     {detail.quantityReceived?.toLocaleString() || 0}
                                   </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                     LKR {detail.unitCost?.toLocaleString('en-US', {
                                       minimumFractionDigits: 2,
                                       maximumFractionDigits: 2
                                     }) || '0.00'}
                                   </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                                     LKR {detail.subTotal?.toLocaleString('en-US', {
                                       minimumFractionDigits: 2,
                                       maximumFractionDigits: 2
                                     }) || '0.00'}
                                   </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                     {detail.location || 'N/A'}
                                   </td>
                                 </tr>
                               ))}
                             </tbody>
-                            <tfoot className="bg-gray-100">
+                            <tfoot className="bg-gray-100 dark:bg-slate-700">
                               <tr>
-                                <td colSpan={4} className="px-6 py-4 text-sm font-medium text-gray-900 text-right">
+                                <td colSpan={4} className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white text-right">
                                   Total Amount:
                                 </td>
-                                <td className="px-6 py-4 text-sm font-bold text-gray-900">
+                                <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-white">
                                   LKR {viewGrnDetails.reduce((total, detail) => total + (detail.subTotal || 0), 0).toLocaleString('en-US', {
                                     minimumFractionDigits: 2,
                                     maximumFractionDigits: 2
@@ -1186,10 +1179,10 @@ const GrnPage: React.FC = () => {
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+                <div className="px-6 py-4 border-t border-gray-200 dark:border-slate-700 flex justify-end">
                   <button
                     onClick={handleCloseViewModal}
-                    className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                    className="px-6 py-2 bg-gray-600 dark:bg-slate-600 text-white rounded-md hover:bg-gray-700 dark:hover:bg-slate-500 transition-colors"
                   >
                     Close
                   </button>
@@ -1207,13 +1200,13 @@ const GrnPage: React.FC = () => {
           
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-              <div className="relative bg-white rounded-lg shadow-xl">
-                <div className="px-6 py-4 border-b border-gray-200">
+              <div className="relative bg-white dark:bg-slate-800 rounded-lg shadow-xl">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-gray-900">Create Complete GRN</h2>
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Create Complete GRN</h2>
                     <button
                       onClick={handleCloseCreateForm}
-                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                     >
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1225,29 +1218,29 @@ const GrnPage: React.FC = () => {
                 <div className="px-6 py-4">
                   {/* GRN Information Section */}
                   <div className="mb-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">GRN Information</h3>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">GRN Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           GRN Number <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
                           value={grnFormData.grnNumber}
                           onChange={(e) => handleGrnFormChange('grnNumber', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white dark:placeholder-gray-400"
                           placeholder="Enter GRN number (e.g., GRN-2025-001)"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Supplier <span className="text-red-500">*</span>
                         </label>
                         <select
                           value={grnFormData.supplierId}
                           onChange={(e) => handleGrnFormChange('supplierId', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
                         >
                           <option value="">Select supplier</option>
                           {suppliers.filter(s => s.IsActive).map(supplier => (
@@ -1259,19 +1252,19 @@ const GrnPage: React.FC = () => {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Received Date <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="date"
                           value={grnFormData.receivedDate}
                           onChange={(e) => handleGrnFormChange('receivedDate', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Total Amount (Optional)
                         </label>
                         <input
@@ -1279,33 +1272,33 @@ const GrnPage: React.FC = () => {
                           step="0.01"
                           value={grnFormData.totalAmount}
                           onChange={(e) => handleGrnFormChange('totalAmount', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white dark:placeholder-gray-400"
                           placeholder={`Auto-calculated: LKR ${calculateTotalAmount().toFixed(2)}`}
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Stock ID (Optional)
                         </label>
                         <input
                           type="number"
                           value={grnFormData.stockId}
                           onChange={(e) => handleGrnFormChange('stockId', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white dark:placeholder-gray-400"
                           placeholder="Enter stock ID"
                         />
                       </div>
 
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Remarks
                         </label>
                         <textarea
                           value={grnFormData.remarks}
                           onChange={(e) => handleGrnFormChange('remarks', e.target.value)}
                           rows={3}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white dark:placeholder-gray-400"
                           placeholder="Enter remarks (optional)"
                         />
                       </div>
@@ -1315,10 +1308,10 @@ const GrnPage: React.FC = () => {
                   {/* GRN Details Section */}
                   <div className="mb-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-medium text-gray-900">GRN Details</h3>
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">GRN Details</h3>
                       <button
                         onClick={addGrnDetail}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                        className="px-4 py-2 bg-blue-600 dark:bg-indigo-600 text-white rounded-md hover:bg-blue-700 dark:hover:bg-indigo-700 transition-colors"
                       >
                         Add Product
                       </button>
@@ -1326,13 +1319,13 @@ const GrnPage: React.FC = () => {
 
                     <div className="space-y-4">
                       {grnDetails.map((detail, index) => (
-                        <div key={index} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                        <div key={index} className="p-4 border border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-700/50">
                           <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-medium text-gray-700">GRN Product {index + 1}</h4>
+                            <h4 className="font-medium text-gray-700 dark:text-gray-300">GRN Product {index + 1}</h4>
                             {grnDetails.length > 1 && (
                               <button
                                 onClick={() => removeGrnDetail(index)}
-                                className="text-red-600 hover:text-red-800"
+                                className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
                               >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1343,13 +1336,13 @@ const GrnPage: React.FC = () => {
 
                           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                 Product <span className="text-red-500">*</span>
                               </label>
                               <select
                                 value={detail.productId}
                                 onChange={(e) => handleDetailChange(index, 'productId', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
                               >
                                 <option value="">Select product</option>
                                 {products.filter(p => p.isActive).map(product => (
@@ -1361,20 +1354,20 @@ const GrnPage: React.FC = () => {
                             </div>
 
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                 Quantity <span className="text-red-500">*</span>
                               </label>
                               <input
                                 type="number"
                                 value={detail.quantityReceived}
                                 onChange={(e) => handleDetailChange(index, 'quantityReceived', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white dark:placeholder-gray-400"
                                 placeholder="Quantity"
                               />
                             </div>
 
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                 Unit Cost <span className="text-red-500">*</span>
                               </label>
                               <input
@@ -1382,27 +1375,27 @@ const GrnPage: React.FC = () => {
                                 step="0.01"
                                 value={detail.unitCost}
                                 onChange={(e) => handleDetailChange(index, 'unitCost', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white dark:placeholder-gray-400"
                                 placeholder="Unit cost"
                               />
                             </div>
 
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                 Location
                               </label>
                               <input
                                 type="text"
                                 value={detail.location}
                                 onChange={(e) => handleDetailChange(index, 'location', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white dark:placeholder-gray-400"
                                 placeholder="Location ID"
                               />
                             </div>
                           </div>
 
                           {detail.quantityReceived && detail.unitCost && (
-                            <div className="mt-2 text-sm text-gray-600">
+                            <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                               Subtotal: LKR {(parseInt(detail.quantityReceived) * parseFloat(detail.unitCost)).toFixed(2)}
                             </div>
                           )}
@@ -1410,26 +1403,26 @@ const GrnPage: React.FC = () => {
                       ))}
                     </div>
 
-                    <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                      <div className="text-sm font-medium text-blue-800">
+                    <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <div className="text-sm font-medium text-blue-800 dark:text-blue-300">
                         Total Amount: LKR {calculateTotalAmount().toFixed(2)}
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                <div className="px-6 py-4 border-t border-gray-200 dark:border-slate-700 flex justify-end space-x-3">
                   <button
                     onClick={handleCloseCreateForm}
                     disabled={isSubmitting}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                    className="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleCreateCompleteGrn}
                     disabled={isSubmitting}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    className="px-6 py-2 bg-blue-600 dark:bg-indigo-600 text-white rounded-md hover:bg-blue-700 dark:hover:bg-indigo-700 transition-colors disabled:opacity-50"
                   >
                     {isSubmitting ? 'Creating...' : 'Create GRN'}
                   </button>
@@ -1447,24 +1440,21 @@ const GrnPage: React.FC = () => {
           
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="relative w-full max-w-2xl">
-              <div className="relative bg-white rounded-lg shadow-xl">
+              <div className="relative bg-white dark:bg-slate-800 rounded-lg shadow-xl">
                 <button
                   onClick={handleCloseUpdateForm}
-                  className="absolute right-4 top-4 z-10 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-4 top-4 z-10 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
 
-                
-
-
-                  <UpdateForm
-                   fields={getUpdateFormFields()}
-                   onSubmit={handleUpdateGrn}
-                   title="Update GRN"
-                   loading={isSubmitting}
+                <UpdateForm
+                  fields={getUpdateFormFields()}
+                  onSubmit={handleUpdateGrn}
+                  title="Update GRN"
+                  loading={isSubmitting}
                   initialData={{
                     grnNumber: selectedGrn.grnNumber,
                     supplierId: selectedGrn.supplierId.toString(),

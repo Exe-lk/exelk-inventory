@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -293,7 +292,7 @@ const ProductVersionPage: React.FC = () => {
       label: 'Version ID',
       sortable: true,
       render: (value: number) => (
-        <span className="font-medium text-gray-900">
+        <span className="font-medium text-gray-900 dark:text-white">
           {String(value).padStart(3, '0')}
         </span>
       )
@@ -304,7 +303,7 @@ const ProductVersionPage: React.FC = () => {
       sortable: true,
       filterable: true,
       render: (value: number) => (
-        <span className="font-medium text-gray-900">{value}</span>
+        <span className="font-medium text-gray-900 dark:text-white">{value}</span>
       )
     },
     {
@@ -313,7 +312,7 @@ const ProductVersionPage: React.FC = () => {
       sortable: true,
       filterable: true,
       render: (value: string) => (
-        <span className="font-medium text-gray-900">{value}</span>
+        <span className="font-medium text-gray-900 dark:text-white">{value}</span>
       )
     },
     {
@@ -321,7 +320,7 @@ const ProductVersionPage: React.FC = () => {
       label: 'Release Date',
       sortable: true,
       render: (value: string) => (
-        <span className="text-gray-600">
+        <span className="text-gray-600 dark:text-gray-400">
           {value ? new Date(value).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short',
@@ -338,8 +337,8 @@ const ProductVersionPage: React.FC = () => {
       render: (value: boolean) => (
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
           value 
-            ? 'bg-green-100 text-green-800' 
-            : 'bg-red-100 text-red-800'
+            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
         }`}>
           {value ? 'Yes' : 'No'}
         </span>
@@ -419,10 +418,10 @@ const ProductVersionPage: React.FC = () => {
   // Show loading spinner during auth check
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950">
         <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <div className="text-lg text-gray-600">Loading...</div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-indigo-500 mb-4"></div>
+          <div className="text-lg text-gray-600 dark:text-gray-300">Loading...</div>
         </div>
       </div>
     );
@@ -436,16 +435,16 @@ const ProductVersionPage: React.FC = () => {
   // Show access denied for unauthorized users
   if (!isStockKeeper(currentUser?.RoleID || 0)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg text-center">
-          <div className="text-red-500 text-4xl mb-4">🚫</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
-          <p className="text-gray-600 mb-6">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950">
+        <div className="max-w-md w-full bg-white dark:bg-slate-800 p-8 rounded-lg shadow-lg text-center">
+          <div className="text-red-500 dark:text-red-400 text-4xl mb-4">🚫</div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Access Denied</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             Only stockkeepers can access product version management.
           </p>
           <button
             onClick={() => router.push('/home')}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-6 py-3 bg-blue-600 dark:bg-indigo-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-indigo-700 transition-colors"
           >
             Go to Dashboard
           </button>
@@ -457,7 +456,7 @@ const ProductVersionPage: React.FC = () => {
   // Show error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-gray-100 dark:bg-slate-950">
         <Navbar currentUser={currentUser} onMenuClick={toggleSidebar} />
         <SidebarWrapper
           currentUser={currentUser}
@@ -467,18 +466,18 @@ const ProductVersionPage: React.FC = () => {
           onExpandedChange={handleSidebarExpandChange}
         />
         <div className={`pt-[70px] transition-all duration-300 ease-in-out ${isSidebarExpanded ? 'lg:ml-[300px]' : 'lg:ml-16'}`}>
-          <main className="overflow-y-auto bg-gray-50 p-6" style={{ minHeight: 'calc(100vh - 70px)' }}>
+          <main className="overflow-y-auto bg-gray-50 dark:bg-slate-950 p-6" style={{ minHeight: 'calc(100vh - 70px)' }}>
             <div className="flex items-center justify-center min-h-[60vh]">
-              <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+              <div className="bg-white dark:bg-slate-800 p-8 rounded-lg shadow-lg max-w-md w-full">
                 <div className="text-center">
-                  <div className="text-red-500 text-xl mb-4">⚠️</div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Data</h3>
-                  <p className="text-gray-500 mb-4">{error}</p>
+                  <div className="text-red-500 dark:text-red-400 text-xl mb-4">⚠️</div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Error Loading Data</h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">{error}</p>
                   <div className="space-x-4">
-                    <button onClick={refreshData} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                    <button onClick={refreshData} className="px-4 py-2 bg-blue-600 dark:bg-indigo-600 text-white rounded-md hover:bg-blue-700 dark:hover:bg-indigo-700 transition-colors">
                       Retry
                     </button>
-                    <button onClick={() => window.location.reload()} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors">
+                    <button onClick={() => window.location.reload()} className="px-4 py-2 bg-gray-300 dark:bg-slate-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-400 dark:hover:bg-slate-500 transition-colors">
                       Reload Page
                     </button>
                   </div>
@@ -492,7 +491,7 @@ const ProductVersionPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-slate-950">
       {/* Navbar */}
       <Navbar currentUser={currentUser} onMenuClick={toggleSidebar} />
 
@@ -507,13 +506,13 @@ const ProductVersionPage: React.FC = () => {
 
       {/* Main Content */}
       <div className={`pt-[70px] transition-all duration-300 ease-in-out ${isSidebarExpanded ? 'lg:ml-[300px]' : 'lg:ml-16'}`}>
-        <main className="overflow-y-auto bg-gray-50 p-6" style={{ minHeight: 'calc(100vh - 70px)' }}>
+        <main className="overflow-y-auto bg-gray-50 dark:bg-slate-950 p-6" style={{ minHeight: 'calc(100vh - 70px)' }}>
           <div className="max-w-full">
             <div className="mb-8">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Product Version Management</h1>
-                  <p className="mt-2 text-gray-600">
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Product Version Management</h1>
+                  <p className="mt-2 text-gray-600 dark:text-gray-400">
                     Manage product versions and their release information
                   </p>
                 </div>
@@ -523,7 +522,7 @@ const ProductVersionPage: React.FC = () => {
                   {/* Back Button */}
                   <button
                     onClick={handleBackToProducts}
-                    className="px-6 py-2.5 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200"
+                    className="px-6 py-2.5 bg-gray-600 dark:bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-gray-700 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-slate-500 transition-colors duration-200"
                   >
                     
                     Back 
@@ -532,7 +531,7 @@ const ProductVersionPage: React.FC = () => {
                   {/* View Product Variation Button */}
                   <button
                     onClick={handleViewProductVariation}
-                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-Blue-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors shadow-sm"
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 dark:bg-indigo-600 border border-transparent rounded-lg hover:bg-blue-700 dark:hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 transition-colors shadow-sm"
                   >
                     
                     View Product Variation
@@ -541,7 +540,7 @@ const ProductVersionPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow">
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
               <Table
                 data={productVersions}
                 columns={columns}
@@ -553,7 +552,7 @@ const ProductVersionPage: React.FC = () => {
                 emptyMessage="No product versions found. Create your first product version to get started."
                 onCreateClick={isStockKeeper(currentUser?.RoleID || 0) ? handleCreateClick : undefined}
                 createButtonLabel="Create"
-                className="border border-gray-200"
+                className="border border-gray-200 dark:border-slate-700"
               />
             </div>
           </div>
@@ -569,11 +568,11 @@ const ProductVersionPage: React.FC = () => {
           {/* Modal */}
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="relative w-full max-w-2xl">
-              <div className="relative bg-white rounded-lg shadow-xl">
+              <div className="relative bg-white dark:bg-slate-800 rounded-lg shadow-xl">
                 {/* Close button */}
                 <button
                   onClick={handleCloseCreateForm}
-                  className="absolute right-4 top-4 z-10 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-4 top-4 z-10 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -606,11 +605,11 @@ const ProductVersionPage: React.FC = () => {
           {/* Modal */}
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="relative w-full max-w-2xl">
-              <div className="relative bg-white rounded-lg shadow-xl">
+              <div className="relative bg-white dark:bg-slate-800 rounded-lg shadow-xl">
                 {/* Close button */}
                 <button
                   onClick={handleCloseUpdateForm}
-                  className="absolute right-4 top-4 z-10 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-4 top-4 z-10 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

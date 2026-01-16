@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { createServerClient } from '@/lib/supabase/server'
+import { getAuthenticatedSession } from '@/lib/api-auth-optimized'
 
 interface Brand {
   brandId: number
@@ -18,27 +19,16 @@ interface Brand {
 
 // GET - Retrieve brands with pagination, sorting, search, and filtering
 export async function GET(request: NextRequest) {
-  console.log('Brand GET request started');
+  console.log(' Brand GET request started');
 
   try {
-    // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session) {
-      console.log(' No access token found');
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
 
-    console.log(' Access token verified');
+    console.log(' Session verified');
 
     const { searchParams } = new URL(request.url)
 
@@ -51,7 +41,7 @@ export async function GET(request: NextRequest) {
     const country = searchParams.get('country')
     const isActive = searchParams.get('isActive')
 
-     console.log(' Query parameters:', { page, limit, sortBy, sortOrder, search, country, isActive });
+    console.log(' Query parameters:', { page, limit, sortBy, sortOrder, search, country, isActive });
 
     // Calculate offset for pagination
     const offset = (page - 1) * limit
@@ -89,9 +79,9 @@ export async function GET(request: NextRequest) {
 
     try {
 
-      console.log(' Testing database connection...');
-      await prisma.$connect();
-      console.log(' Database connected successfully');
+      // console.log(' Testing database connection...');
+      // await prisma.$connect();
+      // console.log(' Database connected successfully');
 
       // Get total count for pagination
       console.log(' Getting total count...');
@@ -167,7 +157,7 @@ export async function GET(request: NextRequest) {
       });
 
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 500,
           message: 'Failed to retrieve brands',
@@ -181,7 +171,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Brands GET error:', error)
     return NextResponse.json(
-      { 
+      {
         status: 'error',
         code: 500,
         message: 'Internal server error',
@@ -195,43 +185,20 @@ export async function GET(request: NextRequest) {
 // POST - Create new brand
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
-
-    // Get employee ID from session metadata
-    const employeeId = session.user.user_metadata?.employee_id
-    if (!employeeId) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'User metadata not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    const employeeId = authResult.employeeId!
 
     const body = await request.json()
-    
+
     // Validate required fields
     const { brandName, description, country, isActive } = body
     if (!brandName) {
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 400,
           message: 'Brand name is required',
@@ -252,7 +219,7 @@ export async function POST(request: NextRequest) {
 
       if (existingBrand) {
         return NextResponse.json(
-          { 
+          {
             status: 'error',
             code: 409,
             message: 'Brand name already exists',
@@ -269,8 +236,8 @@ export async function POST(request: NextRequest) {
           description: description || '',
           country: country || '',
           isActive: isActive !== undefined ? isActive : true,
-          createdBy: parseInt(employeeId),
-          updatedBy: parseInt(employeeId)
+          createdBy: employeeId,
+          updatedBy: employeeId
         },
         select: {
           brandId: true,
@@ -316,7 +283,7 @@ export async function POST(request: NextRequest) {
     } catch (dbError) {
       console.error('Database error:', dbError)
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 500,
           message: 'Failed to create brand',
@@ -330,7 +297,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Brands POST error:', error)
     return NextResponse.json(
-      { 
+      {
         status: 'error',
         code: 500,
         message: 'Internal server error',
@@ -344,42 +311,19 @@ export async function POST(request: NextRequest) {
 // PUT - Update brand
 export async function PUT(request: NextRequest) {
   try {
-    // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
-
-    // Get employee ID from session metadata
-    const employeeId = session.user.user_metadata?.employee_id
-    if (!employeeId) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'User metadata not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    const employeeId = authResult.employeeId
 
     const body = await request.json()
     const { brandId, ...updateData } = body
-    
+
     if (!brandId) {
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 400,
           message: 'Brand ID is required',
@@ -400,7 +344,7 @@ export async function PUT(request: NextRequest) {
 
       if (!existingBrand) {
         return NextResponse.json(
-          { 
+          {
             status: 'error',
             code: 404,
             message: 'Brand not found',
@@ -422,7 +366,7 @@ export async function PUT(request: NextRequest) {
 
         if (duplicateBrand) {
           return NextResponse.json(
-            { 
+            {
               status: 'error',
               code: 409,
               message: 'Brand name already exists',
@@ -440,7 +384,7 @@ export async function PUT(request: NextRequest) {
         },
         data: {
           ...updateData,
-          updatedBy: parseInt(employeeId)
+          updatedBy: employeeId
         },
         select: {
           brandId: true,
@@ -486,7 +430,7 @@ export async function PUT(request: NextRequest) {
     } catch (dbError) {
       console.error('Database error:', dbError)
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 500,
           message: 'Failed to update brand',
@@ -500,7 +444,7 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error('Brands PUT error:', error)
     return NextResponse.json(
-      { 
+      {
         status: 'error',
         code: 500,
         message: 'Internal server error',
@@ -514,42 +458,19 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete brand (soft delete)
 export async function DELETE(request: NextRequest) {
   try {
-    // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
-
-    // Get employee ID from session metadata
-    const employeeId = session.user.user_metadata?.employee_id
-    if (!employeeId) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'User metadata not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    const employeeId = authResult.employeeId
 
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brandId') || searchParams.get('brandID') || searchParams.get('id')
 
     if (!brandId) {
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 400,
           message: 'Brand ID is required',
@@ -570,7 +491,7 @@ export async function DELETE(request: NextRequest) {
 
       if (!existingBrand) {
         return NextResponse.json(
-          { 
+          {
             status: 'error',
             code: 404,
             message: 'Brand not found',
@@ -590,7 +511,7 @@ export async function DELETE(request: NextRequest) {
 
       if (modelsUsingBrand) {
         return NextResponse.json(
-          { 
+          {
             status: 'error',
             code: 400,
             message: 'Cannot delete brand that is being used by models/products',
@@ -607,7 +528,7 @@ export async function DELETE(request: NextRequest) {
         },
         data: {
           deletedAt: new Date(),
-          deletedBy: parseInt(employeeId),
+          deletedBy: employeeId,
           isActive: false
         }
       })
@@ -625,7 +546,7 @@ export async function DELETE(request: NextRequest) {
     } catch (dbError) {
       console.error('Database error:', dbError)
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 500,
           message: 'Failed to delete brand',
@@ -639,7 +560,7 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     console.error('Brands DELETE error:', error)
     return NextResponse.json(
-      { 
+      {
         status: 'error',
         code: 500,
         message: 'Internal server error',

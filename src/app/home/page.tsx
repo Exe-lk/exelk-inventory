@@ -11,8 +11,8 @@ import { fetchDashboardData, approveReturn, DashboardData, clearDashboardCache }
 import { ReturnResponse } from '@/types/return';
 import { CheckCircle, Clock, XCircle, Eye, AlertCircle, AlertTriangle, Package, ExternalLink, HelpCircle } from 'lucide-react';
 import Tooltip from '@/components/Common/Tooltip';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+// Update the import at the top (around line 14)
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import { usePageTitle } from '@/lib/hooks/usePageTitle';
 
 
@@ -373,99 +373,7 @@ export default function HomePage() {
 
 
 
-            {/* Dashboard Statistics Cards - Reorganized into 2 cards */}
-            {dashboardData && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                {/* Returns Section Card */}
-                <div className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow hover:shadow-md transition-shadow duration-200">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">Returns Overview</h3>
-                    <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                      <Clock className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2">
-                    {/* Total Returns */}
-                    <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                      <div className="flex items-center justify-center mb-1">
-                        <div className="w-5 h-5 bg-blue-100 dark:bg-blue-900/40 rounded-lg flex items-center justify-center">
-                          <Clock className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
-                        </div>
-                      </div>
-                      <p className="text-lg font-bold text-gray-900 dark:text-white">{dashboardData.statistics.totalReturns}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Total Returns</p>
-                    </div>
-
-                    {/* Pending Returns */}
-                    <div className="text-center p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                      <div className="flex items-center justify-center mb-1">
-                        <div className="w-5 h-5 bg-yellow-100 dark:bg-yellow-900/40 rounded-lg flex items-center justify-center">
-                          <AlertCircle className="w-2.5 h-2.5 text-yellow-600 dark:text-yellow-400" />
-                        </div>
-                      </div>
-                      <p className="text-lg font-bold text-yellow-600 dark:text-yellow-400">{dashboardData.statistics.pendingReturns}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Pending</p>
-                    </div>
-
-                    {/* Approved Returns */}
-                    <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                      <div className="flex items-center justify-center mb-1">
-                        <div className="w-5 h-5 bg-green-100 dark:bg-green-900/40 rounded-lg flex items-center justify-center">
-                          <CheckCircle className="w-2.5 h-2.5 text-green-600 dark:text-green-400" />
-                        </div>
-                      </div>
-                      <p className="text-lg font-bold text-green-600 dark:text-green-400">{dashboardData.statistics.approvedReturns}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Approved</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Stock Section Card */}
-                <div className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow hover:shadow-md transition-shadow duration-200">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">Stock Alerts</h3>
-                    <div className="w-6 h-6 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-                      <Package className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    {/* Low Stock Items */}
-                    <div
-                      className="text-center p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg cursor-pointer hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
-                      onClick={handleViewLowStock}
-                    >
-                      <div className="flex items-center justify-center mb-1">
-                        <div className="w-5 h-5 bg-orange-100 dark:bg-orange-900/40 rounded-lg flex items-center justify-center">
-                          <AlertTriangle className="w-2.5 h-2.5 text-orange-600 dark:text-orange-400" />
-                        </div>
-                      </div>
-                      <p className="text-lg font-bold text-orange-600 dark:text-orange-400">{dashboardData.statistics.totalLowStockItems}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Low Stock Items</p>
-                      {dashboardData.statistics.outOfStockItems > 0 && (
-                        <p className="text-xs text-red-600 dark:text-red-400 mt-0.5 font-medium">
-                          {dashboardData.statistics.outOfStockItems} Out of Stock
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Out of Stock */}
-                    <div className="text-center p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                      <div className="flex items-center justify-center mb-1">
-                        <div className="w-5 h-5 bg-red-100 dark:bg-red-900/40 rounded-lg flex items-center justify-center">
-                          <Package className="w-2.5 h-2.5 text-red-600 dark:text-red-400" />
-                        </div>
-                      </div>
-                      <p className="text-lg font-bold text-red-600 dark:text-red-400">{dashboardData.statistics.outOfStockItems}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Out of Stock</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Critical</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
+            
 
 
 
@@ -484,140 +392,226 @@ export default function HomePage() {
             )}
 
             {/* Pending Returns Section */}
+           
+
+
+
+
+            {/* Dashboard Statistics Cards - Combined Layout */}
             {dashboardData && (
-              <div className="bg-white dark:bg-slate-800 shadow rounded-lg mb-4">
-                <div className="px-4 py-3 border-b border-gray-200 dark:border-slate-700">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-medium text-gray-900 dark:text-white">
-                      Pending Returns ({dashboardData.statistics.pendingReturns})
-                    </h3>
-                    <button
-                      onClick={loadDashboardData}
-                      disabled={isLoadingDashboard}
-                      className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 disabled:opacity-50"
-                    >
-                      {isLoadingDashboard ? 'Refreshing...' : 'Refresh'}
-                    </button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                {/* Combined Returns Overview & Stock Alerts Card - Left Side */}
+                <div className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow hover:shadow-md transition-shadow duration-200">
+                  {/* Returns Overview Section */}
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-white">Returns Overview</h3>
+                      <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                        <Clock className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2">
+                      {/* Total Returns */}
+                      <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <div className="flex items-center justify-center mb-1">
+                          <div className="w-5 h-5 bg-blue-100 dark:bg-blue-900/40 rounded-lg flex items-center justify-center">
+                            <Clock className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
+                          </div>
+                        </div>
+                        <p className="text-lg font-bold text-gray-900 dark:text-white">{dashboardData.statistics.totalReturns}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Total Returns</p>
+                      </div>
+
+                      {/* Pending Returns */}
+                      <div className="text-center p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                        <div className="flex items-center justify-center mb-1">
+                          <div className="w-5 h-5 bg-yellow-100 dark:bg-yellow-900/40 rounded-lg flex items-center justify-center">
+                            <AlertCircle className="w-2.5 h-2.5 text-yellow-600 dark:text-yellow-400" />
+                          </div>
+                        </div>
+                        <p className="text-lg font-bold text-yellow-600 dark:text-yellow-400">{dashboardData.statistics.pendingReturns}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Pending</p>
+                      </div>
+
+                      {/* Approved Returns */}
+                      <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                        <div className="flex items-center justify-center mb-1">
+                          <div className="w-5 h-5 bg-green-100 dark:bg-green-900/40 rounded-lg flex items-center justify-center">
+                            <CheckCircle className="w-2.5 h-2.5 text-green-600 dark:text-green-400" />
+                          </div>
+                        </div>
+                        <p className="text-lg font-bold text-green-600 dark:text-green-400">{dashboardData.statistics.approvedReturns}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Approved</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="border-t border-gray-200 dark:border-slate-700 my-3"></div>
+
+                  {/* Stock Alerts Section */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-white">Stock Alerts</h3>
+                      <div className="w-6 h-6 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+                        <Package className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      {/* Low Stock Items */}
+                      <div
+                        className="text-center p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg cursor-pointer hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
+                        onClick={handleViewLowStock}
+                      >
+                        <div className="flex items-center justify-center mb-1">
+                          <div className="w-5 h-5 bg-orange-100 dark:bg-orange-900/40 rounded-lg flex items-center justify-center">
+                            <AlertTriangle className="w-2.5 h-2.5 text-orange-600 dark:text-orange-400" />
+                          </div>
+                        </div>
+                        <p className="text-lg font-bold text-orange-600 dark:text-orange-400">{dashboardData.statistics.totalLowStockItems}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Low Stock Items</p>
+                        {dashboardData.statistics.outOfStockItems > 0 && (
+                          <p className="text-xs text-red-600 dark:text-red-400 mt-0.5 font-medium">
+                            {dashboardData.statistics.outOfStockItems} Out of Stock
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Out of Stock */}
+                      <div className="text-center p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                        <div className="flex items-center justify-center mb-1">
+                          <div className="w-5 h-5 bg-red-100 dark:bg-red-900/40 rounded-lg flex items-center justify-center">
+                            <Package className="w-2.5 h-2.5 text-red-600 dark:text-red-400" />
+                          </div>
+                        </div>
+                        <p className="text-lg font-bold text-red-600 dark:text-red-400">{dashboardData.statistics.outOfStockItems}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Out of Stock</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Critical</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="px-4 py-3">
-                  {isLoadingDashboard ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 dark:border-indigo-500 mr-3"></div>
-                      <span className="text-gray-500 dark:text-gray-400">Loading pending returns...</span>
-                    </div>
-                  ) : dashboardError ? (
-                    <div className="text-center py-8">
-                      <div className="text-red-400 text-xl mb-4"></div>
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Error Loading Data</h3>
-                      <p className="text-gray-500 dark:text-gray-400 mb-4">{dashboardError}</p>
+                {/* Pending Returns Section - Right Side */}
+                <div className="bg-white dark:bg-slate-800 shadow rounded-lg">
+                  <div className="px-4 py-3 border-b border-gray-200 dark:border-slate-700">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-base font-medium text-gray-900 dark:text-white">
+                        Pending Returns ({dashboardData.statistics.pendingReturns})
+                      </h3>
                       <button
                         onClick={loadDashboardData}
-                        className="px-4 py-2 bg-blue-600 dark:bg-indigo-600 text-white rounded-md hover:bg-blue-700 dark:hover:bg-indigo-700"
+                        disabled={isLoadingDashboard}
+                        className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 disabled:opacity-50"
                       >
-                        Try Again
+                        {isLoadingDashboard ? 'Refreshing...' : 'Refresh'}
                       </button>
                     </div>
-                  ) : dashboardData.pendingReturns.length === 0 ? (
-                    <div className="text-center py-8">
-                      <div className="text-gray-400 dark:text-gray-500 text-xl mb-4"></div>
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Pending Returns</h3>
-                      <p className="text-gray-500 dark:text-gray-400">All returns have been processed!</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {dashboardData.pendingReturns.map((returnItem) => (
-                        <div key={returnItem.returnId} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50">
-                          <div className="flex items-center justify-between">
-                            {/* // Return Summary starts here */}
-                            <div className="flex-1">
-                              <div className="flex items-center gap-4">
-                                <div>
-                                  <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-                                    Return Number: {returnItem.returnNumber}
-                                  </h4>
-                                  {/* <p className="text-sm text-gray-500 dark:text-gray-400">
-                                    Return Number: {returnItem.returnNumber}
-                                  </p> */}
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                    Supplier ID: {String(returnItem.supplier.supplierId).padStart(4, '0')}
-                                  </p>
-                                  {/* <p className="text-sm text-gray-500 dark:text-gray-400">
-                                    Supplier ID: {String(returnItem.supplier.supplierId).padStart(4, '0')}
-                                  </p> */}
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                    Type: {getReturnTypeName(returnItem.returnType)}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                    Date: {returnItem.returnDate ? new Date(returnItem.returnDate).toLocaleDateString() : 'N/A'}
-                                  </p>
-                                </div>
-                                <div>
-                                  {/* <p className="text-sm text-gray-500 dark:text-gray-400">
-                                    Items: {returnItem.details.length}
-                                  </p> */}
-                                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                    Total Qty: {returnItem.details.reduce((total, detail) => total + (detail.quantityReturned || 0), 0)}
-                                  </p>
-                                </div>
-                                <div>
-                                  {returnItem.reason && (
+                  </div>
+
+                  <div className="px-4 py-3 max-h-[600px] overflow-y-auto">
+                    {isLoadingDashboard ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 dark:border-indigo-500 mr-3"></div>
+                        <span className="text-gray-500 dark:text-gray-400">Loading pending returns...</span>
+                      </div>
+                    ) : dashboardError ? (
+                      <div className="text-center py-8">
+                        <div className="text-red-400 text-xl mb-4"></div>
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Error Loading Data</h3>
+                        <p className="text-gray-500 dark:text-gray-400 mb-4">{dashboardError}</p>
+                        <button
+                          onClick={loadDashboardData}
+                          className="px-4 py-2 bg-blue-600 dark:bg-indigo-600 text-white rounded-md hover:bg-blue-700 dark:hover:bg-indigo-700"
+                        >
+                          Try Again
+                        </button>
+                      </div>
+                    ) : dashboardData.pendingReturns.length === 0 ? (
+                      <div className="text-center py-8">
+                        <div className="text-gray-400 dark:text-gray-500 text-xl mb-4"></div>
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Pending Returns</h3>
+                        <p className="text-gray-500 dark:text-gray-400">All returns have been processed!</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {dashboardData.pendingReturns.map((returnItem) => (
+                          <div key={returnItem.returnId} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50">
+                            <div className="flex items-center justify-between">
+                              {/* Return Summary starts here */}
+                              <div className="flex-1">
+                                <div className="flex items-center gap-4">
+                                  <div>
+                                    <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                                      Return Number: {returnItem.returnNumber}
+                                    </h4>
+                                  </div>
+                                  <div>
                                     <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                      <span className="font-medium">Reason:</span> {returnItem.reason}
+                                      Supplier ID: {String(returnItem.supplier.supplierId).padStart(4, '0')}
                                     </p>
-                                  )}
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                      Type: {getReturnTypeName(returnItem.returnType)}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                      Date: {returnItem.returnDate ? new Date(returnItem.returnDate).toLocaleDateString() : 'N/A'}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                      Total Qty: {returnItem.details.reduce((total, detail) => total + (detail.quantityReturned || 0), 0)}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    {returnItem.reason && (
+                                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                        <span className="font-medium">Reason:</span> {returnItem.reason}
+                                      </p>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
-                              {/* {returnItem.reason && (
-                                <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
-                                  <span className="font-medium">Reason:</span> {returnItem.reason}
-                                </p>
-                              )} */}
+                              {/* Return Actions starts here */}
+
+                              <div className="flex items-center gap-2 ml-4">
+                                <button
+                                  onClick={() => handleViewReturn(returnItem)}
+                                  title="View Return Details"
+                                  className="inline-flex items-center gap-2 px-3 py-1 text-sm bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+                                >
+                                  <Eye size={14} />
+                                </button>
+
+                                <button
+                                  onClick={() => handleApproveReturn(returnItem.returnId)}
+                                  title="Approve Return"
+                                  disabled={isApprovingReturn === returnItem.returnId}
+                                  className="inline-flex items-center gap-2 px-3 py-1 text-sm bg-green-600 dark:bg-green-700 text-white rounded-md hover:bg-green-700 dark:hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                  {isApprovingReturn === returnItem.returnId ? (
+                                    <>
+                                      <div className="animate-spin rounded-full h-3 w-3 border border-white border-t-transparent"></div>
+                                      Approving...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <CheckCircle size={14} />
+                                    </>
+                                  )}
+                                </button>
+                              </div>
                             </div>
-                            {/* // Return Actions starts here */}
-
-                            <div className="flex items-center gap-2 ml-4">
-                              <button
-                                onClick={() => handleViewReturn(returnItem)}
-                                title="View Return Details"
-                                className="inline-flex items-center gap-2 px-3 py-1 text-sm bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
-                              >
-                                <Eye size={14} />
-
-                              </button>
-
-                              <button
-                                onClick={() => handleApproveReturn(returnItem.returnId)}
-                                title="Approve Return"
-                                disabled={isApprovingReturn === returnItem.returnId}
-                                className="inline-flex items-center gap-2 px-3 py-1 text-sm bg-green-600 dark:bg-green-700 text-white rounded-md hover:bg-green-700 dark:hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                              >
-                                {isApprovingReturn === returnItem.returnId ? (
-                                  <>
-                                    <div className="animate-spin rounded-full h-3 w-3 border border-white border-t-transparent"></div>
-                                    Approving...
-                                  </>
-                                ) : (
-                                  <>
-                                    <CheckCircle size={14} />
-
-                                  </>
-                                )}
-                              </button>
-                            </div>
-
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -625,372 +619,23 @@ export default function HomePage() {
 
 
 
-
-            {/* GRN & GIN Analytics - Side by Side */}
-            {(dashboardData?.grnAnalytics || dashboardData?.ginAnalytics) && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
-                {/* GRN Analytics Section */}
-                {dashboardData?.grnAnalytics && (
-                  <div className="bg-white dark:bg-slate-800 shadow rounded-lg">
-                    <div className="px-3 py-2 border-b border-gray-200 dark:border-slate-700">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-base font-semibold text-gray-900 dark:text-white">GRN (Goods Receipt) Analytics</h3>
-                          <Tooltip
-                            title="GRN Analytics"
-                            description="Comprehensive analytics for Goods Receipt Notes (GRN), showing monthly totals, trends, and average values over time."
-                            position="bottom"
-                          />
-                        </div>
-                        <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                          <Package className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="px-3 py-2">
-                      {/* Key Metrics Cards */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
-                        {/* Total GRNs */}
-                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/30 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                          <div className="flex items-center justify-between mb-1.5">
-                            <h4 className="text-xs font-medium text-blue-700 dark:text-blue-300 uppercase tracking-wide">Total GRNs</h4>
-                            <Package className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                          </div>
-                          <div className="mt-0.5">
-                            <div className="flex items-baseline gap-1.5">
-                              <p className="text-xl font-bold text-blue-900 dark:text-blue-200">
-                                {dashboardData.grnAnalytics.totalGRNsThisMonth}
-                              </p>
-                              <span className="text-xs text-blue-600 dark:text-blue-300">This Month</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 mt-1">
-                              {dashboardData.grnAnalytics.totalGRNsThisMonth > dashboardData.grnAnalytics.totalGRNsLastMonth ? (
-                                <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400" />
-                              ) : dashboardData.grnAnalytics.totalGRNsThisMonth < dashboardData.grnAnalytics.totalGRNsLastMonth ? (
-                                <TrendingDown className="w-3 h-3 text-red-600 dark:text-red-400" />
-                              ) : (
-                                <Minus className="w-3 h-3 text-gray-600 dark:text-gray-400" />
-                              )}
-                              <p className="text-xs text-blue-600 dark:text-blue-300">
-                                Last Month: {dashboardData.grnAnalytics.totalGRNsLastMonth}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Total Value This Month */}
-                        <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-900/30 p-3 rounded-lg border border-green-200 dark:border-green-800">
-                          <div className="flex items-center justify-between mb-1.5">
-                            <h4 className="text-xs font-medium text-green-700 dark:text-green-300 uppercase tracking-wide">Total Value This Month</h4>
-                            <TrendingUp className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                          </div>
-                          <div className="mt-0.5">
-                            <p className="text-xl font-bold text-green-900 dark:text-green-200">
-                              LKR {dashboardData.grnAnalytics.totalValueThisMonth.toLocaleString('en-US', {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2
-                              })}
-                            </p>
-                            <div className="flex items-center gap-1.5 mt-1">
-                              {dashboardData.grnAnalytics.totalValueThisMonth > dashboardData.grnAnalytics.totalValueLastMonth ? (
-                                <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400" />
-                              ) : dashboardData.grnAnalytics.totalValueThisMonth < dashboardData.grnAnalytics.totalValueLastMonth ? (
-                                <TrendingDown className="w-3 h-3 text-red-600 dark:text-red-400" />
-                              ) : (
-                                <Minus className="w-3 h-3 text-gray-600 dark:text-gray-400" />
-                              )}
-                              <p className="text-xs text-green-600 dark:text-green-300">
-                                Last Month: LKR {dashboardData.grnAnalytics.totalValueLastMonth.toLocaleString('en-US', {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2
-                                })}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Average GRN Value */}
-                        <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-900/30 p-3 rounded-lg border border-purple-200 dark:border-purple-800">
-                          <div className="flex items-center justify-between mb-1.5">
-                            <h4 className="text-xs font-medium text-purple-700 dark:text-purple-300 uppercase tracking-wide">Average GRN Value</h4>
-                            <AlertCircle className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                          </div>
-                          <div className="mt-0.5">
-                            <p className="text-xl font-bold text-purple-900 dark:text-purple-200">
-                              LKR {dashboardData.grnAnalytics.averageGRNValue.toLocaleString('en-US', {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2
-                              })}
-                            </p>
-                            <p className="text-xs text-purple-600 dark:text-purple-300 mt-0.5">
-                              Across all GRNs
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* GRN Value Trend Chart */}
-                      <div className="border-t border-gray-200 dark:border-slate-700 pt-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-1.5">
-                            <h4 className="text-sm font-semibold text-gray-900 dark:text-white">GRN Value Trend (Last 30 Days)</h4>
-                            <Tooltip
-                              title="GRN Value Trend"
-                              description="Shows the daily total value of GRNs received over the last 30 days. Helps identify patterns and trends in goods receipt."
-                              position="bottom"
-                            />
-                          </div>
-                        </div>
-
-                        {dashboardData.grnAnalytics.grnValueTrend.length > 0 ? (
-                          <div className="w-full h-56">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <LineChart
-                                data={dashboardData.grnAnalytics.grnValueTrend}
-                                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                              >
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-slate-700" />
-                                <XAxis
-                                  dataKey="date"
-                                  stroke="#6b7280"
-                                  className="dark:stroke-slate-400"
-                                  tick={{ fontSize: 10 }}
-                                  tickFormatter={(value) => {
-                                    const date = new Date(value);
-                                    return `${date.getMonth() + 1}/${date.getDate()}`;
-                                  }}
-                                />
-                                <YAxis
-                                  stroke="#6b7280"
-                                  className="dark:stroke-slate-400"
-                                  tick={{ fontSize: 10 }}
-                                  tickFormatter={(value) => {
-                                    if (value >= 1000000) return `LKR ${(value / 1000000).toFixed(1)}M`;
-                                    if (value >= 1000) return `LKR ${(value / 1000).toFixed(1)}K`;
-                                    return `LKR ${value}`;
-                                  }}
-                                />
-                                <RechartsTooltip
-                                  contentStyle={{
-                                    backgroundColor: '#1f2937',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    color: '#fff'
-                                  }}
-                                  formatter={(value: number | undefined) => [
-                                    `LKR ${(value ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-                                    'Value'
-                                  ]}
-                                  labelFormatter={(label) => {
-                                    const date = new Date(label);
-                                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                                  }}
-                                />
-                                <Legend />
-                                <Line
-                                  type="monotone"
-                                  dataKey="value"
-                                  stroke="#3b82f6"
-                                  strokeWidth={2}
-                                  dot={{ fill: '#3b82f6', r: 3 }}
-                                  activeDot={{ r: 5 }}
-                                  name="GRN Value (LKR)"
-                                />
-                              </LineChart>
-                            </ResponsiveContainer>
-                          </div>
-                        ) : (
-                          <div className="text-center py-6 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
-                            <p className="text-sm text-gray-500 dark:text-gray-400">No GRN data available for the last 30 days</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* GIN Analytics Section */}
-                {dashboardData?.ginAnalytics && (
-                  <div className="bg-white dark:bg-slate-800 shadow rounded-lg">
-                    <div className="px-3 py-2 border-b border-gray-200 dark:border-slate-700">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-base font-semibold text-gray-900 dark:text-white">GIN (Goods Issue) Analytics</h3>
-                          <Tooltip
-                            title="GIN Analytics"
-                            description="Comprehensive analytics for Goods Issue Notes (GIN), showing monthly totals, quantities issued, and trends over time."
-                            position="bottom"
-                          />
-                        </div>
-                        <div className="w-6 h-6 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-                          <Package className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="px-3 py-2">
-                      {/* Key Metrics Cards */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
-                        {/* Total GINs */}
-                        <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-900/30 p-3 rounded-lg border border-orange-200 dark:border-orange-800">
-                          <div className="flex items-center justify-between mb-1.5">
-                            <h4 className="text-xs font-medium text-orange-700 dark:text-orange-300 uppercase tracking-wide">Total GINs</h4>
-                            <Package className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
-                          </div>
-                          <div className="mt-0.5">
-                            <div className="flex items-baseline gap-1.5">
-                              <p className="text-xl font-bold text-orange-900 dark:text-orange-200">
-                                {dashboardData.ginAnalytics.totalGINsThisMonth}
-                              </p>
-                              <span className="text-xs text-orange-600 dark:text-orange-300">This Month</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 mt-1">
-                              {dashboardData.ginAnalytics.totalGINsThisMonth > dashboardData.ginAnalytics.totalGINsLastMonth ? (
-                                <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400" />
-                              ) : dashboardData.ginAnalytics.totalGINsThisMonth < dashboardData.ginAnalytics.totalGINsLastMonth ? (
-                                <TrendingDown className="w-3 h-3 text-red-600 dark:text-red-400" />
-                              ) : (
-                                <Minus className="w-3 h-3 text-gray-600 dark:text-gray-400" />
-                              )}
-                              <p className="text-xs text-orange-600 dark:text-orange-300">
-                                Last Month: {dashboardData.ginAnalytics.totalGINsLastMonth}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Total Quantity Issued */}
-                        <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-900/30 p-3 rounded-lg border border-red-200 dark:border-red-800">
-                          <div className="flex items-center justify-between mb-1.5">
-                            <h4 className="text-xs font-medium text-red-700 dark:text-red-300 uppercase tracking-wide">Total Quantity Issued</h4>
-                            <TrendingUp className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
-                          </div>
-                          <div className="mt-0.5">
-                            <p className="text-xl font-bold text-red-900 dark:text-red-200">
-                              {dashboardData.ginAnalytics.totalQuantityIssuedThisMonth.toLocaleString('en-US')}
-                            </p>
-                            <span className="text-xs text-red-600 dark:text-red-300">Units This Month</span>
-                            <div className="flex items-center gap-1.5 mt-1">
-                              {dashboardData.ginAnalytics.totalQuantityIssuedThisMonth > dashboardData.ginAnalytics.totalQuantityIssuedLastMonth ? (
-                                <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400" />
-                              ) : dashboardData.ginAnalytics.totalQuantityIssuedThisMonth < dashboardData.ginAnalytics.totalQuantityIssuedLastMonth ? (
-                                <TrendingDown className="w-3 h-3 text-red-600 dark:text-red-400" />
-                              ) : (
-                                <Minus className="w-3 h-3 text-gray-600 dark:text-gray-400" />
-                              )}
-                              <p className="text-xs text-red-600 dark:text-red-300">
-                                Last Month: {dashboardData.ginAnalytics.totalQuantityIssuedLastMonth.toLocaleString('en-US')}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Average GIN Value */}
-                        <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-900/30 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
-                          <div className="flex items-center justify-between mb-1.5">
-                            <h4 className="text-xs font-medium text-amber-700 dark:text-amber-300 uppercase tracking-wide">Average GIN Value</h4>
-                            <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                          </div>
-                          <div className="mt-0.5">
-                            <p className="text-xl font-bold text-amber-900 dark:text-amber-200">
-                              LKR {dashboardData.ginAnalytics.averageGINValue.toLocaleString('en-US', {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2
-                              })}
-                            </p>
-                            <p className="text-xs text-amber-600 dark:text-amber-300 mt-0.5">
-                              Per GIN average
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Quantity Issued Trend Chart */}
-                      <div className="border-t border-gray-200 dark:border-slate-700 pt-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-1.5">
-                            <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Quantity Issued Trend (Last 30 Days)</h4>
-                            <Tooltip
-                              title="Quantity Issued Trend"
-                              description="Shows the daily total quantity of items issued through GINs over the last 30 days. Helps identify patterns in goods issuance."
-                              position="bottom"
-                            />
-                          </div>
-                        </div>
-
-                        {dashboardData.ginAnalytics.quantityIssuedTrend.length > 0 ? (
-                          <div className="w-full h-56">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <LineChart
-                                data={dashboardData.ginAnalytics.quantityIssuedTrend}
-                                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                              >
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-slate-700" />
-                                <XAxis
-                                  dataKey="date"
-                                  stroke="#6b7280"
-                                  className="dark:stroke-slate-400"
-                                  tick={{ fontSize: 10 }}
-                                  tickFormatter={(value) => {
-                                    const date = new Date(value);
-                                    return `${date.getMonth() + 1}/${date.getDate()}`;
-                                  }}
-                                />
-                                <YAxis
-                                  stroke="#6b7280"
-                                  className="dark:stroke-slate-400"
-                                  tick={{ fontSize: 10 }}
-                                  tickFormatter={(value: number) => {
-                                    if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
-                                    return `${value}`;
-                                  }}
-                                />
-                                <RechartsTooltip
-                                  contentStyle={{
-                                    backgroundColor: '#1f2937',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    color: '#fff'
-                                  }}
-                                  formatter={(value: number | undefined) => [
-                                    `${(value ?? 0).toLocaleString('en-US')} units`,
-                                    'Quantity'
-                                  ]}
-                                  labelFormatter={(label) => {
-                                    const date = new Date(label);
-                                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                                  }}
-                                />
-                                <Legend />
-                                <Line
-                                  type="monotone"
-                                  dataKey="quantity"
-                                  stroke="#f97316"
-                                  strokeWidth={2}
-                                  dot={{ fill: '#f97316', r: 3 }}
-                                  activeDot={{ r: 5 }}
-                                  name="Quantity Issued (Units)"
-                                />
-                              </LineChart>
-                            </ResponsiveContainer>
-                          </div>
-                        ) : (
-                          <div className="text-center py-6 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
-                            <p className="text-sm text-gray-500 dark:text-gray-400">No GIN data available for the last 30 days</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+            
 
 
 
 
             {/* Stock Value Analytics - Combined Section */}
+            
+
+
+
+
+
+
+
+
+            {/* Stock Value Analytics - Combined Section with Charts */}
+            {/* Stock Value Analytics - Combined Section with Charts */}
             {dashboardData?.stockValueAnalytics && (
               <div className="bg-white dark:bg-slate-800 shadow rounded-lg mb-3">
                 <div className="px-3 py-2 border-b border-gray-200 dark:border-slate-700">
@@ -1010,11 +655,11 @@ export default function HomePage() {
                 </div>
 
                 <div className="px-3 py-2">
-                  {/* Key Metrics */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+                  {/* Key Metrics - Compact */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
                     {/* Total Inventory Value */}
-                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-900/30 p-3 rounded-lg border border-purple-200 dark:border-purple-800">
-                      <div className="flex items-center justify-between mb-1.5">
+                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-900/30 p-2 rounded-lg border border-purple-200 dark:border-purple-800">
+                      <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-1.5">
                           <h4 className="text-xs font-medium text-purple-700 dark:text-purple-300 uppercase tracking-wide">Total Inventory Value</h4>
                           <Tooltip
@@ -1025,24 +670,24 @@ export default function HomePage() {
                             position="top"
                           />
                         </div>
-                        <Package className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                        <Package className="w-3 h-3 text-purple-600 dark:text-purple-400" />
                       </div>
-                      <div className="mt-0.5">
-                        <p className="text-xl font-bold text-purple-900 dark:text-purple-200">
+                      <div>
+                        <p className="text-lg font-bold text-purple-900 dark:text-purple-200">
                           LKR {dashboardData.stockValueAnalytics.totalInventoryValue.toLocaleString('en-US', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2
                           })}
                         </p>
                         <p className="text-xs text-purple-600 dark:text-purple-300 mt-0.5">
-                          Across {dashboardData.stockValueAnalytics.totalProducts} {dashboardData.stockValueAnalytics.totalProducts === 1 ? 'product' : 'products'}
+                          {dashboardData.stockValueAnalytics.totalProducts} {dashboardData.stockValueAnalytics.totalProducts === 1 ? 'product' : 'products'}
                         </p>
                       </div>
                     </div>
 
                     {/* Average Value Per Product */}
-                    <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-900/30 p-3 rounded-lg border border-indigo-200 dark:border-indigo-800">
-                      <div className="flex items-center justify-between mb-1.5">
+                    <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-900/30 p-2 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                      <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-1.5">
                           <h4 className="text-xs font-medium text-indigo-700 dark:text-indigo-300 uppercase tracking-wide">Average Value Per Product</h4>
                           <Tooltip
@@ -1053,10 +698,10 @@ export default function HomePage() {
                             position="top"
                           />
                         </div>
-                        <AlertCircle className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                        <AlertCircle className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
                       </div>
-                      <div className="mt-0.5">
-                        <p className="text-xl font-bold text-indigo-900 dark:text-indigo-200">
+                      <div>
+                        <p className="text-lg font-bold text-indigo-900 dark:text-indigo-200">
                           LKR {dashboardData.stockValueAnalytics.averageStockValuePerProduct.toLocaleString('en-US', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2
@@ -1069,56 +714,72 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  {/* Breakdown Section */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 mb-3">
-                    {/* By Category */}
-                    <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-2">
+                  {/* Charts Section - Compact */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 mb-2">
+                    {/* Category Value Bar Chart */}
+                    <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-2 bg-gray-50 dark:bg-slate-900/50">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-1.5">
-                          <div className="w-5 h-5 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-1.5">
-                            <Package className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                          <div className="w-4 h-4 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-1">
+                            <Package className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
                           </div>
-                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white">By Category</h4>
+                          <h4 className="text-xs font-semibold text-gray-900 dark:text-white">Value by Category</h4>
                           <Tooltip
                             title="Inventory Value by Category"
-                            description="Shows the total inventory value grouped by product categories. This helps you identify which categories hold the most value in your inventory."
-                            formula="For each category: Σ (Quantity × Unit Cost) of all products in that category"
-                            example="Electronics category: 50 units × LKR 100 = LKR 5,000. Clothing category: 100 units × LKR 30 = LKR 3,000"
+                            description="Bar chart showing the total inventory value grouped by product categories."
                             position="top"
                           />
                         </div>
                       </div>
                       {dashboardData.stockValueAnalytics.inventoryValueByCategory.length > 0 ? (
-                        <div className="space-y-1.5">
-                          {dashboardData.stockValueAnalytics.inventoryValueByCategory.slice(0, 5).map((category, index) => (
-                            <div key={category.categoryId} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
-                              <div className="flex items-center flex-1">
-                                <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${index === 0 ? 'bg-blue-500 dark:bg-blue-400' :
-                                  index === 1 ? 'bg-green-500 dark:bg-green-400' :
-                                    index === 2 ? 'bg-yellow-500 dark:bg-yellow-400' :
-                                      index === 3 ? 'bg-purple-500 dark:bg-purple-400' : 'bg-gray-400 dark:bg-gray-500'
-                                  }`}></div>
-                                <div className="flex-1">
-                                  <p className="text-xs font-semibold text-gray-900 dark:text-white">{category.categoryName}</p>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{category.percentage.toFixed(1)}% of total value</p>
-                                </div>
-                              </div>
-                              <div className="text-right ml-2">
-                                <p className="text-xs font-bold text-gray-900 dark:text-white">
-                                  LKR {category.value.toLocaleString('en-US', {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2
-                                  })}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                          {dashboardData.stockValueAnalytics.inventoryValueByCategory.length > 5 && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-1">
-                              +{dashboardData.stockValueAnalytics.inventoryValueByCategory.length - 5} more categories
-                            </p>
-                          )}
-                        </div>
+                        <ResponsiveContainer width="100%" height={180}>
+                          <BarChart
+                            data={dashboardData.stockValueAnalytics.inventoryValueByCategory.slice(0, 8).map(cat => ({
+                              name: cat.categoryName.length > 12 ? cat.categoryName.substring(0, 12) + '...' : cat.categoryName,
+                              value: cat.value,
+                              fullName: cat.categoryName,
+                              percentage: cat.percentage
+                            }))}
+                            margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-slate-700" />
+                            <XAxis
+                              dataKey="name"
+                              tick={{ fontSize: 10, fill: '#6b7280' }}
+                              className="dark:fill-slate-400"
+                              angle={-45}
+                              textAnchor="end"
+                              height={50}
+                            />
+                            <YAxis
+                              tick={{ fontSize: 10, fill: '#6b7280' }}
+                              className="dark:fill-slate-400"
+                              tickFormatter={(value) => `LKR ${(value / 1000).toFixed(0)}K`}
+                            />
+                            <RechartsTooltip
+                              contentStyle={{
+                                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: '6px',
+                                color: '#111827'
+                              }}
+                              formatter={(value: number | undefined, name: string | undefined, props: any) => {
+                                if (value === undefined) return ['N/A', `Value (${props?.payload?.percentage?.toFixed(1) || '0'}%)`];
+                                return [
+                                  `LKR ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                                  `Value (${props?.payload?.percentage?.toFixed(1) || '0'}%)`
+                                ];
+                              }}
+                              labelFormatter={(label) => `Category: ${label}`}
+                            />
+                            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                              {dashboardData.stockValueAnalytics.inventoryValueByCategory.slice(0, 8).map((entry, index) => {
+                                const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4', '#f97316', '#84cc16'];
+                                return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                              })}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
                       ) : (
                         <div className="text-center py-4">
                           <p className="text-xs text-gray-500 dark:text-gray-400">No category data available</p>
@@ -1126,54 +787,70 @@ export default function HomePage() {
                       )}
                     </div>
 
-                    {/* By Brand */}
-                    <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-2">
+                    {/* Brand Value Bar Chart */}
+                    <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-2 bg-gray-50 dark:bg-slate-900/50">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-1.5">
-                          <div className="w-5 h-5 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mr-1.5">
-                            <Package className="w-3 h-3 text-green-600 dark:text-green-400" />
+                          <div className="w-4 h-4 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mr-1">
+                            <Package className="w-2.5 h-2.5 text-green-600 dark:text-green-400" />
                           </div>
-                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white">By Brand</h4>
+                          <h4 className="text-xs font-semibold text-gray-900 dark:text-white">Value by Brand</h4>
                           <Tooltip
                             title="Inventory Value by Brand"
-                            description="Shows the total inventory value grouped by product brands. This helps you identify which brands represent the most value in your inventory."
-                            formula="For each brand: Σ (Quantity × Unit Cost) of all products from that brand"
-                            example="Brand A: 75 units × LKR 80 = LKR 6,000. Brand B: 120 units × LKR 25 = LKR 3,000"
+                            description="Bar chart showing the total inventory value grouped by product brands."
                             position="top"
                           />
                         </div>
                       </div>
                       {dashboardData.stockValueAnalytics.inventoryValueByBrand.length > 0 ? (
-                        <div className="space-y-1.5">
-                          {dashboardData.stockValueAnalytics.inventoryValueByBrand.slice(0, 5).map((brand, index) => (
-                            <div key={brand.brandId} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
-                              <div className="flex items-center flex-1">
-                                <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${index === 0 ? 'bg-blue-500 dark:bg-blue-400' :
-                                  index === 1 ? 'bg-green-500 dark:bg-green-400' :
-                                    index === 2 ? 'bg-yellow-500 dark:bg-yellow-400' :
-                                      index === 3 ? 'bg-purple-500 dark:bg-purple-400' : 'bg-gray-400 dark:bg-gray-500'
-                                  }`}></div>
-                                <div className="flex-1">
-                                  <p className="text-xs font-semibold text-gray-900 dark:text-white">{brand.brandName}</p>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{brand.percentage.toFixed(1)}% of total value</p>
-                                </div>
-                              </div>
-                              <div className="text-right ml-2">
-                                <p className="text-xs font-bold text-gray-900 dark:text-white">
-                                  LKR {brand.value.toLocaleString('en-US', {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2
-                                  })}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                          {dashboardData.stockValueAnalytics.inventoryValueByBrand.length > 5 && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-1">
-                              +{dashboardData.stockValueAnalytics.inventoryValueByBrand.length - 5} more brands
-                            </p>
-                          )}
-                        </div>
+                        <ResponsiveContainer width="100%" height={180}>
+                          <BarChart
+                            data={dashboardData.stockValueAnalytics.inventoryValueByBrand.slice(0, 8).map(brand => ({
+                              name: brand.brandName.length > 12 ? brand.brandName.substring(0, 12) + '...' : brand.brandName,
+                              value: brand.value,
+                              fullName: brand.brandName,
+                              percentage: brand.percentage
+                            }))}
+                            margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-slate-700" />
+                            <XAxis
+                              dataKey="name"
+                              tick={{ fontSize: 10, fill: '#6b7280' }}
+                              className="dark:fill-slate-400"
+                              angle={-45}
+                              textAnchor="end"
+                              height={50}
+                            />
+                            <YAxis
+                              tick={{ fontSize: 10, fill: '#6b7280' }}
+                              className="dark:fill-slate-400"
+                              tickFormatter={(value) => `LKR ${(value / 1000).toFixed(0)}K`}
+                            />
+                            <RechartsTooltip
+                              contentStyle={{
+                                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: '6px',
+                                color: '#111827'
+                              }}
+                              formatter={(value: number | undefined, name: string | undefined, props: any) => {
+                                if (value === undefined) return ['N/A', `Value (${props?.payload?.percentage?.toFixed(1) || '0'}%)`];
+                                return [
+                                  `LKR ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                                  `Value (${props?.payload?.percentage?.toFixed(1) || '0'}%)`
+                                ];
+                              }}
+                              labelFormatter={(label) => `Brand: ${label}`}
+                            />
+                            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                              {dashboardData.stockValueAnalytics.inventoryValueByBrand.slice(0, 8).map((entry, index) => {
+                                const colors = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4', '#f97316', '#84cc16'];
+                                return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                              })}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
                       ) : (
                         <div className="text-center py-4">
                           <p className="text-xs text-gray-500 dark:text-gray-400">No brand data available</p>
@@ -1182,71 +859,112 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  {/* Value Trends Section */}
-                  <div className="border-t border-gray-200 dark:border-slate-700 pt-3">
+                  {/* Value Trends Line Chart - Compact */}
+                  <div className="border-t border-gray-200 dark:border-slate-700 pt-2 mb-2">
                     <div className="flex items-center mb-2">
-                      <div className="w-5 h-5 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center mr-1.5">
-                        <Clock className="w-3 h-3 text-orange-600 dark:text-orange-400" />
+                      <div className="w-4 h-4 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center mr-1.5">
+                        <Clock className="w-2.5 h-2.5 text-orange-600 dark:text-orange-400" />
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Value Trends</h4>
+                        <h4 className="text-xs font-semibold text-gray-900 dark:text-white">Value Trends</h4>
                         <Tooltip
                           title="Inventory Value Trends"
-                          description="Shows the inventory value over different time periods. Currently displays the current inventory value. Historical tracking can be added to show actual trends over time."
+                          description="Line chart showing the inventory value over different time periods."
                           position="top"
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/30 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="bg-gray-50 dark:bg-slate-900/50 rounded-lg p-2 border border-gray-200 dark:border-slate-700">
+                      <ResponsiveContainer width="100%" height={150}>
+                        <LineChart
+                          data={[
+                            {
+                              period: '30 Days',
+                              value: dashboardData.stockValueAnalytics.inventoryValueTrend.last30Days
+                            },
+                            {
+                              period: '90 Days',
+                              value: dashboardData.stockValueAnalytics.inventoryValueTrend.last90Days
+                            },
+                            {
+                              period: 'Current',
+                              value: dashboardData.stockValueAnalytics.totalInventoryValue
+                            }
+                          ]}
+                          margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-slate-700" />
+                          <XAxis
+                            dataKey="period"
+                            tick={{ fontSize: 11, fill: '#6b7280' }}
+                            className="dark:fill-slate-400"
+                          />
+                          <YAxis
+                            tick={{ fontSize: 10, fill: '#6b7280' }}
+                            className="dark:fill-slate-400"
+                            tickFormatter={(value) => `LKR ${(value / 1000).toFixed(0)}K`}
+                          />
+                          <RechartsTooltip
+                            contentStyle={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                              border: '1px solid #e5e7eb',
+                              borderRadius: '6px',
+                              color: '#111827'
+                            }}
+                            formatter={(value: number | undefined, name?: string) => {
+                              if (value === undefined) return ['N/A', 'Inventory Value'];
+                              return [
+                                `LKR ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                                'Inventory Value'
+                              ];
+                            }}
+                          />
+                          <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '5px' }} />
+                          <Line
+                            type="monotone"
+                            dataKey="value"
+                            stroke="#3b82f6"
+                            strokeWidth={2}
+                            dot={{ fill: '#3b82f6', r: 3 }}
+                            activeDot={{ r: 5 }}
+                            name="Inventory Value"
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                    {/* Trend Cards - Compact */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/30 p-2 rounded-lg border border-blue-200 dark:border-blue-800">
                         <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-1.5">
-                            <p className="text-xs font-medium text-blue-700 dark:text-blue-300">Last 30 Days</p>
-                            <Tooltip
-                              title="30-Day Inventory Value"
-                              description="The total inventory value calculated for the last 30 days. Currently shows the current value. This metric helps track inventory value changes over a monthly period."
-                              formula="Current: Σ (Current Quantity × Latest Unit Cost). Historical: Would track value at 30 days ago"
-                              example="If tracking historical data, this would show the inventory value from 30 days ago for comparison"
-                              position="top"
-                            />
-                          </div>
+                          <p className="text-xs font-medium text-blue-700 dark:text-blue-300">Last 30 Days</p>
                           <div className="w-1.5 h-1.5 bg-blue-500 dark:bg-blue-400 rounded-full"></div>
                         </div>
-                        <p className="text-lg font-bold text-blue-900 dark:text-blue-200">
+                        <p className="text-base font-bold text-blue-900 dark:text-blue-200">
                           LKR {dashboardData.stockValueAnalytics.inventoryValueTrend.last30Days.toLocaleString('en-US', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2
                           })}
                         </p>
-                        <p className="text-xs text-blue-600 dark:text-blue-300 mt-0.5">30-day inventory value</p>
                       </div>
-                      <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-900/30 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                      <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-900/30 p-2 rounded-lg border border-green-200 dark:border-green-800">
                         <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-1.5">
-                            <p className="text-xs font-medium text-green-700 dark:text-green-300">Last 90 Days</p>
-                            <Tooltip
-                              title="90-Day Inventory Value"
-                              description="The total inventory value calculated for the last 90 days. Currently shows the current value. This metric helps track inventory value changes over a quarterly period."
-                              formula="Current: Σ (Current Quantity × Latest Unit Cost). Historical: Would track value at 90 days ago"
-                              example="If tracking historical data, this would show the inventory value from 90 days ago for comparison"
-                              position="top"
-                            />
-                          </div>
+                          <p className="text-xs font-medium text-green-700 dark:text-green-300">Last 90 Days</p>
                           <div className="w-1.5 h-1.5 bg-green-500 dark:bg-green-400 rounded-full"></div>
                         </div>
-                        <p className="text-lg font-bold text-green-900 dark:text-green-200">
+                        <p className="text-base font-bold text-green-900 dark:text-green-200">
                           LKR {dashboardData.stockValueAnalytics.inventoryValueTrend.last90Days.toLocaleString('en-US', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2
                           })}
                         </p>
-                        <p className="text-xs text-green-600 dark:text-green-300 mt-0.5">90-day inventory value</p>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
             )}
+
+            
 
 
 

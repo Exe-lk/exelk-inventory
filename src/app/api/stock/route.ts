@@ -1,24 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { createServerClient } from '@/lib/supabase/server'
+import { getAuthenticatedSession } from '@/lib/api-auth-optimized'
 
 // Helper function to extract employee ID from Supabase session
-async function getEmployeeIdFromSession(request: NextRequest): Promise<number | null> {
-  try {
-    const supabase = await createServerClient()
-    const { data: { session }, error } = await supabase.auth.getSession()
-    
-    if (error || !session) {
-      return null
-    }
-    
-    const employeeId = session.user.user_metadata?.employee_id
-    return employeeId ? parseInt(employeeId.toString()) : null
-  } catch (error) {
-    console.error('Error extracting employee ID from session:', error)
-    return null
-  }
-}
+
 
 // Generate GRN number
 function generateGrnNumber(): string {
@@ -96,22 +82,13 @@ export async function GET(request: NextRequest) {
   
   try {
     // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+   // Verify authentication using optimized helper
+const authResult = await getAuthenticatedSession(request)
+if (authResult.error) {
+  return authResult.response
+}
 
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
-
-    console.log(' Access token verified');
+console.log(' Access token verified');
 
     const { searchParams } = new URL(request.url)
 
@@ -403,35 +380,14 @@ export async function POST(request: NextRequest) {
   
   try {
     // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    // Verify authentication using optimized helper
+const authResult = await getAuthenticatedSession(request)
+if (authResult.error) {
+  return authResult.response
+}
 
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
-
-    const employeeId = await getEmployeeIdFromSession(request)
-    if (!employeeId) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid access token - employee ID not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
-
-    console.log(' Access token verified, employee ID:', employeeId);
+const employeeId = authResult.employeeId!
+console.log(' Access token verified, employee ID:', employeeId);
 
     const body = await request.json()
     console.log(' Request body:', body);

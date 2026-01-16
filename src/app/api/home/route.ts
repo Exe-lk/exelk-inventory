@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/prisma/client'
 import { authenticateRequest } from '@/lib/api-auth'
 import { getRoleName } from '@/lib/auth-helpers'
+import { getAuthenticatedSession } from '@/lib/api-auth-optimized'
+
+// Route segment config for caching
+export const revalidate = 60 // Revalidate every 60 seconds
+export const dynamic = 'auto' // Force dynamic rendering for authenticated routes
 
 interface LowStockItem {
   stockId: number;
@@ -29,8 +35,6 @@ function generateReturnReference(returnId: number): string {
   const day = String(now.getDate()).padStart(2, '0');
   return `RTN-${year}${month}${day}-${String(returnId).padStart(6, '0')}`;
 }
-
-
 
 // Add after generateReturnReference function
 async function calculateStockValueAnalytics() {
@@ -206,7 +210,6 @@ async function calculateStockValueAnalytics() {
   }
 }
 
-
 // Add after calculateStockValueAnalytics function (around line 200)
 async function calculateGRNAnalytics() {
   try {
@@ -349,9 +352,6 @@ async function calculateGRNAnalytics() {
     };
   }
 }
-
-
-
 
 // Add after calculateGRNAnalytics function (around line 350)
 async function calculateGINAnalytics() {
@@ -528,7 +528,33 @@ async function calculateGINAnalytics() {
   }
 }
 
+// Wrap expensive calculations with caching using unstable_cache
+const getCachedStockValueAnalytics = unstable_cache(
+  async () => calculateStockValueAnalytics(),
+  ['stock-value-analytics'],
+  { 
+    revalidate: 300, // Cache for 5 minutes
+    tags: ['stock-analytics']
+  }
+);
 
+const getCachedGRNAnalytics = unstable_cache(
+  async () => calculateGRNAnalytics(),
+  ['grn-analytics'],
+  { 
+    revalidate: 300, // Cache for 5 minutes
+    tags: ['grn-analytics']
+  }
+);
+
+const getCachedGINAnalytics = unstable_cache(
+  async () => calculateGINAnalytics(),
+  ['gin-analytics'],
+  { 
+    revalidate: 300, // Cache for 5 minutes
+    tags: ['gin-analytics']
+  }
+);
 
 // GET - Get dashboard data including pending returns
 export async function GET(request: NextRequest) {
@@ -536,11 +562,13 @@ export async function GET(request: NextRequest) {
   
   try {
     // Verify authentication using Supabase
-    const { employeeId, response: authError } = await authenticateRequest(request)
-    
-    if (authError) {
-      return authError
-    }
+    // Verify authentication using optimized helper
+const authResult = await getAuthenticatedSession(request)
+if (authResult.error) {
+  return authResult.response
+}
+
+const employeeId = authResult.employeeId
 
     const employee = await prisma.employees.findUnique({
       where: { EmployeeID: employeeId },
@@ -568,8 +596,127 @@ export async function GET(request: NextRequest) {
 
     console.log(' Access token verified, employee ID:', employeeId);
 
+    // Check for lightweight mode
+    const url = new URL(request.url);
+    const lightweight = url.searchParams.get('lightweight') === 'true';
+
+    if (lightweight) {
+      // Lightweight mode: Return only critical data (pending returns, low stock count)
+      console.log(' Lightweight mode: Fetching critical data only');
+      
+      try {
+        const [pendingReturns, lowStockCount] = await Promise.all([
+          // Get pending returns with minimal data
+          prisma.returns.findMany({
+            where: { 
+              returnStatus: 'PENDING', 
+              approved: false 
+            },
+            take: 10, // Limit to 10 most recent
+            orderBy: { returnDate: 'desc' },
+            include: {
+              supplier: { 
+                select: { 
+                  supplierId: true, 
+                  supplierName: true 
+                } 
+              },
+              employees: { 
+                select: { 
+                  EmployeeID: true,
+                  UserName: true 
+                } 
+              },
+              returnproduct: {
+                take: 1, // Just get count, limit details
+                select: {
+                  returnProductId: true,
+                  quantity: true
+                }
+              }
+            }
+          }),
+          // Get low stock count only
+          prisma.stock.count({
+            where: {
+              OR: [
+                {
+                  quantityAvailable: {
+                    lte: prisma.stock.fields.reorderLevel
+                  }
+                },
+                {
+                  quantityAvailable: 0
+                }
+              ]
+            }
+          })
+        ]);
+
+        // Transform pending returns for lightweight response
+        const transformedPendingReturns = pendingReturns.map(returnItem => ({
+          returnId: returnItem.returnId,
+          returnNumber: `RT-${String(returnItem.returnId).padStart(6, '0')}`,
+          returnedBy: returnItem.employeeId,
+          returnDate: returnItem.returnDate?.toISOString()?.split('T')[0] || null,
+          reason: returnItem.reason,
+          status: returnItem.returnStatus,
+          returnType: returnItem.returnType,
+          supplier: {
+            supplierId: returnItem.supplier.supplierId,
+            supplierName: returnItem.supplier.supplierName
+          },
+          employee: {
+            employeeId: returnItem.employees.EmployeeID,
+            userName: returnItem.employees.UserName
+          },
+          itemCount: returnItem.returnproduct.length,
+          totalQuantity: returnItem.returnproduct.reduce((sum, rp) => sum + (rp.quantity || 0), 0)
+        }));
+
+        return NextResponse.json(
+          {
+            status: 'success',
+            code: 200,
+            message: 'Lightweight dashboard data retrieved successfully',
+            timestamp: new Date().toISOString(),
+            data: {
+              user: employee,
+              role: getRoleName(employee.RoleID),
+              pendingReturns: transformedPendingReturns,
+              lowStockCount: lowStockCount,
+              statistics: {
+                pendingReturns: pendingReturns.length,
+                totalLowStockItems: lowStockCount
+              }
+            }
+          },
+          {
+            status: 200,
+            headers: {
+              'Cache-Control': 'private, max-age=30, stale-while-revalidate=60' // Cache for 30 seconds, allow stale for 60 seconds
+            }
+          }
+        );
+      } catch (dbError) {
+        console.error(' Lightweight mode database error:', dbError);
+        return NextResponse.json(
+          {
+            status: 'error',
+            code: 500,
+            message: 'Failed to retrieve lightweight dashboard data - Database error',
+            timestamp: new Date().toISOString(),
+            details: dbError instanceof Error ? dbError.message : 'Unknown database error'
+          },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Full dashboard mode: Return complete dashboard data
     try {
       // OPTIMIZATION: Run all independent queries in parallel using Promise.all
+      // Use cached versions for expensive analytics calculations
       const [pendingReturns, totalReturns, approvedReturns, rejectedReturns, lowStockItems, stockValueAnalytics, grnAnalytics, ginAnalytics] = await Promise.all([
         // Get pending returns with details
         prisma.returns.findMany({
@@ -691,9 +838,10 @@ export async function GET(request: NextRequest) {
           ],
           take: 10 // Limit to top 10 most critical items
         }),
-        calculateStockValueAnalytics(),
-        calculateGRNAnalytics(),
-        calculateGINAnalytics()
+        // Use cached analytics functions
+        getCachedStockValueAnalytics(),
+        getCachedGRNAnalytics(),
+        getCachedGINAnalytics()
       ]);
 
       // Transform pending returns for response
@@ -837,11 +985,13 @@ export async function POST(request: NextRequest) {
   
   try {
     // Verify authentication using Supabase
-    const { employeeId, response: authError } = await authenticateRequest(request)
-    
-    if (authError) {
-      return authError
-    }
+    // Verify authentication using optimized helper
+const authResult = await getAuthenticatedSession(request)
+if (authResult.error) {
+  return authResult.response
+}
+
+const employeeId = authResult.employeeId!
 
     console.log(' Access token verified, employee ID:', employeeId);
 

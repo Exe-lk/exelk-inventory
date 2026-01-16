@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { createServerClient } from '@/lib/supabase/server'
+import { getAuthenticatedSession } from '@/lib/api-auth-optimized'
 
 interface Product {
   productId: number
@@ -23,43 +24,17 @@ interface Product {
 }
 
 // Helper function to extract employee ID from Supabase session
-async function getEmployeeIdFromSession(request: NextRequest): Promise<number | null> {
-  try {
-    const supabase = await createServerClient()
-    const { data: { session }, error } = await supabase.auth.getSession()
-    
-    if (error || !session) {
-      return null
-    }
-    
-    const employeeId = session.user.user_metadata?.employee_id
-    return employeeId ? parseInt(employeeId.toString()) : null
-  } catch (error) {
-    console.error('Error extracting employee ID from session:', error)
-    return null
-  }
-}
+
 
 // GET - Retrieve products with pagination, sorting, search, and filtering
 export async function GET(request: NextRequest) {
   console.log(' Product GET request started');
   
   try {
-    // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    
-    if (sessionError || !session) {
-      console.log(' No valid session found');
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
 
     console.log(' Session verified');
@@ -238,44 +213,19 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 }
     )
-  } finally {
-    
-  }
+  } 
 }
 
 
 // POST - Create simple product
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
-
-    const employeeId = await getEmployeeIdFromSession(request)
-    
-    if (!employeeId) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid session - employee ID not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    const employeeId = authResult.employeeId!
 
     const body = await request.json()
     
@@ -461,35 +411,12 @@ export async function POST(request: NextRequest) {
 // PUT - Update product
 export async function PUT(request: NextRequest) {
   try {
-    // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
-
-    const employeeId = await getEmployeeIdFromSession(request)
-    
-    if (!employeeId) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid session - employee ID not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    const employeeId = authResult.employeeId
 
     const body = await request.json()
     
@@ -690,35 +617,12 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete product with cascade (soft delete)
 export async function DELETE(request: NextRequest) {
   try {
-    // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
-
-    const employeeId = await getEmployeeIdFromSession(request)
-    
-    if (!employeeId) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid session - employee ID not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    const employeeId = authResult.employeeId
 
     const { searchParams } = new URL(request.url)
     const productId = searchParams.get('productId') || searchParams.get('id')

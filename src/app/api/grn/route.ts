@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { createServerClient } from '@/lib/supabase/server'
+import { getAuthenticatedSession } from '@/lib/api-auth-optimized'
 
 interface GRN {
   grnId: number
@@ -16,22 +17,7 @@ interface GRN {
 }
 
 // Helper function to extract employee ID from Supabase session
-async function getEmployeeIdFromSession(request: NextRequest): Promise<number | null> {
-  try {
-    const supabase = await createServerClient()
-    const { data: { session }, error } = await supabase.auth.getSession()
-    
-    if (error || !session) {
-      return null
-    }
-    
-    const employeeId = session.user.user_metadata?.employee_id
-    return employeeId ? parseInt(employeeId.toString()) : null
-  } catch (error) {
-    console.error('Error extracting employee ID from session:', error)
-    return null
-  }
-}
+
 
 /**
  * @swagger
@@ -114,40 +100,30 @@ async function getEmployeeIdFromSession(request: NextRequest): Promise<number | 
 // GET - Retrieve GRN records with enhanced search functionality
 export async function GET(request: NextRequest) {
   console.log(' GRN GET request started with enhanced search');
-  
+
   try {
     // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    
-    if (sessionError || !session) {
-      console.log(' No valid session found');
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
 
     console.log(' Session verified');
 
     const { searchParams } = new URL(request.url)
-    
+
     // Check if requesting single GRN by ID
     const grnId = searchParams.get('id')
-    
+
     if (grnId) {
       // GET SINGLE GRN BY ID
       console.log(` Getting single GRN with ID: ${grnId}`);
-      
+
       const parsedGrnId = parseInt(grnId)
       if (isNaN(parsedGrnId)) {
         return NextResponse.json(
-          { 
+          {
             status: 'error',
             code: 400,
             message: 'Invalid GRN ID',
@@ -179,7 +155,7 @@ export async function GET(request: NextRequest) {
 
         if (!grn) {
           return NextResponse.json(
-            { 
+            {
               status: 'error',
               code: 404,
               message: 'GRN not found',
@@ -218,7 +194,7 @@ export async function GET(request: NextRequest) {
       } catch (dbError) {
         console.error(' Database error:', dbError)
         return NextResponse.json(
-          { 
+          {
             status: 'error',
             code: 500,
             message: 'Failed to retrieve GRN',
@@ -244,9 +220,9 @@ export async function GET(request: NextRequest) {
     const minAmount = searchParams.get('minAmount')
     const maxAmount = searchParams.get('maxAmount')
 
-    console.log(' Query parameters:', { 
-      page, limit, sortBy, sortOrder, search, 
-      supplierId, stockKeeperId, minAmount, maxAmount 
+    console.log(' Query parameters:', {
+      page, limit, sortBy, sortOrder, search,
+      supplierId, stockKeeperId, minAmount, maxAmount
     });
 
     // Calculate offset for pagination
@@ -259,13 +235,13 @@ export async function GET(request: NextRequest) {
     if (search) {
       const searchTerm = search.trim();
       console.log(` Enhanced search term: "${searchTerm}"`);
-      
+
       where.OR = [
         // Search by GRN number (existing functionality)
         {
-          grnNumber: { 
-            contains: searchTerm, 
-            mode: 'insensitive' 
+          grnNumber: {
+            contains: searchTerm,
+            mode: 'insensitive'
           }
         },
         // Search by product name through GRN details (new functionality)
@@ -309,9 +285,9 @@ export async function GET(request: NextRequest) {
     console.log(' Order by:', orderBy);
 
     try {
-      console.log(' Testing database connection...');
-      await prisma.$connect();
-      console.log(' Database connected successfully');
+      // console.log(' Testing database connection...');
+      // await prisma.$connect();
+      // console.log(' Database connected successfully');
 
       // Get total count for pagination
       console.log(' Getting total count...');
@@ -349,7 +325,7 @@ export async function GET(request: NextRequest) {
             take: 3 // Limit to show first 3 products
           }
         }
-      }) 
+      })
 
       console.log(` Found ${grns.length} GRN records with enhanced data`);
 
@@ -407,9 +383,9 @@ export async function GET(request: NextRequest) {
         message: dbError instanceof Error ? dbError.message : 'Unknown error',
         stack: dbError instanceof Error ? dbError.stack : 'No stack trace'
       });
-      
+
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 500,
           message: 'Failed to retrieve GRN records - Database error',
@@ -423,7 +399,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error(' GRN GET error:', error);
     return NextResponse.json(
-      { 
+      {
         status: 'error',
         code: 500,
         message: 'Internal server error',
@@ -431,8 +407,6 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 }
     )
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -525,53 +499,31 @@ export async function GET(request: NextRequest) {
 // POST - Create complete GRN with details
 export async function POST(request: NextRequest) {
   console.log(' GRN POST request started');
-  
+
   try {
     // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
 
-    const employeeId = await getEmployeeIdFromSession(request)
-    
-    if (!employeeId) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid session - employee ID not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
-
+    const employeeId = authResult.employeeId!
     console.log(' Access token verified, employee ID:', employeeId);
 
     const body = await request.json()
-    
+
     console.log(' Received complete GRN data:', JSON.stringify(body, null, 2));
-    
+
     // Validate required fields
     const { grnNumber, supplierId, receivedDate, totalAmount, remarks, stockId, grnDetails } = body
-    
+
     console.log(' Received data:', { grnNumber, supplierId, receivedDate, totalAmount, remarks, stockId });
     console.log(' Using employee ID:', employeeId);
 
     if (!grnNumber || !supplierId || !receivedDate) {
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 400,
           message: 'GRN number, supplier ID, and received date are required',
@@ -584,7 +536,7 @@ export async function POST(request: NextRequest) {
     // Validate GRN details
     if (!grnDetails || !Array.isArray(grnDetails) || grnDetails.length === 0) {
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 400,
           message: 'At least one GRN detail is required',
@@ -599,7 +551,7 @@ export async function POST(request: NextRequest) {
       const detail = grnDetails[i];
       if (!detail.productId || !detail.quantityReceived || !detail.unitCost) {
         return NextResponse.json(
-          { 
+          {
             status: 'error',
             code: 400,
             message: `GRN detail ${i + 1}: Product ID, quantity received, and unit cost are required`,
@@ -824,12 +776,12 @@ export async function POST(request: NextRequest) {
 
     } catch (dbError) {
       console.error(' Database error:', dbError)
-      
+
       // Handle specific error cases
       if (dbError instanceof Error) {
         if (dbError.message === 'GRN number already exists') {
           return NextResponse.json(
-            { 
+            {
               status: 'error',
               code: 409,
               message: 'GRN number already exists',
@@ -841,7 +793,7 @@ export async function POST(request: NextRequest) {
 
         if (dbError.message === 'Invalid supplier ID') {
           return NextResponse.json(
-            { 
+            {
               status: 'error',
               code: 400,
               message: 'Invalid supplier ID',
@@ -853,7 +805,7 @@ export async function POST(request: NextRequest) {
 
         if (dbError.message.startsWith('Invalid product ID')) {
           return NextResponse.json(
-            { 
+            {
               status: 'error',
               code: 400,
               message: dbError.message,
@@ -865,7 +817,7 @@ export async function POST(request: NextRequest) {
       }
 
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 500,
           message: 'Failed to create complete GRN',
@@ -879,7 +831,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error(' GRN POST error:', error)
     return NextResponse.json(
-      { 
+      {
         status: 'error',
         code: 500,
         message: 'Internal server error',
@@ -946,38 +898,16 @@ export async function POST(request: NextRequest) {
 // PUT - Update GRN
 export async function PUT(request: NextRequest) {
   console.log(' GRN PUT request started');
-  
+
   try {
     // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
 
-    const employeeId = await getEmployeeIdFromSession(request)
-    
-    if (!employeeId) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid session - employee ID not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
-
+    const employeeId = authResult.employeeId
     console.log(' Access token verified, employee ID:', employeeId);
 
     const { searchParams } = new URL(request.url)
@@ -986,7 +916,7 @@ export async function PUT(request: NextRequest) {
 
     if (!grnIdParam) {
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 400,
           message: 'GRN ID is required as query parameter',
@@ -999,7 +929,7 @@ export async function PUT(request: NextRequest) {
     const grnId = parseInt(grnIdParam)
     if (isNaN(grnId)) {
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 400,
           message: 'Invalid GRN ID',
@@ -1021,7 +951,7 @@ export async function PUT(request: NextRequest) {
 
       if (!existingGrn) {
         return NextResponse.json(
-          { 
+          {
             status: 'error',
             code: 404,
             message: 'GRN not found',
@@ -1042,7 +972,7 @@ export async function PUT(request: NextRequest) {
 
         if (duplicateGrn) {
           return NextResponse.json(
-            { 
+            {
               status: 'error',
               code: 409,
               message: 'GRN number already exists',
@@ -1064,7 +994,7 @@ export async function PUT(request: NextRequest) {
 
         if (!existingSupplier) {
           return NextResponse.json(
-            { 
+            {
               status: 'error',
               code: 400,
               message: 'Invalid supplier ID',
@@ -1160,7 +1090,7 @@ export async function PUT(request: NextRequest) {
     } catch (dbError) {
       console.error(' Database error:', dbError)
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 500,
           message: 'Failed to update GRN',
@@ -1174,7 +1104,7 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error(' GRN PUT error:', error)
     return NextResponse.json(
-      { 
+      {
         status: 'error',
         code: 500,
         message: 'Internal server error',
@@ -1218,22 +1148,13 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete GRN
 export async function DELETE(request: NextRequest) {
   console.log(' GRN DELETE request started');
-  
+
   try {
     // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
 
     console.log(' Session verified');
@@ -1243,7 +1164,7 @@ export async function DELETE(request: NextRequest) {
 
     if (!grnIdParam) {
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 400,
           message: 'GRN ID is required as query parameter',
@@ -1256,7 +1177,7 @@ export async function DELETE(request: NextRequest) {
     const grnId = parseInt(grnIdParam)
     if (isNaN(grnId)) {
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 400,
           message: 'Invalid GRN ID',
@@ -1278,7 +1199,7 @@ export async function DELETE(request: NextRequest) {
 
       if (!existingGrn) {
         return NextResponse.json(
-          { 
+          {
             status: 'error',
             code: 404,
             message: 'GRN not found',
@@ -1323,7 +1244,7 @@ export async function DELETE(request: NextRequest) {
     } catch (dbError) {
       console.error(' Database error:', dbError)
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 500,
           message: 'Failed to delete GRN',
@@ -1337,7 +1258,7 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     console.error(' GRN DELETE error:', error)
     return NextResponse.json(
-      { 
+      {
         status: 'error',
         code: 500,
         message: 'Internal server error',

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { createServerClient } from '@/lib/supabase/server'
+import { getAuthenticatedSession } from '@/lib/api-auth-optimized'
 
 /**
  * @swagger
@@ -58,23 +59,13 @@ export async function GET(request: NextRequest) {
   console.log(' BinCards GET request started');
   
   try {
-    // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
 
-    console.log(' Access token verified');
+    console.log(' Session verified');
 
     const { searchParams } = new URL(request.url)
 
@@ -316,36 +307,14 @@ export async function POST(request: NextRequest) {
   
   try {
     // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    // Verify authentication using optimized helper
+const authResult = await getAuthenticatedSession(request)
+if (authResult.error) {
+  return authResult.response
+}
 
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
-
-    // Get employee ID from session metadata
-    const employeeId = session.user.user_metadata?.employee_id
-    if (!employeeId) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'User metadata not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
-
-    console.log(' Access token verified, employee ID:', employeeId);
+const employeeId = authResult.employeeId
+console.log(' Access token verified, employee ID:', employeeId);
 
     const body = await request.json()
     console.log(' Request body:', body);

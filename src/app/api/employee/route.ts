@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma/client'
 import { Employee } from '@/types/user'
+import { getAuthenticatedSession } from '@/lib/api-auth-optimized'
 
 /**
  * @swagger
@@ -45,14 +46,10 @@ import { Employee } from '@/types/user'
 export async function GET(request: NextRequest) {
   try {
     // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { error: 'Access token not found' },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
 
     const employees = await prisma.employees.findMany({
@@ -146,27 +143,16 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { error: 'Access token not found' },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
 
-    // Get employee ID from session metadata
-    const employeeId = session.user.user_metadata?.employee_id
-    if (!employeeId) {
-      return NextResponse.json(
-        { error: 'User metadata not found' },
-        { status: 401 }
-      )
-    }
+    const employeeId = authResult.employeeId
 
     const body = await request.json()
-    
+
     // Validate required fields
     const { Email, UserName, Password, RoleID } = body
     if (!Email || !UserName || !Password || !RoleID) {
@@ -178,10 +164,10 @@ export async function POST(request: NextRequest) {
 
     const employeeData = {
       ...body,
-      CreatedBy: parseInt(employeeId),
+      CreatedBy: employeeId,
       CreatedDate: new Date()
     }
-    
+
     const employee = await prisma.employees.create({
       data: employeeData,
       select: {
@@ -261,26 +247,22 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { error: 'Access token not found' },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
 
     const body = await request.json()
     const { EmployeeID, ...updateData } = body
-    
+
     if (!EmployeeID) {
       return NextResponse.json(
         { error: 'EmployeeID is required' },
         { status: 400 }
       )
     }
-    
+
     const employee = await prisma.employees.update({
       where: { EmployeeID: parseInt(EmployeeID) },
       data: updateData,
@@ -352,14 +334,10 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { error: 'Access token not found' },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
 
     const { searchParams } = new URL(request.url)
@@ -384,7 +362,7 @@ export async function DELETE(request: NextRequest) {
         { status: 404 }
       )
     }
-    
+
     await prisma.employees.delete({
       where: { EmployeeID: parseInt(employeeId) }
     })

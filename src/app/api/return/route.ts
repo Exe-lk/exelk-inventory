@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { createServerClient } from '@/lib/supabase/server'
+import { getAuthenticatedSession } from '@/lib/api-auth-optimized'
 
 // Generate return number
 function generateReturnNumber(): string {
@@ -68,22 +69,13 @@ export async function GET(request: NextRequest) {
   
   try {
     // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    // Verify authentication using optimized helper
+const authResult = await getAuthenticatedSession(request)
+if (authResult.error) {
+  return authResult.response
+}
 
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
-
-    console.log(' Access token verified');
+console.log(' Access token verified');
 
     const { searchParams } = new URL(request.url)
 
@@ -336,49 +328,14 @@ export async function POST(request: NextRequest) {
   
   try {
     // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    // Verify authentication using optimized helper
+const authResult = await getAuthenticatedSession(request)
+if (authResult.error) {
+  return authResult.response
+}
 
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
-
-    // Get employee ID from session
-    const employeeId = session.user.user_metadata?.employee_id
-    if (!employeeId) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid access token - employee ID not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
-
-    const parsedEmployeeId = parseInt(employeeId.toString())
-    if (isNaN(parsedEmployeeId)) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid employee ID in token',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
-
-    console.log(' Access token verified, employee ID:', parsedEmployeeId);
+const parsedEmployeeId = authResult.employeeId!
+console.log(' Access token verified, employee ID:', parsedEmployeeId);
 
     const body = await request.json()
     console.log(' Request body:', body);
@@ -684,49 +641,14 @@ export async function PUT(request: NextRequest) {
   
   try {
     // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    // Verify authentication using optimized helper
+const authResult = await getAuthenticatedSession(request)
+if (authResult.error) {
+  return authResult.response
+}
 
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
-
-    // Get employee ID from session
-    const employeeId = session.user.user_metadata?.employee_id
-    if (!employeeId) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid access token - employee ID not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
-
-    const parsedEmployeeId = parseInt(employeeId.toString())
-    if (isNaN(parsedEmployeeId)) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid employee ID in token',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
-
-    console.log(' Access token verified, employee ID:', parsedEmployeeId);
+const parsedEmployeeId = authResult.employeeId!
+console.log(' Access token verified, employee ID:', parsedEmployeeId);
 
     // Extract return ID from query parameters
     const { searchParams } = new URL(request.url)
@@ -1007,49 +929,14 @@ export async function DELETE(request: NextRequest) {
   
   try {
     // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    // Verify authentication using optimized helper
+const authResult = await getAuthenticatedSession(request)
+if (authResult.error) {
+  return authResult.response
+}
 
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
-
-    // Get employee ID from session
-    const employeeId = session.user.user_metadata?.employee_id
-    if (!employeeId) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid access token - employee ID not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
-
-    const parsedEmployeeId = parseInt(employeeId.toString())
-    if (isNaN(parsedEmployeeId)) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid employee ID in token',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
-
-    console.log(' Access token verified, employee ID:', parsedEmployeeId);
+const parsedEmployeeId = authResult.employeeId!
+console.log(' Access token verified, employee ID:', parsedEmployeeId);
 
     // Extract return ID from query parameters
     const { searchParams } = new URL(request.url)

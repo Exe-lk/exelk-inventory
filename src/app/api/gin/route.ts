@@ -103,7 +103,7 @@
 // // GET - Retrieve GIN records with enhanced search functionality
 // export async function GET(request: NextRequest) {
 //   console.log(' GIN GET request started with enhanced search');
-  
+
 //   try {
 //     // Verify authentication
 //     const accessToken = getAuthTokenFromCookies(request)
@@ -137,14 +137,14 @@
 //     }
 
 //     const { searchParams } = new URL(request.url)
-    
+
 //     // Check if requesting single GIN by ID
 //     const ginId = searchParams.get('id')
-    
+
 //     if (ginId) {
 //       // GET SINGLE GIN BY ID
 //       console.log(` Getting single GIN with ID: ${ginId}`);
-      
+
 //       const parsedGinId = parseInt(ginId)
 //       if (isNaN(parsedGinId)) {
 //         return NextResponse.json(
@@ -260,7 +260,7 @@
 //     if (search) {
 //       const searchTerm = search.trim();
 //       console.log(` Enhanced search term: "${searchTerm}"`);
-      
+
 //       where.OR = [
 //         // Search by GIN number
 //         {
@@ -426,7 +426,7 @@
 //         message: dbError instanceof Error ? dbError.message : 'Unknown error',
 //         stack: dbError instanceof Error ? dbError.stack : 'No stack trace'
 //       });
-      
+
 //       return NextResponse.json(
 //         { 
 //           status: 'error',
@@ -544,7 +544,7 @@
 // // POST - Create complete GIN with details
 // export async function POST(request: NextRequest) {
 //   console.log(' GIN POST request started');
-  
+
 //   try {
 //     // Verify authentication
 //     const accessToken = getAuthTokenFromCookies(request)
@@ -578,12 +578,12 @@
 //     }
 
 //     const body = await request.json()
-    
+
 //     console.log(' Received complete GIN data:', JSON.stringify(body, null, 2));
-    
+
 //     // Validate required fields
 //     const { ginNumber, issuedTo, issueReason, issueDate, remarks, stockId, ginDetails } = body
-    
+
 //     console.log(' Received data:', { ginNumber, issuedTo, issueReason, issueDate, remarks, stockId });
 //     console.log(' Using employee ID:', employeeId);
 
@@ -793,7 +793,7 @@
 
 //     } catch (dbError) {
 //       console.error(' Database error:', dbError)
-      
+
 //       // Handle specific error cases
 //       if (dbError instanceof Error) {
 //         if (dbError.message === 'GIN number already exists') {
@@ -903,7 +903,7 @@
 // // PUT - Update GIN
 // export async function PUT(request: NextRequest) {
 //   console.log(' GIN PUT request started');
-  
+
 //   try {
 //     // Verify authentication
 //     const accessToken = getAuthTokenFromCookies(request)
@@ -1152,7 +1152,7 @@
 // // DELETE - Delete GIN
 // export async function DELETE(request: NextRequest) {
 //   console.log(' GIN DELETE request started');
-  
+
 //   try {
 //     // Verify authentication
 //     const accessToken = getAuthTokenFromCookies(request)
@@ -1304,6 +1304,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { createServerClient } from '@/lib/supabase/server'
+import { getAuthenticatedSession } from '@/lib/api-auth-optimized'
 
 interface GIN {
   ginId: number
@@ -1394,40 +1395,30 @@ interface GIN {
 // GET - Retrieve GIN records with enhanced search functionality
 export async function GET(request: NextRequest) {
   console.log(' GIN GET request started with enhanced search');
-  
+
   try {
     // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session) {
-      console.log(' No access token found');
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
 
     console.log(' Access token verified');
 
     const { searchParams } = new URL(request.url)
-    
+
     // Check if requesting single GIN by ID
     const ginId = searchParams.get('id')
-    
+
     if (ginId) {
       // GET SINGLE GIN BY ID
       console.log(` Getting single GIN with ID: ${ginId}`);
-      
+
       const parsedGinId = parseInt(ginId)
       if (isNaN(parsedGinId)) {
         return NextResponse.json(
-          { 
+          {
             status: 'error',
             code: 400,
             message: 'Invalid GIN ID',
@@ -1459,7 +1450,7 @@ export async function GET(request: NextRequest) {
 
         if (!gin) {
           return NextResponse.json(
-            { 
+            {
               status: 'error',
               code: 404,
               message: 'GIN not found',
@@ -1499,7 +1490,7 @@ export async function GET(request: NextRequest) {
       } catch (dbError) {
         console.error(' Database error:', dbError)
         return NextResponse.json(
-          { 
+          {
             status: 'error',
             code: 500,
             message: 'Failed to retrieve GIN',
@@ -1524,9 +1515,9 @@ export async function GET(request: NextRequest) {
     const stockKeeperId = searchParams.get('stockKeeperId')
     const issueReasonFilter = searchParams.get('issueReason')
 
-    console.log(' Query parameters:', { 
-      page, limit, sortBy, sortOrder, search, 
-      issuedToFilter, stockKeeperId, issueReasonFilter 
+    console.log(' Query parameters:', {
+      page, limit, sortBy, sortOrder, search,
+      issuedToFilter, stockKeeperId, issueReasonFilter
     });
 
     // Calculate offset for pagination
@@ -1539,13 +1530,13 @@ export async function GET(request: NextRequest) {
     if (search) {
       const searchTerm = search.trim();
       console.log(` Enhanced search term: "${searchTerm}"`);
-      
+
       where.OR = [
         // Search by GIN number
         {
-          ginNumber: { 
-            contains: searchTerm, 
-            mode: 'insensitive' 
+          ginNumber: {
+            contains: searchTerm,
+            mode: 'insensitive'
           }
         },
         // Search by issued to
@@ -1607,9 +1598,9 @@ export async function GET(request: NextRequest) {
     console.log(' Order by:', orderBy);
 
     try {
-      console.log(' Testing database connection...');
-      await prisma.$connect();
-      console.log(' Database connected successfully');
+      // console.log(' Testing database connection...');
+      // await prisma.$connect();
+      // console.log(' Database connected successfully');
 
       // Get total count for pagination
       console.log(' Getting total count...');
@@ -1647,7 +1638,7 @@ export async function GET(request: NextRequest) {
             take: 3 // Limit to show first 3 products
           }
         }
-      }) 
+      })
 
       console.log(` Found ${gins.length} GIN records with enhanced data`);
 
@@ -1705,9 +1696,9 @@ export async function GET(request: NextRequest) {
         message: dbError instanceof Error ? dbError.message : 'Unknown error',
         stack: dbError instanceof Error ? dbError.stack : 'No stack trace'
       });
-      
+
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 500,
           message: 'Failed to retrieve GIN records - Database error',
@@ -1721,7 +1712,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error(' GIN GET error:', error);
     return NextResponse.json(
-      { 
+      {
         status: 'error',
         code: 500,
         message: 'Internal server error',
@@ -1729,8 +1720,6 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 }
     )
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -1802,53 +1791,31 @@ export async function GET(request: NextRequest) {
 // POST - Create complete GIN with details
 export async function POST(request: NextRequest) {
   console.log(' GIN POST request started');
-  
+
   try {
     // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
 
-    // Get employee ID from session metadata
-    const employeeId = session.user.user_metadata?.employee_id
-    if (!employeeId) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'User metadata not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
-
+    const employeeId = authResult.employeeId!
     console.log(' Access token verified, employee ID:', employeeId);
 
     const body = await request.json()
-    
+
     console.log(' Received complete GIN data:', JSON.stringify(body, null, 2));
-    
+
     // Validate required fields
     const { ginNumber, issuedTo, issueReason, issueDate, remarks, stockId, ginDetails } = body
-    
+
     console.log(' Received data:', { ginNumber, issuedTo, issueReason, issueDate, remarks, stockId });
     console.log(' Using employee ID:', employeeId);
 
     if (!ginNumber || !issuedTo || !issueDate) {
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 400,
           message: 'GIN number, issued to, and issue date are required',
@@ -1861,7 +1828,7 @@ export async function POST(request: NextRequest) {
     // Validate GIN details
     if (!ginDetails || !Array.isArray(ginDetails) || ginDetails.length === 0) {
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 400,
           message: 'At least one GIN detail is required',
@@ -1876,7 +1843,7 @@ export async function POST(request: NextRequest) {
       const detail = ginDetails[i];
       if (!detail.productId || !detail.quantityIssued || !detail.unitCost) {
         return NextResponse.json(
-          { 
+          {
             status: 'error',
             code: 400,
             message: `GIN detail ${i + 1}: Product ID, quantity issued, and unit cost are required`,
@@ -1923,7 +1890,7 @@ export async function POST(request: NextRequest) {
         // Create GIN
         const ginData = {
           ginNumber,
-          employeeId: parseInt(employeeId),
+          employeeId: employeeId,
           issuedTo: issuedTo.toString(),
           issueReason: issueReason ? issueReason.toString() : null,
           issueDate: new Date(issueDate),
@@ -2052,12 +2019,12 @@ export async function POST(request: NextRequest) {
 
     } catch (dbError) {
       console.error(' Database error:', dbError)
-      
+
       // Handle specific error cases
       if (dbError instanceof Error) {
         if (dbError.message === 'GIN number already exists') {
           return NextResponse.json(
-            { 
+            {
               status: 'error',
               code: 409,
               message: 'GIN number already exists',
@@ -2069,7 +2036,7 @@ export async function POST(request: NextRequest) {
 
         if (dbError.message.startsWith('Invalid product ID')) {
           return NextResponse.json(
-            { 
+            {
               status: 'error',
               code: 400,
               message: dbError.message,
@@ -2081,7 +2048,7 @@ export async function POST(request: NextRequest) {
       }
 
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 500,
           message: 'Failed to create complete GIN',
@@ -2095,7 +2062,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error(' GIN POST error:', error)
     return NextResponse.json(
-      { 
+      {
         status: 'error',
         code: 500,
         message: 'Internal server error',
@@ -2162,22 +2129,13 @@ export async function POST(request: NextRequest) {
 // PUT - Update GIN
 export async function PUT(request: NextRequest) {
   console.log(' GIN PUT request started');
-  
+
   try {
     // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
 
     const { searchParams } = new URL(request.url)
@@ -2186,7 +2144,7 @@ export async function PUT(request: NextRequest) {
 
     if (!ginIdParam) {
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 400,
           message: 'GIN ID is required as query parameter',
@@ -2199,7 +2157,7 @@ export async function PUT(request: NextRequest) {
     const ginId = parseInt(ginIdParam)
     if (isNaN(ginId)) {
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 400,
           message: 'Invalid GIN ID',
@@ -2221,7 +2179,7 @@ export async function PUT(request: NextRequest) {
 
       if (!existingGin) {
         return NextResponse.json(
-          { 
+          {
             status: 'error',
             code: 404,
             message: 'GIN not found',
@@ -2242,7 +2200,7 @@ export async function PUT(request: NextRequest) {
 
         if (duplicateGin) {
           return NextResponse.json(
-            { 
+            {
               status: 'error',
               code: 409,
               message: 'GIN number already exists',
@@ -2338,7 +2296,7 @@ export async function PUT(request: NextRequest) {
     } catch (dbError) {
       console.error(' Database error:', dbError)
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 500,
           message: 'Failed to update GIN',
@@ -2352,7 +2310,7 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error(' GIN PUT error:', error)
     return NextResponse.json(
-      { 
+      {
         status: 'error',
         code: 500,
         message: 'Internal server error',
@@ -2396,22 +2354,13 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete GIN
 export async function DELETE(request: NextRequest) {
   console.log(' GIN DELETE request started');
-  
+
   try {
     // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
 
     const { searchParams } = new URL(request.url)
@@ -2419,7 +2368,7 @@ export async function DELETE(request: NextRequest) {
 
     if (!ginIdParam) {
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 400,
           message: 'GIN ID is required as query parameter',
@@ -2432,7 +2381,7 @@ export async function DELETE(request: NextRequest) {
     const ginId = parseInt(ginIdParam)
     if (isNaN(ginId)) {
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 400,
           message: 'Invalid GIN ID',
@@ -2454,7 +2403,7 @@ export async function DELETE(request: NextRequest) {
 
       if (!existingGin) {
         return NextResponse.json(
-          { 
+          {
             status: 'error',
             code: 404,
             message: 'GIN not found',
@@ -2499,7 +2448,7 @@ export async function DELETE(request: NextRequest) {
     } catch (dbError) {
       console.error(' Database error:', dbError)
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 500,
           message: 'Failed to delete GIN',
@@ -2513,7 +2462,7 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     console.error(' GIN DELETE error:', error)
     return NextResponse.json(
-      { 
+      {
         status: 'error',
         code: 500,
         message: 'Internal server error',

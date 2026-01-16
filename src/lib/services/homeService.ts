@@ -1,5 +1,3 @@
-
-
 import { ReturnResponse } from '@/types/return';
 import { Employee } from '@/types/user';
 
@@ -37,7 +35,6 @@ export interface LowStockItem {
   lastUpdatedDate: string;
 }
 
-
 export interface StockValueAnalytics {
   totalInventoryValue: number;
   inventoryValueByCategory: Array<{
@@ -59,6 +56,7 @@ export interface StockValueAnalytics {
     last90Days: number;
   };
 }
+
 export interface GRNAnalytics {
   totalGRNsThisMonth: number;
   totalGRNsLastMonth: number;
@@ -85,9 +83,7 @@ export interface GINAnalytics {
   }>;
 }
 
-// Update DashboardStatistics interface (around line 10
-
-// Update DashboardData interface (around line 38)
+// Update DashboardData interface
 export interface DashboardData {
   user?: Omit<Employee, 'Password'>;
   role?: string;
@@ -99,8 +95,17 @@ export interface DashboardData {
   ginAnalytics?: GINAnalytics;
 }
 
-
-
+// Lightweight dashboard data interface
+export interface LightweightDashboardData {
+  user?: Omit<Employee, 'Password'>;
+  role?: string;
+  pendingReturns: ReturnResponse[];
+  lowStockCount: number;
+  statistics: {
+    pendingReturns: number;
+    totalLowStockItems: number;
+  };
+}
 
 // Interface for approve return request
 export interface ApproveReturnRequest {
@@ -166,51 +171,125 @@ export interface ApproveReturnResponse {
   };
 }
 
-// Fetch dashboard data including pending returns
-// export async function fetchDashboardData(): Promise<DashboardData> {
-//   try {
-//     console.log(' Fetching dashboard data');
-    
-//     const response = await fetch(BASE_URL, {
-//       method: 'GET',
-//       credentials: 'include',
-//       headers: {
-//         'Content-Type': 'application/json'
-//       }
-//     });
-    
-//     if (!response.ok) {
-//       const errorData = await response.json();
-//       console.error(' Fetch dashboard data error response:', errorData);
-//       throw new Error(errorData.message || 'Failed to fetch dashboard data');
-//     }
-    
-//     const result = await response.json();
-//     console.log(' Dashboard data API Response:', result);
-    
-//     if (result.status === 'success' && result.data) {
-//       return result.data;
-//     } else {
-//       throw new Error(result.message || 'Invalid response format');
-//     }
-//   } catch (error) {
-//     console.error(' Error fetching dashboard data:', error);
-//     throw error;
-//   }
-// }
-
-
-
-// Add cache duration constant at the top (after imports, around line 134)
+// Cache duration constant
 const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes for dashboard data
+const LIGHTWEIGHT_CACHE_DURATION = 30 * 1000; // 30 seconds for lightweight data
 
-// ... existing code ...
+// Request deduplication: Track pending requests
+let pendingRequest: Promise<DashboardData> | null = null;
+let pendingLightweightRequest: Promise<LightweightDashboardData> | null = null;
 
-// Update fetchDashboardData function (around line 238)
+// Fetch lightweight dashboard data (fast, critical data only)
+export async function fetchLightweightDashboardData(): Promise<LightweightDashboardData> {
+  // If a request is already in flight, return the same promise
+  if (pendingLightweightRequest) {
+    return pendingLightweightRequest;
+  }
+
+  const cacheKey = 'dashboard_lightweight_cache';
+  
+  // Check cache first
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < LIGHTWEIGHT_CACHE_DURATION) {
+        console.log(' Using cached lightweight dashboard data');
+        return data;
+      } else {
+        // Cache expired, remove it
+        sessionStorage.removeItem(cacheKey);
+      }
+    }
+  } catch (error) {
+    console.warn(' Failed to read lightweight cache:', error);
+  }
+
+  // Create and cache the request promise
+  pendingLightweightRequest = (async () => {
+    try {
+      console.log(' Fetching lightweight dashboard data');
+      
+      const response = await fetch(`${BASE_URL}?lightweight=true`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error(' Fetch lightweight dashboard data error response:', errorData);
+        
+        // If fetch fails, try to return stale cache as fallback
+        try {
+          const cached = sessionStorage.getItem(cacheKey);
+          if (cached) {
+            const { data } = JSON.parse(cached);
+            console.log(' Using stale lightweight cache due to fetch error');
+            return data;
+          }
+        } catch (fallbackError) {
+          // Ignore fallback errors
+        }
+        
+        throw new Error(errorData.message || 'Failed to fetch lightweight dashboard data');
+      }
+
+      const result = await response.json();
+      console.log(' Lightweight dashboard data API Response:', result);
+
+      if (result.status === 'success' && result.data) {
+        const data = result.data;
+
+        // Cache the result
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify({
+            data,
+            timestamp: Date.now()
+          }));
+          console.log(' Lightweight dashboard data cached successfully');
+        } catch (cacheError) {
+          console.warn(' Failed to cache lightweight dashboard data:', cacheError);
+        }
+
+        return data;
+      } else {
+        throw new Error(result.message || 'Invalid response format');
+      }
+    } catch (error) {
+      console.error(' Error fetching lightweight dashboard data:', error);
+      
+      // If fetch fails, try to return stale cache as fallback
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          const { data } = JSON.parse(cached);
+          console.log(' Using stale lightweight cache due to fetch error');
+          return data;
+        }
+      } catch (fallbackError) {
+        // Ignore fallback errors
+      }
+      
+      throw error;
+    } finally {
+      pendingLightweightRequest = null; // Clear the pending request
+    }
+  })();
+
+  return pendingLightweightRequest;
+}
+
+// Fetch full dashboard data including pending returns
 export async function fetchDashboardData(): Promise<DashboardData> {
+  // If a request is already in flight, return the same promise
+  if (pendingRequest) {
+    return pendingRequest;
+  }
+
   const cacheKey = 'dashboard_data_cache';
   
-  // Check for cached data
+  // Check cache first
   try {
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -227,21 +306,61 @@ export async function fetchDashboardData(): Promise<DashboardData> {
     // If cache read fails (e.g., storage disabled), continue to fetch
     console.warn(' Failed to read dashboard cache:', error);
   }
-  
-  try {
-    console.log(' Fetching dashboard data');
-    
-    const response = await fetch(BASE_URL, {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json'
+
+  // Create and cache the request promise
+  pendingRequest = (async () => {
+    try {
+      console.log(' Fetching dashboard data');
+      
+      const response = await fetch(BASE_URL, {
+        method: 'GET',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error(' Fetch dashboard data error response:', errorData);
+        
+        // If fetch fails, try to return stale cache as fallback
+        try {
+          const cached = sessionStorage.getItem(cacheKey);
+          if (cached) {
+            const { data } = JSON.parse(cached);
+            console.log(' Using stale cache due to fetch error');
+            return data;
+          }
+        } catch (fallbackError) {
+          // Ignore fallback errors
+        }
+        
+        throw new Error(errorData.message || 'Failed to fetch dashboard data');
       }
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error(' Fetch dashboard data error response:', errorData);
+
+      const result = await response.json();
+      console.log(' Dashboard data API Response:', result);
+
+      if (result.status === 'success' && result.data) {
+        const data = result.data;
+
+        // Cache the result
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify({
+            data,
+            timestamp: Date.now()
+          }));
+          console.log(' Dashboard data cached successfully');
+        } catch (cacheError) {
+          // If caching fails (e.g., storage full), continue without caching
+          console.warn(' Failed to cache dashboard data:', cacheError);
+        }
+
+        return data;
+      } else {
+        throw new Error(result.message || 'Invalid response format');
+      }
+    } catch (error) {
+      console.error(' Error fetching dashboard data:', error);
       
       // If fetch fails, try to return stale cache as fallback
       try {
@@ -255,59 +374,27 @@ export async function fetchDashboardData(): Promise<DashboardData> {
         // Ignore fallback errors
       }
       
-      throw new Error(errorData.message || 'Failed to fetch dashboard data');
+      throw error;
+    } finally {
+      pendingRequest = null; // Clear the pending request
     }
-    
-    const result = await response.json();
-    console.log(' Dashboard data API Response:', result);
-    
-    if (result.status === 'success' && result.data) {
-      // Cache the successful response
-      try {
-        sessionStorage.setItem(cacheKey, JSON.stringify({
-          data: result.data,
-          timestamp: Date.now()
-        }));
-        console.log(' Dashboard data cached successfully');
-      } catch (cacheError) {
-        // If caching fails (e.g., storage full), continue without caching
-        console.warn(' Failed to cache dashboard data:', cacheError);
-      }
-      
-      return result.data;
-    } else {
-      throw new Error(result.message || 'Invalid response format');
-    }
-  } catch (error) {
-    console.error(' Error fetching dashboard data:', error);
-    
-    // If fetch fails, try to return stale cache as fallback
-    try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        const { data } = JSON.parse(cached);
-        console.log(' Using stale cache due to fetch error');
-        return data;
-      }
-    } catch (fallbackError) {
-      // Ignore fallback errors
-    }
-    
-    throw error;
-  }
+  })();
+
+  return pendingRequest;
 }
 
-// Add cache invalidation helper function (add after refreshDashboard function)
+// Add cache invalidation helper function
 export function clearDashboardCache(): void {
   try {
     sessionStorage.removeItem('dashboard_data_cache');
-    console.log(' Dashboard cache cleared');
+    sessionStorage.removeItem('dashboard_lightweight_cache');
+    console.log(' Dashboard caches cleared');
   } catch (error) {
     console.warn(' Failed to clear dashboard cache:', error);
   }
 }
 
-// Update refreshDashboard to clear cache before fetching (around line 320)
+// Update refreshDashboard to clear cache before fetching
 export async function refreshDashboard(): Promise<DashboardData> {
   try {
     console.log(' Refreshing dashboard data');
@@ -319,8 +406,6 @@ export async function refreshDashboard(): Promise<DashboardData> {
     throw error;
   }
 }
-
-
 
 // Approve a pending return with stock updates
 export async function approveReturn(returnId: number): Promise<ApproveReturnResponse> {
@@ -370,17 +455,6 @@ export async function fetchPendingReturns(): Promise<ReturnResponse[]> {
     throw error;
   }
 }
-
-// Refresh dashboard data (utility function)
-// export async function refreshDashboard(): Promise<DashboardData> {
-//   try {
-//     console.log(' Refreshing dashboard data');
-//     return await fetchDashboardData();
-//   } catch (error) {
-//     console.error(' Error refreshing dashboard:', error);
-//     throw error;
-//   }
-// }
 
 // Get stock summary for a specific return (utility function)
 export async function getReturnStockImpact(returnId: number): Promise<any> {

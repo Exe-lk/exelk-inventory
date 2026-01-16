@@ -173,59 +173,125 @@ const StockPage: React.FC = () => {
   }, [router]);
 
   // Load data
-  useEffect(() => {
-    if (!isLoggedIn) return;
+  // useEffect(() => {
+  //   if (!isLoggedIn) return;
 
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  //   const loadData = async () => {
+  //     try {
+  //       setLoading(true);
+  //       setError(null);
         
-        // Load stocks from API
-        const stockData = await fetchStocks({
+  //       // Load stocks from API
+  //       const stockData = await fetchStocks({
+  //         page: 1,
+  //         limit: 100
+  //       });
+        
+  //       // Load products and suppliers for the forms
+  //       const [productsData, suppliersData] = await Promise.all([
+  //         fetchProducts(),
+  //         fetchSuppliers()
+  //       ]);
+        
+  //       setStocks(stockData.items);
+        
+  //       // Map products correctly
+  //       setProducts(productsData.map((p: any) => ({
+  //         productId: p.productId,
+  //         productName: p.productName || p.ProductName,
+  //         variations: p.variations || []
+  //       })));
+        
+  //       console.log(' Raw suppliers data:', suppliersData);
+
+  //       // Map suppliers correctly  
+  //       const mappedSuppliers = suppliersData.map((s: any) => {
+  //         console.log(' Processing supplier:', s);
+  //         return {
+  //           supplierId: s.supplierId || s.SupplierID,
+  //           supplierName: s.supplierName || s.SupplierName
+  //         };
+  //       });
+        
+  //       console.log(' Mapped suppliers:', mappedSuppliers);
+  //       setSuppliers(mappedSuppliers);
+        
+  //     } catch (err) {
+  //       console.error('Error loading data:', err);
+  //       setError(err instanceof Error ? err.message : 'Failed to load data');
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   loadData();
+  // }, [isLoggedIn]);
+
+
+
+
+
+
+// Load data
+useEffect(() => {
+  if (!isLoggedIn) return;
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // OPTIMIZATION: Load all data in parallel with Promise.allSettled
+      const [stockResult, productsResult, suppliersResult] = await Promise.allSettled([
+        fetchStocks({
           page: 1,
-          limit: 100
-        });
-        
-        // Load products and suppliers for the forms
-        const [productsData, suppliersData] = await Promise.all([
-          fetchProducts(),
-          fetchSuppliers()
-        ]);
-        
-        setStocks(stockData.items);
-        
-        // Map products correctly
-        setProducts(productsData.map((p: any) => ({
+          limit: 50 // Reduce initial load
+        }),
+        fetchProducts(), // This already has caching
+        fetchSuppliers() // This already has caching
+      ]);
+      
+      // Handle stock data
+      if (stockResult.status === 'fulfilled') {
+        setStocks(stockResult.value.items);
+      } else {
+        console.error('Failed to load stocks:', stockResult.reason);
+        setError('Failed to load stock data');
+      }
+      
+      // Handle products data
+      if (productsResult.status === 'fulfilled') {
+        setProducts(productsResult.value.map((p: any) => ({
           productId: p.productId,
           productName: p.productName || p.ProductName,
           variations: p.variations || []
         })));
-        
-        console.log(' Raw suppliers data:', suppliersData);
-
-        // Map suppliers correctly  
-        const mappedSuppliers = suppliersData.map((s: any) => {
-          console.log(' Processing supplier:', s);
-          return {
-            supplierId: s.supplierId || s.SupplierID,
-            supplierName: s.supplierName || s.SupplierName
-          };
-        });
-        
-        console.log(' Mapped suppliers:', mappedSuppliers);
-        setSuppliers(mappedSuppliers);
-        
-      } catch (err) {
-        console.error('Error loading data:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load data');
-      } finally {
-        setLoading(false);
       }
-    };
+      
+      // Handle suppliers data
+      if (suppliersResult.status === 'fulfilled') {
+        const mappedSuppliers = suppliersResult.value.map((s: any) => ({
+          supplierId: s.supplierId || s.SupplierID,
+          supplierName: s.supplierName || s.SupplierName
+        }));
+        setSuppliers(mappedSuppliers);
+      }
+      
+    } catch (err) {
+      console.error('Error loading data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    loadData();
-  }, [isLoggedIn]);
+  loadData();
+}, [isLoggedIn]);
+
+
+
+
+
 
   // Auth handlers
   const handleLogin = (user: Omit<Employee, 'Password'>) => {

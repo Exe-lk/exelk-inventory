@@ -83,6 +83,9 @@ model employees {
   supplier_updatedBy       supplier[]       @relation("supplier_updatedBy")
   transactionlog           transactionlog[]
 
+  @@index([UserName], map: "idx_employee_username")
+  @@index([Email], map: "idx_employee_email")
+
   @@map("employees")
 }
 
@@ -138,6 +141,7 @@ model product {
 
   @@index([productId, deletedAt], map: "idx_product_id_deleted")
   @@index([sku, deletedAt], map: "idx_product_sku_deleted")
+  @@index([sku], map: "idx_product_sku")
   @@index([productName, deletedAt], map: "idx_product_name_deleted")
   @@index([categoryId, brandId, deletedAt], map: "idx_product_category_brand")
 
@@ -328,6 +332,8 @@ model gindetails {
   location       String?
   gin            gin      @relation(fields: [ginId], references: [ginId], onDelete: NoAction, onUpdate: NoAction, map: "fk_gindetails_gin")
   product        product  @relation(fields: [productId], references: [productId], onDelete: NoAction, onUpdate: NoAction, map: "fk_gindetails_product")
+
+  @@index([productId], map: "idx_gindetails_product")
 }
 
 model grn {
@@ -360,6 +366,8 @@ model grndetails {
   location         String?
   grn              grn      @relation(fields: [grnId], references: [grnId], onDelete: NoAction, onUpdate: NoAction, map: "fk_grndetails_grn")
   product          product  @relation(fields: [productId], references: [productId], onDelete: NoAction, onUpdate: NoAction, map: "fk_grndetails_product")
+
+  @@index([productId, grnDetailId], map: "idx_grndetails_product_id")
 }
 
 model stock {
@@ -379,6 +387,8 @@ model stock {
   @@index([quantityAvailable, reorderLevel], map: "idx_stock_low_stock")
   @@index([location], map: "idx_stock_location")
   @@index([lastUpdatedDate], map: "idx_stock_updated")
+  @@index([productId, variationId, quantityAvailable], map: "idx_stock_product_var_qty")
+  
 }
 
 model transactionlog {
@@ -410,6 +420,7 @@ model returns {
   @@index([returnStatus, approved], map: "idx_returns_status_approved")
   @@index([returnDate], map: "idx_returns_date")
   @@index([supplierId, returnStatus], map: "idx_returns_supplier_status")
+  @@index([employeeId, returnDate], map: "idx_returns_employee_date")
 }
 
 model returnproduct {

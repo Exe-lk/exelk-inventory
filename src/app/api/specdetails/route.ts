@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { createServerClient } from '@/lib/supabase/server'
+import { getAuthenticatedSession } from '@/lib/api-auth-optimized'
 
 interface SpecDetail {
   specDetailId: number
@@ -79,23 +80,13 @@ interface SpecDetail {
 // GET - Retrieve spec details with pagination, sorting, search, and filtering
 export async function GET(request: NextRequest) {
   console.log(' SpecDetail GET request started');
-  
+
   try {
     // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session) {
-      console.log(' No access token found');
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
 
     console.log(' Access token verified');
@@ -145,9 +136,9 @@ export async function GET(request: NextRequest) {
     console.log(' Order by:', orderBy);
 
     try {
-      console.log(' Testing database connection...');
-      await prisma.$connect();
-      console.log(' Database connected successfully');
+      // console.log(' Testing database connection...');
+      // await prisma.$connect();
+      // console.log(' Database connected successfully');
 
       // Get total count for pagination
       console.log(' Getting total count...');
@@ -224,9 +215,9 @@ export async function GET(request: NextRequest) {
         message: dbError instanceof Error ? dbError.message : 'Unknown error',
         stack: dbError instanceof Error ? dbError.stack : 'No stack trace'
       });
-      
+
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 500,
           message: 'Failed to retrieve spec details - Database error',
@@ -240,7 +231,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error(' Spec details GET error:', error);
     return NextResponse.json(
-      { 
+      {
         status: 'error',
         code: 500,
         message: 'Internal server error',
@@ -248,8 +239,6 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 }
     )
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -303,59 +292,25 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
 
-    // Get employee ID from session
-    const employeeId = session.user.user_metadata?.employee_id
-    if (!employeeId) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid access token - employee ID not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
-
-    const parsedEmployeeId = parseInt(employeeId.toString())
-    if (isNaN(parsedEmployeeId)) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid employee ID in token',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    const parsedEmployeeId = authResult.employeeId
 
     const body = await request.json()
-    
+
     // Validate required fields
     const { variationId, specId, specValue } = body
-    
+
     console.log(' Received data:', { variationId, specId, specValue });
     console.log(' Employee ID from session:', parsedEmployeeId);
 
     if (!variationId || !specId || !specValue) {
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 400,
           message: 'Variation ID, spec ID, and spec value are required',
@@ -377,7 +332,7 @@ export async function POST(request: NextRequest) {
 
       if (existingSpecDetail) {
         return NextResponse.json(
-          { 
+          {
             status: 'error',
             code: 409,
             message: 'Spec detail with this variation and spec already exists',
@@ -397,7 +352,7 @@ export async function POST(request: NextRequest) {
 
       if (!existingVariation) {
         return NextResponse.json(
-          { 
+          {
             status: 'error',
             code: 400,
             message: 'Invalid variation ID',
@@ -417,7 +372,7 @@ export async function POST(request: NextRequest) {
 
       if (!existingSpec) {
         return NextResponse.json(
-          { 
+          {
             status: 'error',
             code: 400,
             message: 'Invalid spec ID',
@@ -476,7 +431,7 @@ export async function POST(request: NextRequest) {
     } catch (dbError) {
       console.error(' Database error:', dbError)
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 500,
           message: 'Failed to create spec detail',
@@ -490,7 +445,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error(' Spec details POST error:', error)
     return NextResponse.json(
-      { 
+      {
         status: 'error',
         code: 500,
         message: 'Internal server error',
@@ -555,56 +510,22 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
 
-    // Get employee ID from session
-    const employeeId = session.user.user_metadata?.employee_id
-    if (!employeeId) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid access token - employee ID not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
-
-    const parsedEmployeeId = parseInt(employeeId.toString())
-    if (isNaN(parsedEmployeeId)) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid employee ID in token',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    const parsedEmployeeId = authResult.employeeId
 
     const body = await request.json()
     const { specDetailId, ...updateData } = body
 
     console.log(' Update - Employee ID from session:', parsedEmployeeId);
-    
+
     if (!specDetailId) {
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 400,
           message: 'Spec detail ID is required',
@@ -625,7 +546,7 @@ export async function PUT(request: NextRequest) {
 
       if (!existingSpecDetail) {
         return NextResponse.json(
-          { 
+          {
             status: 'error',
             code: 404,
             message: 'Spec detail not found',
@@ -648,7 +569,7 @@ export async function PUT(request: NextRequest) {
 
         if (duplicateSpecDetail) {
           return NextResponse.json(
-            { 
+            {
               status: 'error',
               code: 409,
               message: 'Spec detail with this variation and spec already exists',
@@ -670,7 +591,7 @@ export async function PUT(request: NextRequest) {
 
         if (!existingVariation) {
           return NextResponse.json(
-            { 
+            {
               status: 'error',
               code: 400,
               message: 'Invalid variation ID',
@@ -692,7 +613,7 @@ export async function PUT(request: NextRequest) {
 
         if (!existingSpec) {
           return NextResponse.json(
-            { 
+            {
               status: 'error',
               code: 400,
               message: 'Invalid spec ID',
@@ -758,7 +679,7 @@ export async function PUT(request: NextRequest) {
     } catch (dbError) {
       console.error(' Database error:', dbError)
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 500,
           message: 'Failed to update spec detail',
@@ -772,7 +693,7 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error(' Spec details PUT error:', error)
     return NextResponse.json(
-      { 
+      {
         status: 'error',
         code: 500,
         message: 'Internal server error',
@@ -823,54 +744,22 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
 
-    // Get employee ID from session
-    const employeeId = session.user.user_metadata?.employee_id
-    if (!employeeId) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid access token - employee ID not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    const parsedEmployeeId = authResult.employeeId
 
-    const parsedEmployeeId = parseInt(employeeId.toString())
-    if (isNaN(parsedEmployeeId)) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Invalid employee ID in token',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+
 
     const { searchParams } = new URL(request.url)
     const specDetailId = searchParams.get('specDetailId') || searchParams.get('id')
 
     if (!specDetailId) {
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 400,
           message: 'Spec detail ID is required',
@@ -883,6 +772,7 @@ export async function DELETE(request: NextRequest) {
     try {
       // Check if spec detail exists and is not already deleted
       const existingSpecDetail = await prisma.specdetails.findFirst({
+        // ... existing code ...
         where: {
           specDetailId: parseInt(specDetailId),
           deletedAt: null
@@ -891,7 +781,7 @@ export async function DELETE(request: NextRequest) {
 
       if (!existingSpecDetail) {
         return NextResponse.json(
-          { 
+          {
             status: 'error',
             code: 404,
             message: 'Spec detail not found',
@@ -925,7 +815,7 @@ export async function DELETE(request: NextRequest) {
     } catch (dbError) {
       console.error(' Database error:', dbError)
       return NextResponse.json(
-        { 
+        {
           status: 'error',
           code: 500,
           message: 'Failed to delete spec detail',
@@ -939,7 +829,7 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     console.error(' Spec details DELETE error:', error)
     return NextResponse.json(
-      { 
+      {
         status: 'error',
         code: 500,
         message: 'Internal server error',

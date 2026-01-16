@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma/client'
 import { createServerClient } from '@/lib/supabase/server'
+import { getAuthenticatedSession } from '@/lib/api-auth-optimized'
 
 // Allowed main category values
 const ALLOWED_MAIN_CATEGORIES = ['Laptop', 'Desktop', 'Accessories'];
@@ -24,21 +25,10 @@ export async function GET(request: NextRequest) {
   console.log(' Category GET request started');
   
   try {
-    // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session) {
-      console.log(' No access token found');
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
 
     console.log(' Access token verified');
@@ -92,9 +82,9 @@ export async function GET(request: NextRequest) {
     console.log(' Order by:', orderBy);
 
     try {
-      console.log(' Testing database connection...');
-      await prisma.$connect();
-      console.log(' Database connected successfully');
+      // console.log(' Testing database connection...');
+      // await prisma.$connect();
+      // console.log(' Database connected successfully');
 
       // Get total count for pagination
       console.log(' Getting total count...');
@@ -192,43 +182,18 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 }
     )
-  } finally {
-    await prisma.$disconnect();
-  }
+  } 
 }
 
 // POST - Create new category
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
-
-    // Get employee ID from session metadata
-    const employeeId = session.user.user_metadata?.employee_id
-    if (!employeeId) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'User metadata not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    const employeeId = authResult.employeeId!
 
     const body = await request.json()
     const { categoryName, description, mainCategory, isActive } = body
@@ -302,8 +267,8 @@ export async function POST(request: NextRequest) {
           description,
           mainCategory: mainCategory || null,
           isActive: isActive !== undefined ? isActive : true,
-          createdBy: parseInt(employeeId),
-          updatedBy: parseInt(employeeId)
+          createdBy: employeeId,
+          updatedBy: employeeId
         },
         select: {
           categoryId: true,
@@ -379,35 +344,12 @@ export async function POST(request: NextRequest) {
 // PUT - Update category
 export async function PUT(request: NextRequest) {
   try {
-    // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
-
-    // Get employee ID from session metadata
-    const employeeId = session.user.user_metadata?.employee_id
-    if (!employeeId) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'User metadata not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    const employeeId = authResult.employeeId
 
     const body = await request.json()
     const { categoryID, ...updateData } = body
@@ -486,7 +428,7 @@ export async function PUT(request: NextRequest) {
 
       // Prepare update data
       const prismaUpdateData: any = {
-        updatedBy: parseInt(employeeId)
+        updatedBy: employeeId
       }
 
       if (updateData.categoryName !== undefined) prismaUpdateData.categoryName = updateData.categoryName
@@ -574,35 +516,12 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete category (soft delete)
 export async function DELETE(request: NextRequest) {
   try {
-    // Verify authentication using Supabase
-    const supabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'Access token not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
+    // Verify authentication using optimized helper
+    const authResult = await getAuthenticatedSession(request)
+    if (authResult.error) {
+      return authResult.response
     }
-
-    // Get employee ID from session metadata
-    const employeeId = session.user.user_metadata?.employee_id
-    if (!employeeId) {
-      return NextResponse.json(
-        { 
-          status: 'error',
-          code: 401,
-          message: 'User metadata not found',
-          timestamp: new Date().toISOString()
-        },
-        { status: 401 }
-      )
-    }
+    const employeeId = authResult.employeeId
 
     const { searchParams } = new URL(request.url)
     const categoryID = searchParams.get('categoryID') || searchParams.get('id')
@@ -687,7 +606,7 @@ export async function DELETE(request: NextRequest) {
         },
         data: {
           deletedAt: new Date(),
-          deletedBy: parseInt(employeeId),
+          deletedBy: employeeId,
           isActive: false
         }
       })
